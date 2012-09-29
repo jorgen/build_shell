@@ -8,7 +8,11 @@
 
 #include <iostream>
 
+#ifdef __MACH__
+#include <errno.h>
+#else
 #include <error.h>
+#endif //__MACH__
 
 Configuration::Configuration()
     : m_mode(Invalid)

@@ -27,17 +27,6 @@ AM_SILENT_RULES([yes])
 AC_LANG(C++)
 AC_PROG_CXX
 
-m4_include([m4/ax_cxx_compile_stdcxx_11.m4])
-
-AX_CXX_COMPILE_STDCXX_11([noext])
-
-# Initialize libtool
-LT_PREREQ([2.2])
-LT_INIT
-
-PKG_PROG_PKG_CONFIG()
-PKG_CHECK_MODULES(JSON, [json])
-
 if test "x$GCC" = "xyes"; then
 	GCC_CFLAGS="-Wall -Wextra -Wno-unused-parameter -g -Wstrict-prototypes -Wmissing-prototypes -fvisibility=hidden"
 fi

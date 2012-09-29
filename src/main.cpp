@@ -39,7 +39,6 @@ int main(int argc, char **argv)
 {
     argc-=(argc>0); argv+=(argc>0);
     option::Stats  stats(usage, argc, argv);
-    fprintf(stderr, "MAX BUFFER %d:%d\n", stats.options_max, stats.buffer_max);
     option::Option options[stats.options_max], buffer[stats.buffer_max];
     option::Parser parser(usage, argc, argv, options, buffer);
 
