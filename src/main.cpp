@@ -1,8 +1,13 @@
 #include "arg.h"
 #include "configuration.h"
+#include "writer.h"
 
 #include <iostream>
-#include <optionparser.h>
+#include "3rdparty/optionparser/src/optionparser.h"
+
+extern "C" {
+#include "3rdparty/jsmn/jsmn.h"
+}
 
 enum optionIndex {
     UNKNOWN,
@@ -116,6 +121,12 @@ int main(int argc, char **argv)
         fprintf(stderr, "IT IS SANE!!!!!!!!!!!\n");
     }
 
+    if (configuration.mode() == Configuration::Create) {
+        fprintf(stderr, "Outfile is %s\n", configuration.buildDir().c_str());
+        Writer writer(configuration.buildDir().append("to_writer"));
+    }
+    jsmn_parser tst_parser;
+    jsmn_init(&tst_parser);
 
     return 0;
 }

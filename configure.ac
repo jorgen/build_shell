@@ -24,6 +24,8 @@ AM_INIT_AUTOMAKE([1.11 foreign no-dist-gzip dist-xz])
 
 AM_SILENT_RULES([yes])
 
+AC_LANG(C)
+AC_PROG_CC
 AC_LANG(C++)
 AC_PROG_CXX
 

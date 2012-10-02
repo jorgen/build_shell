@@ -2,11 +2,13 @@ bin_PROGRAMS = build_shell
 
 build_shell_SOURCES =	         	        \
 	main.cpp 				\
-	optionparser.h				\
 	arg.h					\
 	arg.cpp					\
 	configuration.h				\
-	configuration.cpp
+	configuration.cpp			\
+	witer.h					\
+	writer.cpp				\
+	3rdparty/jsmn/jsmn.c
 
 AM_CPPFLAGS = $(JSON_CFLAGS) -DDATA_PATH=\"$(pkgdatadir)\"
 
