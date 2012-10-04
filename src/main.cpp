@@ -1,13 +1,14 @@
 #include "arg.h"
 #include "configuration.h"
-#include "writer.h"
+#include "creator.h"
 
 #include <iostream>
 #include "3rdparty/optionparser/src/optionparser.h"
 
-extern "C" {
-#include "3rdparty/jsmn/jsmn.h"
-}
+//how to include jsmn
+//extern "C" {
+//#include "3rdparty/jsmn/jsmn.h"
+//}
 
 enum optionIndex {
     UNKNOWN,
@@ -15,28 +16,30 @@ enum optionIndex {
     SRC_DIR,
     BUILD_DIR,
     INSTALL_DIR,
-    BUILDSET_FILE
+    BUILDSET,
+    BUILDSET_OUT
 };
 
 const option::Descriptor usage[] =
  {
-  {UNKNOWN,       0,  "", "",              Arg::unknown,              "USAGE: build_shell [options] mode\n\n"
-                                                                      "Modes\n"
-                                                                      "  pull\t pulls sources specified in buildsetfile\n"
-                                                                      "  create\t creates a new buildset file\n"
-                                                                      "  build\t builds a buildset file\n\n"
-                                                                      "Options:" },
-  {HELP,          0, "h" , "help",         option::Arg::None,         "  --help, -h\tPrint usage and exit." },
-  {SRC_DIR,       0, "s", "src-dir",       Arg::requiresDirectory,    "  --src-dir, -s  \tSource dir, where projects are cloned\v"
-                                                                      "     and builds read their sources from." },
-  {BUILD_DIR,     0, "b", "build-dir",     Arg::requiresDirectory,    "  --build-dir, -b     \tBuild dir, defaults to source dir. This is\v"
-                                                                      "     where the projects will be built."},
-  {INSTALL_DIR,   0, "i", "install-dir",   Arg::requiresDirectory,    "  --install-dir, -i   \tInstall dir, defaults to build dir. This is the directory\v"
-                                                                      "     that will be used as prefix for projects."},
-  {BUILDSET_FILE, 0, "f", "buildset-file", Arg::requiresExistingFile, "  --buildset-file -f  \tFile used as input for projects"},
+  {UNKNOWN,       0,  "", "",                 Arg::unknown,              "USAGE: build_shell [options] mode\n\n"
+                                                                         "Modes\n"
+                                                                         "  pull\t pulls sources specified in buildsetfile\n"
+                                                                         "  create\t creates a new buildset file\n"
+                                                                         "  build\t builds a buildset file\n\n"
+                                                                         "Options:" },
+  {HELP,          0, "h" , "help",            option::Arg::None,         "  --help, -h\tPrint usage and exit." },
+  {SRC_DIR,       0, "s", "src-dir",          Arg::requiresDirectory,    "  --src-dir, -s  \tSource dir, where projects are cloned\v"
+                                                                         "     and builds read their sources from." },
+  {BUILD_DIR,     0, "b", "build-dir",        Arg::requiresDirectory,    "  --build-dir, -b     \tBuild dir, defaults to source dir. This is\v"
+                                                                         "     where the projects will be built."},
+  {INSTALL_DIR,   0, "i", "install-dir",      Arg::requiresDirectory,    "  --install-dir, -i   \tInstall dir, defaults to build dir. This is the directory\v"
+                                                                         "     that will be used as prefix for projects."},
+  {BUILDSET,      0, "f", "buildset",         Arg::requiresExistingFile, "  --buildset -f  \tFile used as input for projects"},
+  {BUILDSET_OUT,  0, "o", "buildset-out",     Arg::requiresNotExistingFile, "  --buildset-out -o  \tFile used for creating buildset file"},
 
-  {UNKNOWN, 0,"" ,  ""   ,                 option::Arg::None,         "\nExamples:\n"
-                                                                      "  build_shell --src-dir /some/file -f ../some/buildset_file pull\n"},
+  {UNKNOWN, 0,"" ,  ""   ,                    option::Arg::None,         "\nExamples:\n"
+                                                                         "  build_shell --src-dir /some/file -f ../some/buildset_file pull\n"},
   {0,0,0,0,0,0}
  };
 
@@ -62,7 +65,7 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    if (!options[BUILDSET_FILE]) {
+    if (!options[BUILDSET]) {
         fprintf(stderr, "\nPlease specify the required argument buildset-file\n");
         option::printUsage(std::cerr, usage);
         return 1;
@@ -101,8 +104,11 @@ int main(int argc, char **argv)
             case INSTALL_DIR:
                 configuration.setInstallDir(opt.arg);
                 break;
-            case BUILDSET_FILE:
+            case BUILDSET:
                 configuration.setBuildsetFile(opt.arg);
+                break;
+            case BUILDSET_OUT:
+                configuration.setBuildsetOutFile(opt.arg);
                 break;
             case UNKNOWN:
                 fprintf(stderr, "UNKNOWN!");
@@ -122,11 +128,9 @@ int main(int argc, char **argv)
     }
 
     if (configuration.mode() == Configuration::Create) {
-        fprintf(stderr, "Outfile is %s\n", configuration.buildDir().c_str());
-        Writer writer(configuration.buildDir().append("to_writer"));
+        Creator create(&configuration);
+        create.writeNewBuildSet("FOOABR");
     }
-    jsmn_parser tst_parser;
-    jsmn_init(&tst_parser);
 
     return 0;
 }

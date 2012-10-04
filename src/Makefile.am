@@ -8,6 +8,8 @@ build_shell_SOURCES =	         	        \
 	configuration.cpp			\
 	witer.h					\
 	writer.cpp				\
+	creator.h				\
+	creator.cpp				\
 	3rdparty/jsmn/jsmn.c
 
 AM_CPPFLAGS = $(JSON_CFLAGS) -DDATA_PATH=\"$(pkgdatadir)\"

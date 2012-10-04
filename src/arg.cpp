@@ -4,6 +4,7 @@
 #include <stdio.h>
 
 #include <sys/stat.h>
+#include <errno.h>
 
 void Arg::printError(const char* msg1, const option::Option& opt, const char* msg2)
 {
@@ -36,6 +37,16 @@ option::ArgStatus Arg::requiresExistingFile(const option::Option &option, bool m
 
     if (msg)
         printError("Option '", option, "' requires an existing path\n");
+
+    return option::ARG_ILLEGAL;
+}
+
+option::ArgStatus Arg::requiresNotExistingFile(const option::Option &option, bool msg)
+{
+    struct stat stat_buf;
+    int success = stat(option.arg, &stat_buf);
+    if (success == ENOENT)
+        return option::ARG_OK;
 
     return option::ARG_ILLEGAL;
 }

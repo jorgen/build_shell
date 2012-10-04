@@ -1,3 +1,6 @@
+#ifndef WRITER_H
+#define WRITER_H
+
 #include <string>
 #include <cstdio>
 
@@ -12,3 +15,4 @@ private:
     int m_file_desc;
 };
 
+#endif //WRITER_H

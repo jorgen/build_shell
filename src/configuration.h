@@ -26,6 +26,9 @@ public:
     void setBuildsetFile(const char *buildset_file);
     std::string buildsetFile() const;
 
+    void setBuildsetOutFile(const char *buildset_out_file);
+    std::string buildsetOutFile() const;
+
     void validate();
     bool sane() const;
 private:
@@ -38,6 +41,7 @@ private:
     std::string m_build_dir;
     std::string m_install_dir;
     std::string m_buildset_file;
+    std::string m_buildset_out_file;
 
     bool m_sane;
 };

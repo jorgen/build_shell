@@ -76,6 +76,16 @@ std::string Configuration::buildsetFile() const
     return m_buildset_file;
 }
 
+void Configuration::setBuildsetOutFile(const char *buildset_out_file)
+{
+    m_buildset_out_file = buildset_out_file;
+}
+
+std::string Configuration::buildsetOutFile() const
+{
+    return m_buildset_out_file;
+}
+
 void Configuration::validate()
 {
     m_sane = false;
