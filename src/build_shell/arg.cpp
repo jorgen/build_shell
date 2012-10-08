@@ -41,7 +41,7 @@ option::ArgStatus Arg::requiresExistingFile(const option::Option &option, bool m
     return option::ARG_ILLEGAL;
 }
 
-option::ArgStatus Arg::requiresNotExistingFile(const option::Option &option, bool msg)
+option::ArgStatus Arg::requiresNonExistingFile(const option::Option &option, bool msg)
 {
     struct stat stat_buf;
     int success = stat(option.arg, &stat_buf);

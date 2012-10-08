@@ -3,7 +3,7 @@
 #include "creator.h"
 
 #include <iostream>
-#include "3rdparty/optionparser/src/optionparser.h"
+#include "../3rdparty/optionparser/src/optionparser.h"
 
 //how to include jsmn
 //extern "C" {
@@ -36,7 +36,7 @@ const option::Descriptor usage[] =
   {INSTALL_DIR,   0, "i", "install-dir",      Arg::requiresDirectory,    "  --install-dir, -i   \tInstall dir, defaults to build dir. This is the directory\v"
                                                                          "     that will be used as prefix for projects."},
   {BUILDSET,      0, "f", "buildset",         Arg::requiresExistingFile, "  --buildset -f  \tFile used as input for projects"},
-  {BUILDSET_OUT,  0, "o", "buildset-out",     Arg::requiresNotExistingFile, "  --buildset-out -o  \tFile used for creating buildset file"},
+  {BUILDSET_OUT,  0, "o", "buildset-out",     Arg::requiresNonExistingFile, "  --buildset-out -o  \tFile used for creating buildset file"},
 
   {UNKNOWN, 0,"" ,  ""   ,                    option::Arg::None,         "\nExamples:\n"
                                                                          "  build_shell --src-dir /some/file -f ../some/buildset_file pull\n"},

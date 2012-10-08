@@ -1,7 +1,7 @@
 AC_PREREQ([2.64])
 
 m4_define([build_shell_major_version], [0])
-m4_define([build_shell_minor_version], [95])
+m4_define([build_shell_minor_version], [0])
 m4_define([build_shell_micro_version], [0])
 m4_define([build_shell_version],
           [build_shell_major_version.build_shell_minor_version.build_shell_micro_version])
@@ -63,5 +63,7 @@ AC_SUBST(GCC_CFLAGS)
 
 AC_CONFIG_FILES([Makefile
 		 src/Makefile
+                 src/build_shell/Makefile
+                 src/src_descriptor/Makefile
 		 src/build_shell-version.h])
 AC_OUTPUT

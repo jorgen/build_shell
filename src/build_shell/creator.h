@@ -12,6 +12,8 @@ public:
 
     void writeNewBuildSet(std::string file);
 private:
+    void handleCurrentSrcDir();
+
     std::string m_src_dir;
     std::string m_build_set_file_in;
 };

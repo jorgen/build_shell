@@ -24,7 +24,6 @@ src/.deps/
 src/Makefile
 src/Makefile.in
 src/*.o
-src/build_shell
 src/build_shell-version.h
 stamp-h1
 
