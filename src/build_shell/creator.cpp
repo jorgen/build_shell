@@ -6,6 +6,8 @@
 #include <sys/dir.h>
 #include <errno.h>
 #include <sys/stat.h>
+#include <limits.h>
+#include <unistd.h>
 
 Creator::Creator(Configuration *configuration)
 {

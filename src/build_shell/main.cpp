@@ -2,13 +2,10 @@
 #include "configuration.h"
 #include "creator.h"
 
+#include <vector>
 #include <iostream>
-#include "../3rdparty/optionparser/src/optionparser.h"
 
-//how to include jsmn
-//extern "C" {
-//#include "3rdparty/jsmn/jsmn.h"
-//}
+#include "../3rdparty/optionparser/src/optionparser.h"
 
 enum optionIndex {
     UNKNOWN,
@@ -47,8 +44,9 @@ int main(int argc, char **argv)
 {
     argc-=(argc>0); argv+=(argc>0);
     option::Stats  stats(usage, argc, argv);
-    option::Option options[stats.options_max], buffer[stats.buffer_max];
-    option::Parser parser(usage, argc, argv, options, buffer);
+    std::vector<option::Option> options(stats.options_max);
+    std::vector<option::Option> buffer(stats.buffer_max);
+    option::Parser parser(usage, argc, argv, options.data(), buffer.data());
 
     if (parser.error()) {
         return 1;

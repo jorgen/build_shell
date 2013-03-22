@@ -9,9 +9,8 @@ build_shell_SOURCES =	         	        \
 	witer.h					\
 	writer.cpp				\
 	creator.h				\
-	creator.cpp				\
-	../3rdparty/jsmn/jsmn.c
+	creator.cpp
 
-AM_CPPFLAGS = -DDATA_PATH=\"$(pkgdatadir)\"
+#AM_CPPFLAGS = -DDATA_PATH=\"$(pkgdatadir)\"
 
 CLEANFILES = $(BUILT_SOURCES)

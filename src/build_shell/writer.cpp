@@ -1,5 +1,6 @@
 #include "writer.h"
 #include <fcntl.h>
+#include <unistd.h>
 
 Writer::Writer(std::string file)
     : m_file(0)
