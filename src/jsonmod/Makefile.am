@@ -6,8 +6,8 @@ jsonmod_SOURCES =   	        					\
 	arg.cpp								\
 	configuration.h							\
 	configuration.cpp						\
-	$(top_srcdir)/src/3rdparty/json_tools/src/json_tokenizer.cpp	\
-	$(top_srcdir)/src/3rdparty/json_tools/src/json_tree.cpp
+	json_streamer.cpp						\
+	$(top_srcdir)/src/3rdparty/json_tools/src/json_tokenizer.cpp
 
 AM_CPPFLAGS = \
     -I$(top_srcdir)/src/3rdparty/json_tools/src \

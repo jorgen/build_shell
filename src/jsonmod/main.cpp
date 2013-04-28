@@ -1,5 +1,6 @@
 #include "arg.h"
 #include "configuration.h"
+#include "json_streamer.h"
 
 #include <iostream>
 #include <vector>
@@ -11,21 +12,21 @@ enum optionIndex {
     FILE_SRC,
     INLINE,
     PROPERTY,
-    HUMAN,
+    COMPACT,
     VALUE
 };
 
 const option::Descriptor usage[] =
  {
   {UNKNOWN,       0,  "", "",                 Arg::unknown,              "USAGE: jsonmod [options][file]\n\n"
-                                                                         "\n"
-                                                                         "If file is omitted, then input is read from standard in\n\n"
+                                                                         "If file is omitted, then input is read from stdin\n"
+                                                                         "Output is allways going to stdout if not the inline option is specified\n\n"
                                                                          "Options:" },
-  {HELP,          0, "?", "help",             option::Arg::None,         "  --help, -?\tPrint usage and exit." },
+  {HELP,          0, "h", "help",             option::Arg::None,         "  --help, -?\tPrint usage and exit." },
   {INLINE,        0, "i", "inline",           option::Arg::None,         "  --inline, -i  \tInline modifies the input file." },
   {PROPERTY,      0, "p", "property",         Arg::requiresValue,        "  --property, -p \tProperty to retrun/modify." },
   {VALUE,         0, "v", "value",            Arg::requiresValue,        "  --value, -v\tValue to update property with."},
-  {HUMAN,         0, "h", "pretty",           option::Arg::None,         "  --pretty, -h\tOutput in human readable format."},
+  {COMPACT,       0, "c", "compact",          option::Arg::None,         "  --compact, -h\tOutput in compact format."},
   {UNKNOWN, 0,"" ,  ""   ,                    option::Arg::None,         "\nExamples:\n"
                                                                          "  jsonmod -i -p \"foo\" -v 43, /some/file \n"},
   {0,0,0,0,0,0}
@@ -43,22 +44,22 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    if (options[HELP] || argc == 0) {
+    if (options[HELP]) {
         option::printUsage(std::cout, usage);
         return 0;
     }
 
-    for (int i = 0; i < parser.nonOptionsCount(); ++i)
-             std::cout << "Non-option #" << i << ": " << parser.nonOption(i) << "\n";
-    if (parser.nonOptionsCount() > 0) {
-
-    }
-
     Configuration configuration;
+
+    if (parser.nonOptionsCount() > 1) {
+        fprintf(stderr, "Its not leagal to specify more than one input file\n");
+        return 1;
+    }
 
     if (parser.nonOptionsCount() == 1) {
         configuration.setInputFile(parser.nonOption(0));
     }
+
     for (int i = 0; i < parser.optionsCount(); ++i)
     {
         option::Option& opt = buffer[i];
@@ -75,8 +76,8 @@ int main(int argc, char **argv)
             case PROPERTY:
                 configuration.setProperty(opt.arg);
                 break;
-            case HUMAN:
-                configuration.setShouldPrettyPrint(true);
+            case COMPACT:
+                configuration.setCompactPrint(true);
                 break;
             case VALUE:
                 configuration.setValue(opt.arg);
@@ -93,7 +94,12 @@ int main(int argc, char **argv)
         option::printUsage(std::cerr,usage);
         return 1;
     } else {
-        fprintf(stderr, "IT IS SANE!!!!!!!!!!!\n");
+        JsonStreamer streamer(configuration);
+        if (streamer.error())
+            return 2;
+        streamer.stream();
+        if (streamer.error())
+            return 3;
     }
 
     return 0;

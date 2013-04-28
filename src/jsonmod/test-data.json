@@ -1,0 +1,19 @@
+{
+    "StringNode" : "Some test data",
+    "NumberNode" : 4676.4,
+    "NullNode" : null,
+    "BooleanTrue" : true,
+    "BooleanFalse" : false,
+    "Object" : {
+        "SomeSubObjectProp": "RED"
+    },
+    "Array" : [
+        "String",
+        null,
+        true,
+        {
+            "SomeOtherObjectProp" : "GREEN"
+        }
+    ],
+    "LastStringNode" : "More test data"
+}

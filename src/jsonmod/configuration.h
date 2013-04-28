@@ -1,3 +1,6 @@
+#ifndef CONFIGURATION_H
+#define CONFIGURATION_H
+
 #include <string>
 
 class Configuration
@@ -10,7 +13,7 @@ public:
     const std::string &inputFile() const;
 
     void setProperty(const char *property);
-    bool hasPropertyFile() const;
+    bool hasProperty() const;
     const std::string &property() const;
 
     void setValue(const char *value);
@@ -20,8 +23,8 @@ public:
     void setInline(bool shouldInline);
     bool hasInlineSet() const;
 
-    void setShouldPrettyPrint(bool shouldPrettyPrint);
-    bool shouldPrettyPrint() const;
+    void setCompactPrint(bool compactPrint);
+    bool compactPrint() const;
 
     bool sane() const;
 private:
@@ -30,6 +33,7 @@ private:
     std::string m_value;
 
     bool m_inline;
-    bool m_human;
+    bool m_compact;
 };
 
+#endif //CONFIGURATION_H

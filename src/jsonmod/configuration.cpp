@@ -15,13 +15,15 @@
 #endif //__MACH__
 
 Configuration::Configuration()
+    : m_inline(false)
+    , m_compact(false)
 {
 
 }
 
 void Configuration::setInputFile(const char *input)
 {
-    m_input_file=input;
+    m_input_file = input;
 }
 
 bool Configuration::hasInputFile() const
@@ -39,7 +41,7 @@ void Configuration::setProperty(const char *property)
     m_property = property;
 }
 
-bool Configuration::hasPropertyFile() const
+bool Configuration::hasProperty() const
 {
     return m_property.size() != 0;
 }
@@ -74,17 +76,27 @@ bool Configuration::hasInlineSet() const
     return m_inline;
 }
 
-void Configuration::setShouldPrettyPrint(bool shouldPrettyPrint)
+void Configuration::setCompactPrint(bool compactPrint)
 {
-    m_human = shouldPrettyPrint;
+    m_compact = compactPrint;
 }
 
-bool Configuration::shouldPrettyPrint() const
+bool Configuration::compactPrint() const
 {
-    return m_human;
+    return m_compact;
 }
 
 bool Configuration::sane() const
 {
+    if (m_input_file.size()) {
+        int input_file_access = m_inline ? W_OK : 0;
+        input_file_access |= (R_OK | F_OK);
+
+        if (access(m_input_file.c_str(),input_file_access)) {
+            fprintf(stderr, "Error accessing input file\n%s\n\n", strerror(errno));
+            return false;
+        }
+    }
+
     return true;
 }

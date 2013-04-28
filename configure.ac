@@ -23,15 +23,15 @@ m4_include([m4/ax_cxx_compile_stdcxx_11.m4])
 
 AM_INIT_AUTOMAKE([1.11 foreign no-dist-gzip dist-xz])
 
-AM_SILENT_RULES([yes])
+#AM_SILENT_RULES([yes])
 
-CXXCFLAGS="-Wall -Wextra -Wno-unused-parameter -g -Wstrict-prototypes -Wmissing-prototypes -fvisibility=hidden"
+CXXFLAGS="$CXXFLAGS -Wall -Wextra -ggdb"
 
 AC_LANG(C++)
 AC_PROG_CXX
 AX_CXX_COMPILE_STDCXX_11([ext])
 
-if test "x$compiler" = "xclang++"; then
+if test "x$CXX" = "xclang++"; then
     CXXFLAGS="$CXXFLAGS -stdlib=libc++"
     LDFLAGS="$LDFLAGS -stdlib=libc++"
 fi
