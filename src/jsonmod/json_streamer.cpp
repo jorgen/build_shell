@@ -53,9 +53,11 @@ JsonStreamer::JsonStreamer(const Configuration &config)
         std::bind(&JsonStreamer::requestFlushOutBuffer, this, std::placeholders::_1);
 
     m_serializer.addRequestBufferCallback(callback);
-    JT::SerializerOptions serializerOptions = m_serializer.options();
-    serializerOptions.setPretty(true);
-    m_serializer.setSerializerOptions(serializerOptions);
+
+    JT::SerializerOptions options = m_serializer.options();
+    options.setPretty(true);
+    options.skipDelimiter(true);
+    m_serializer.setOptions(options);
 }
 
 JsonStreamer::~JsonStreamer()
@@ -107,6 +109,10 @@ void JsonStreamer::stream()
                             if (m_config.hasValue()) {
                                 token.value.data = m_config.value().c_str();
                                 token.value.size = m_config.value().size();
+                            } else {
+                                token.name.data = "";
+                                token.name.size = 0;
+                                token.name_type = JT::Token::Ascii;
                             }
                         }
                         break;
@@ -129,6 +135,10 @@ void JsonStreamer::stream()
                             break;
                         }
                         m_print_subtree = true;
+                        JT::SerializerOptions options = m_serializer.options();
+                        options.setPretty(false);
+                        options.skipDelimiter(false);
+                        m_serializer.setOptions(options);
                     }
                     break;
                 case JT::Token::ObjectEnd:
@@ -137,6 +147,11 @@ void JsonStreamer::stream()
                     if (m_print_subtree && m_last_matching_depth == m_current_depth) {
                         m_print_subtree = false;
                         print_token = true;
+                        JT::SerializerOptions options = m_serializer.options();
+                        options.setPretty(true);
+                        options.skipDelimiter(true);
+                        m_serializer.setOptions(options);
+
                     }
                     break;
                 default:
