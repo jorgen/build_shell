@@ -8,9 +8,16 @@ build_shell_SOURCES =	         	        \
 	configuration.cpp			\
 	witer.h					\
 	writer.cpp				\
-	creator.h				\
-	creator.cpp
+	action.h				\
+	action.cpp				\
+	create_action.h				\
+	create_action.cpp
 
-#AM_CPPFLAGS = -DDATA_PATH=\"$(pkgdatadir)\"
+
+if ENABLE_DEVELOPER_BUILD
+    AM_CPPFLAGS = -DSCRIPTS_PATH=\"$(abs_top_srcdir)/data/build_shell/scripts\"
+else
+    AM_CPPFLAGS = -DSCRIPTS_PATH=\"$(pkgdatadir)/build_shell/scripts\"
+endif
 
 CLEANFILES = $(BUILT_SOURCES)

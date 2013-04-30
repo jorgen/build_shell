@@ -28,6 +28,8 @@ private:
     bool matchAtDepth(const JT::Data &data);
     void writeOutBuffer(const JT::SerializerBuffer &buffer);
 
+    void setStreamerOptions(bool compact);
+
     const Configuration &m_config;
 
     JT::Tokenizer m_tokenizer;

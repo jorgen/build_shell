@@ -36,9 +36,9 @@ int main(int argc, char **argv)
 {
     argc-=(argc>0); argv+=(argc>0);
     option::Stats  stats(usage, argc, argv);
-    std::vector<option::Option> options(stats.options_max);
-    std::vector<option::Option> buffer(stats.buffer_max);
-    option::Parser parser(usage, argc, argv, options.data(), buffer.data());
+    option::Option *options = new option::Option[stats.options_max];
+    option::Option *buffer = new option::Option[stats.buffer_max];
+    option::Parser parser(true,usage, argc, argv, options, buffer);
 
     if (parser.error()) {
         return 1;
@@ -63,6 +63,7 @@ int main(int argc, char **argv)
     for (int i = 0; i < parser.optionsCount(); ++i)
     {
         option::Option& opt = buffer[i];
+        fprintf(stderr, "have buffer %p at index %d\n", buffer, i);
         switch (opt.index())
         {
             case HELP:
@@ -102,5 +103,7 @@ int main(int argc, char **argv)
             return 3;
     }
 
+    delete[] options;
+    delete[] buffer;
     return 0;
 }

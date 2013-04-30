@@ -3,6 +3,7 @@
     "NumberNode" : 4676.4,
     "NullNode" : null,
     "BooleanTrue" : true,
+    "StringNode" : "Some more data",
     "BooleanFalse" : false,
     "Object" : {
         "SomeSubObjectProp": "RED"
@@ -15,5 +16,8 @@
             "SomeOtherObjectProp" : "GREEN"
         }
     ],
+    "Object" : {
+        "SomeSubObjectProp": "Green"
+    },
     "LastStringNode" : "More test data"
 }

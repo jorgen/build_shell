@@ -6,6 +6,7 @@
 #include <fcntl.h>
 
 #include <errno.h>
+#include <string.h>
 
 JsonStreamer::JsonStreamer(const Configuration &config)
     : m_config(config)
@@ -32,9 +33,11 @@ JsonStreamer::JsonStreamer(const Configuration &config)
 
     if (config.hasInlineSet() && config.hasInputFile()) {
         m_tmp_output = config.inputFile();
-        m_tmp_output.append("XXX");
+        m_tmp_output.append("XXXXXX");
         m_output_file = mkstemp(&m_tmp_output[0]);
-        if (m_output_file < 0) {
+        if (m_output_file == -1) {
+            fprintf(stderr, "to out %s\n", m_tmp_output.c_str());
+            fprintf(stderr, "BIG PROBLEM\n");
             fprintf(stderr, "%s\n", strerror(errno));
             m_error = true;
             return;
@@ -54,10 +57,7 @@ JsonStreamer::JsonStreamer(const Configuration &config)
 
     m_serializer.addRequestBufferCallback(callback);
 
-    JT::SerializerOptions options = m_serializer.options();
-    options.setPretty(true);
-    options.skipDelimiter(true);
-    m_serializer.setOptions(options);
+    setStreamerOptions(m_config.compactPrint());
 }
 
 JsonStreamer::~JsonStreamer()
@@ -98,6 +98,7 @@ void JsonStreamer::stream()
         JT::Error tokenizer_error;
         while ((tokenizer_error = m_tokenizer.nextToken(&token)) == JT::Error::NoError) {
             bool print_token = false;
+            bool finished_printing_subtree = false;
             if (!m_print_subtree && m_current_depth - 1 == m_last_matching_depth) {
                 switch (token.name_type) {
                     case JT::Token::String:
@@ -135,23 +136,14 @@ void JsonStreamer::stream()
                             break;
                         }
                         m_print_subtree = true;
-                        JT::SerializerOptions options = m_serializer.options();
-                        options.setPretty(false);
-                        options.skipDelimiter(false);
-                        m_serializer.setOptions(options);
+                        setStreamerOptions(true);
                     }
                     break;
                 case JT::Token::ObjectEnd:
                 case JT::Token::ArrayEnd:
                     m_current_depth--;
                     if (m_print_subtree && m_last_matching_depth == m_current_depth) {
-                        m_print_subtree = false;
-                        print_token = true;
-                        JT::SerializerOptions options = m_serializer.options();
-                        options.setPretty(true);
-                        options.skipDelimiter(true);
-                        m_serializer.setOptions(options);
-
+                        finished_printing_subtree = true;
                     }
                     break;
                 default:
@@ -159,8 +151,17 @@ void JsonStreamer::stream()
             }
 
             if (print_token || m_print_subtree || m_config.hasValue()) {
+                m_last_matching_depth = m_current_depth -1;
+                std::string tokenvalue(token.value.data, token.value.size);
                 m_serializer.write(token);
             }
+
+            if (finished_printing_subtree) {
+                m_print_subtree = false;
+                print_token = true;
+                setStreamerOptions(m_config.compactPrint());
+            }
+
 
         }
         auto unflushed_out_buffers = m_serializer.buffers();
@@ -216,3 +217,12 @@ void JsonStreamer::writeOutBuffer(const JT::SerializerBuffer &buffer)
         m_error = true;
     }
 }
+
+void JsonStreamer::setStreamerOptions(bool compact)
+{
+    JT::SerializerOptions options = m_serializer.options();
+    options.setPretty(!compact);
+    options.skipDelimiter(m_config.hasProperty() && !compact);
+    m_serializer.setOptions(options);
+}
+

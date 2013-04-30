@@ -1,6 +1,6 @@
 #include "arg.h"
 #include "configuration.h"
-#include "creator.h"
+#include "create_action.h"
 
 #include <vector>
 #include <iostream>
@@ -44,9 +44,9 @@ int main(int argc, char **argv)
 {
     argc-=(argc>0); argv+=(argc>0);
     option::Stats  stats(usage, argc, argv);
-    std::vector<option::Option> options(stats.options_max);
-    std::vector<option::Option> buffer(stats.buffer_max);
-    option::Parser parser(usage, argc, argv, options.data(), buffer.data());
+    option::Option *options = new option::Option[stats.options_max];
+    option::Option *buffer = new option::Option[stats.buffer_max];
+    option::Parser parser(usage, argc, argv, options, buffer);
 
     if (parser.error()) {
         return 1;
@@ -79,7 +79,10 @@ int main(int argc, char **argv)
             configuration.setMode(Configuration::Create, mode);
         } else if (mode == "build") {
             configuration.setMode(Configuration::Build, mode);
+        } else if (mode == "rebuild") {
+            configuration.setMode(Configuration::Rebuild, mode);
         }
+
     } else {
         fprintf(stderr, "\nFailed to recognize mode\n\n");
         option::printUsage(std::cerr, usage);
@@ -118,17 +121,27 @@ int main(int argc, char **argv)
 
     configuration.validate();
 
+    Action *action;
     if (!configuration.sane()) {
         option::printUsage(std::cerr,usage);
         return 1;
     } else {
-        fprintf(stderr, "IT IS SANE!!!!!!!!!!!\n");
+        switch (configuration.mode()) {
+            case Configuration::Create:
+                action = new CreateAction(configuration);
+                break;
+            default:
+                action = new CreateAction(configuration);
+                break;
+        }
     }
 
-    if (configuration.mode() == Configuration::Create) {
-        Creator create(&configuration);
-        create.writeNewBuildSet("FOOABR");
-    }
+    bool success = action->execute();
 
-    return 0;
+    delete action;
+
+    delete[] options;
+    delete[] buffer;
+
+    return !success;
 }

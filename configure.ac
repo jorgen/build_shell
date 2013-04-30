@@ -36,11 +36,16 @@ if test "x$CXX" = "xclang++"; then
     LDFLAGS="$LDFLAGS -stdlib=libc++"
 fi
 
+AC_ARG_ENABLE(developer-build, [  --enable-developer-build],,
+        enable_developer_build=yes)
+AM_CONDITIONAL(ENABLE_DEVELOPER_BUILD, test x$enable_developer_build = xyes)
+
 AC_SUBST(GCC_CFLAGS)
 
 AC_CONFIG_FILES([Makefile
 		 src/Makefile
                  src/build_shell/Makefile
                  src/jsonmod/Makefile
-		 src/build_shell-version.h])
+		 src/build_shell-version.h
+                 data/Makefile])
 AC_OUTPUT
