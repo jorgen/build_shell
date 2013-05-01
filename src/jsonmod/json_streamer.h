@@ -25,7 +25,7 @@ private:
         NoMatch
     };
     void createPropertyVector();
-    bool matchAtDepth(const JT::Data &data);
+    bool matchAtDepth(const JT::Data &data) const;
     void writeOutBuffer(const JT::SerializerBuffer &buffer);
 
     void setStreamerOptions(bool compact);

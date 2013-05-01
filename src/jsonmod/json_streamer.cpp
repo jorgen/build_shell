@@ -92,6 +92,7 @@ void JsonStreamer::stream()
     char out_buffer[4096];
     m_serializer.appendBuffer(out_buffer, sizeof out_buffer);
     ssize_t bytes_read;
+    bool should_create = false;
     while((bytes_read = read(m_input_file, in_buffer, 4096)) > 0) {
         m_tokenizer.addData(in_buffer,bytes_read, true);
         JT::Token token;
@@ -100,13 +101,18 @@ void JsonStreamer::stream()
             bool print_token = false;
             bool finished_printing_subtree = false;
             if (!m_print_subtree && m_current_depth - 1 == m_last_matching_depth) {
+                if (m_current_depth == m_property.size() - 2) {
+                    should_create = true;
+                }
                 switch (token.name_type) {
                     case JT::Token::String:
                         token.name.data++;
                         token.name.size -= 2;
                     case JT::Token::Ascii:
                         if (matchAtDepth(token.name)) {
+                            m_last_matching_depth = m_current_depth;
                             print_token = true;
+                            should_create = false;
                             if (m_config.hasValue()) {
                                 token.value.data = m_config.value().c_str();
                                 token.value.size = m_config.value().size();
@@ -141,6 +147,19 @@ void JsonStreamer::stream()
                     break;
                 case JT::Token::ObjectEnd:
                 case JT::Token::ArrayEnd:
+                    if (should_create ) {
+                        should_create = false;
+                        if (m_config.hasValue()) {
+                            JT::Token new_token;
+                            new_token.name_type = JT::Token::String;
+                            new_token.name.data = m_property.back().c_str();
+                            new_token.name.size = m_property.back().size();
+                            new_token.value_type = JT::Token::String;
+                            new_token.value.data = m_config.value().c_str();
+                            new_token.value.size = m_config.value().size();
+                            m_serializer.write(new_token);
+                        }
+                    }
                     m_current_depth--;
                     if (m_print_subtree && m_last_matching_depth == m_current_depth) {
                         finished_printing_subtree = true;
@@ -152,7 +171,6 @@ void JsonStreamer::stream()
 
             if (print_token || m_print_subtree || m_config.hasValue()) {
                 m_last_matching_depth = m_current_depth -1;
-                std::string tokenvalue(token.value.data, token.value.size);
                 m_serializer.write(token);
             }
 
@@ -195,7 +213,7 @@ void JsonStreamer::createPropertyVector()
     }
 }
 
-bool JsonStreamer::matchAtDepth(const JT::Data &data)
+bool JsonStreamer::matchAtDepth(const JT::Data &data) const
 {
     if (m_current_depth >= m_property.size())
         return false;
@@ -205,7 +223,6 @@ bool JsonStreamer::matchAtDepth(const JT::Data &data)
     if (memcmp(data.data, property.c_str(), data.size))
         return false;
 
-    m_last_matching_depth = m_current_depth;
     return m_property.size() == m_current_depth+1;
 }
 
