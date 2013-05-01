@@ -41,6 +41,8 @@ public:
 
     int runScript(const std::string script, const std::list<std::string> &args) const;
     int runScript(const std::string script, const std::string &args) const;
+
+    static int createTempFileFromCWD(std::string &tmp_file_name);
 private:
 
     std::string findScript(const std::string script) const;

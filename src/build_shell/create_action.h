@@ -3,6 +3,10 @@
 
 #include "action.h"
 
+namespace JT {
+    class ObjectNode;
+}
+
 class CreateAction : public Action
 {
 public:
@@ -13,6 +17,8 @@ public:
 
 private:
     bool handleCurrentSrcDir();
+
+    JT::ObjectNode *m_out_tree;
 };
 
 #endif //CREATE_ACTION_H

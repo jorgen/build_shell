@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <pwd.h>
+#include <libgen.h>
 
 #include <sstream>
 
@@ -180,6 +181,21 @@ int Configuration::runScript(const std::string script, const std::list<std::stri
     return runScript(script, arguments.str());
 }
 
+int Configuration::createTempFileFromCWD(std::string &tmp_file)
+{
+    char cwd[PATH_MAX];
+    getcwd(cwd, sizeof(cwd));
+    const char *base_name = basename(cwd);
+    size_t base_name_len = strlen(base_name);
+    const char temp_file_prefix[] = "/tmp/build_shell_";
+    tmp_file.reserve(sizeof temp_file_prefix + base_name_len + 8);
+    tmp_file.append(temp_file_prefix);
+    tmp_file.append(base_name);
+    tmp_file.append("_XXXXXX");
+
+    return mkstemp(&tmp_file[0]);
+}
+
 std::string Configuration::findScript(const std::string script) const
 {
     const std::list<std::string> searchPath = scriptSearchPaths();
@@ -196,6 +212,7 @@ std::string Configuration::findScript(const std::string script) const
             return full_script_path;
         }
     }
+    fprintf(stderr, "Unable to find script: %s\n", script.c_str());
     return std::string();
 }
 

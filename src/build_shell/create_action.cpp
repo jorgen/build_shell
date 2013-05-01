@@ -7,11 +7,36 @@
 #include <limits.h>
 #include <unistd.h>
 #include <string.h>
+#include <fcntl.h>
+#include <sys/mman.h>
+
+#include "json_tree.h"
 
 CreateAction::CreateAction(const Configuration &configuration)
     : Action(configuration)
 {
+    fprintf(stderr, "FEOWKFFWEKO");
+    int m_buildset_file = open(m_configuration.buildsetFile().c_str(), O_RDONLY | O_CLOEXEC);
+    if (m_buildset_file < 0) {
+        fprintf(stderr, "Failed to open buildset file %s\n%s\n",
+                m_configuration.buildsetFile().c_str(), strerror(errno));
+    }
 
+    struct stat buildset_file_stat;
+    if (fstat (m_buildset_file ,&buildset_file_stat) < 0)
+        fprintf(stderr, "Something whent wrong when getting file length for file %s\n%s\n",
+                m_configuration.buildsetFile().c_str(), strerror(errno));
+    void *buildset_file_data = mmap(0, buildset_file_stat.st_size, PROT_READ, MAP_SHARED, m_buildset_file, 0);
+
+    JT::TreeBuilder tree_builder;
+    tree_builder.create_root_if_needed = true;
+    auto tree_build = tree_builder.build((char *)buildset_file_data,buildset_file_stat.st_size);
+
+    if (tree_build.first) {
+        m_out_tree = tree_build.first->asObjectNode();
+    } else {
+        m_out_tree = new JT::ObjectNode();
+    }
 }
 
 CreateAction::~CreateAction()
@@ -61,15 +86,21 @@ bool CreateAction::execute()
 
 bool CreateAction::handleCurrentSrcDir()
 {
-    char cwd[PATH_MAX];
-    getcwd(cwd, sizeof(cwd));
+
+    std::string tmp_file;
+    int tmp_file_desc = Configuration::createTempFileFromCWD(tmp_file);
+
+    int exit_code = 0;
     if (access(".git", X_OK) == 0) {
-        m_configuration.runScript("git.sh", "foobar");
+        exit_code = m_configuration.runScript("git_create.sh", tmp_file.c_str());
     } else if (access(".svn", X_OK) == 0) {
 
     } else {
 
     }
-    return true;
+
+    close(tmp_file_desc);
+    unlink(tmp_file.c_str());
+    return exit_code == 0;
 }
 
