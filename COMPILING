@@ -1,5 +1,9 @@
-JsonTools has a C++11 configure check. On OS X use 
+Be sure to update the submodule first
 
-CXX=clang++ ./autogen.sh
-
+JsonTools has a C++11 configure check. On OS X use
+./autogen.sh CXX=clang++
 Infact on OS X it should be exported so that it is allways used from cli.
+
+if you want to pick up the system scripts from the $topsrcdir/data/ use --enable-developer-build
+
+

@@ -1,0 +1,3 @@
+[submodule "src/3rdparty/json_tools"]
+	path = src/3rdparty/json_tools
+	url = git@github.com:jorgen/json_tools.git
