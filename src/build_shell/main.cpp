@@ -43,10 +43,10 @@ const option::Descriptor usage[] =
 int main(int argc, char **argv)
 {
     argc-=(argc>0); argv+=(argc>0);
-    option::Stats  stats(usage, argc, argv);
-    option::Option *options = new option::Option[stats.options_max];
-    option::Option *buffer = new option::Option[stats.buffer_max];
-    option::Parser parser(usage, argc, argv, options, buffer);
+    option::Stats  stats(true, usage, argc, argv);
+    std::vector<option::Option> options(stats.options_max);
+    std::vector<option::Option> buffer(stats.buffer_max);
+    option::Parser parser(true, usage, argc, argv, options.data(), buffer.data());
 
     if (parser.error()) {
         return 1;
@@ -55,18 +55,6 @@ int main(int argc, char **argv)
     if (options[HELP] || argc == 0) {
         option::printUsage(std::cout, usage);
         return 0;
-    }
-
-    if (!options[SRC_DIR]) {
-        fprintf(stderr, "\nPlease specify the required argument src-dir\n");
-        option::printUsage(std::cerr, usage);
-        return 1;
-    }
-
-    if (!options[BUILDSET]) {
-        fprintf(stderr, "\nPlease specify the required argument buildset-file\n");
-        option::printUsage(std::cerr, usage);
-        return 1;
     }
 
     Configuration configuration;
@@ -109,6 +97,7 @@ int main(int argc, char **argv)
                 configuration.setBuildsetFile(opt.arg);
                 break;
             case BUILDSET_OUT:
+                fprintf(stderr, "%s\n", opt.arg);
                 configuration.setBuildsetOutFile(opt.arg);
                 break;
             case UNKNOWN:
@@ -139,9 +128,6 @@ int main(int argc, char **argv)
     bool success = action->execute();
 
     delete action;
-
-    delete[] options;
-    delete[] buffer;
 
     return !success;
 }

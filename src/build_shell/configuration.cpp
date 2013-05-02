@@ -94,20 +94,41 @@ void Configuration::validate()
 
     if (m_mode == Invalid)
         return;
-    //we know we have a buildset file as its a required argument
-    if (access(m_buildset_file.c_str(), F_OK)) {
-        fprintf(stderr, "Unable to access buildset file %s", m_buildset_file.c_str());
+
+    if (m_buildset_file.size()) {
+        if (access(m_buildset_file.c_str(), F_OK)) {
+            fprintf(stderr, "Unable to access buildset file %s", m_buildset_file.c_str());
+            return;
+        }
+        char buildset_realpath[PATH_MAX];
+        if (realpath(m_buildset_file.c_str(), buildset_realpath)) {
+            m_buildset_file = buildset_realpath;
+        }
+    }
+    if (m_mode != Create && !m_buildset_file.size()) {
+        fprintf(stderr, "All modes except for create expects a buildset file\n");
         return;
     }
 
-    //we know we have src dir as its a required argument
-    if ( m_mode != Pull) {
+    if (m_src_dir.size()) {
         if (access(m_src_dir.c_str(), W_OK)) {
             fprintf(stderr, "Unable to access src dir %s, which is required for %s\n\n",
                     m_src_dir.c_str(), m_mode_string.c_str());
             return;
         }
     }
+
+    if (!m_src_dir.size() && m_buildset_file.size()) {
+        std::string basename_of_buildset = m_buildset_file;
+        m_src_dir = basename(&basename_of_buildset[0]);
+    }
+
+    if (!m_src_dir.size()) {
+        char current_wd[PATH_MAX];
+        if (getcwd(current_wd, sizeof current_wd))
+            m_src_dir = current_wd;
+    }
+
     m_src_dir = Configuration::create_and_convert_to_abs(m_src_dir.c_str());
     if (!m_src_dir.length()) {
         return;

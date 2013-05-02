@@ -36,8 +36,6 @@ JsonStreamer::JsonStreamer(const Configuration &config)
         m_tmp_output.append("XXXXXX");
         m_output_file = mkstemp(&m_tmp_output[0]);
         if (m_output_file == -1) {
-            fprintf(stderr, "to out %s\n", m_tmp_output.c_str());
-            fprintf(stderr, "BIG PROBLEM\n");
             fprintf(stderr, "%s\n", strerror(errno));
             m_error = true;
             return;
@@ -66,6 +64,7 @@ JsonStreamer::~JsonStreamer()
         close(m_input_file);
     }
     if (m_config.hasInlineSet() && m_config.hasInputFile()) {
+        fsync(m_output_file);
         close(m_output_file);
         if (!m_error) {
             rename(m_tmp_output.c_str(), m_config.inputFile().c_str());
@@ -92,7 +91,7 @@ void JsonStreamer::stream()
     char out_buffer[4096];
     m_serializer.appendBuffer(out_buffer, sizeof out_buffer);
     ssize_t bytes_read;
-    bool should_create = false;
+    std::vector<bool> m_found_on_depth;
     while((bytes_read = read(m_input_file, in_buffer, 4096)) > 0) {
         m_tokenizer.addData(in_buffer,bytes_read, true);
         JT::Token token;
@@ -101,9 +100,6 @@ void JsonStreamer::stream()
             bool print_token = false;
             bool finished_printing_subtree = false;
             if (!m_print_subtree && m_current_depth - 1 == m_last_matching_depth) {
-                if (m_current_depth == m_property.size() - 2) {
-                    should_create = true;
-                }
                 switch (token.name_type) {
                     case JT::Token::String:
                         token.name.data++;
@@ -111,16 +107,18 @@ void JsonStreamer::stream()
                     case JT::Token::Ascii:
                         if (matchAtDepth(token.name)) {
                             m_last_matching_depth = m_current_depth;
-                            print_token = true;
-                            should_create = false;
-                            if (m_config.hasValue()) {
-                                token.value.data = m_config.value().c_str();
-                                token.value.size = m_config.value().size();
-                            } else {
-                                token.name.data = "";
-                                token.name.size = 0;
-                                token.name_type = JT::Token::Ascii;
+                            if (m_last_matching_depth == m_property.size() - 1) {
+                                print_token = true;
+                                if (m_config.hasValue()) {
+                                    token.value.data = m_config.value().c_str();
+                                    token.value.size = m_config.value().size();
+                                } else {
+                                    token.name.data = "";
+                                    token.name.size = 0;
+                                    token.name_type = JT::Token::Ascii;
+                                }
                             }
+                            m_found_on_depth[m_current_depth] = true;
                         }
                         break;
                     default:
@@ -134,6 +132,7 @@ void JsonStreamer::stream()
                 case JT::Token::ObjectStart:
                 case JT::Token::ArrayStart:
                     m_current_depth++;
+                    m_found_on_depth.push_back(false);
                     if (print_token) {
                         if (m_config.hasValue()) {
                             fprintf(stderr, "Its not possible to change the value of and object or array\n");
@@ -144,11 +143,15 @@ void JsonStreamer::stream()
                         m_print_subtree = true;
                         setStreamerOptions(true);
                     }
+                    {
+                        std::string propname(token.name.data, token.name.size);
+                    }
                     break;
                 case JT::Token::ObjectEnd:
                 case JT::Token::ArrayEnd:
-                    if (should_create ) {
-                        should_create = false;
+                    if (m_last_matching_depth == m_current_depth -1
+                            && m_property.size() -1 == m_current_depth
+                            && !m_found_on_depth.back()) {
                         if (m_config.hasValue()) {
                             JT::Token new_token;
                             new_token.name_type = JT::Token::String;
@@ -160,17 +163,19 @@ void JsonStreamer::stream()
                             m_serializer.write(new_token);
                         }
                     }
-                    m_current_depth--;
+                    if (m_current_depth -1 == m_last_matching_depth)
+                        m_last_matching_depth--;
                     if (m_print_subtree && m_last_matching_depth == m_current_depth) {
                         finished_printing_subtree = true;
                     }
+                    m_found_on_depth.pop_back();
+                    m_current_depth--;
                     break;
                 default:
                     break;
             }
 
             if (print_token || m_print_subtree || m_config.hasValue()) {
-                m_last_matching_depth = m_current_depth -1;
                 m_serializer.write(token);
             }
 
@@ -187,7 +192,7 @@ void JsonStreamer::stream()
             writeOutBuffer(*it);
         }
         char new_line[] = "\n";
-        write(m_output_file, new_line, sizeof new_line);
+        write(m_output_file, new_line, sizeof new_line - 1);
         if (tokenizer_error != JT::Error::NeedMoreData
                 && tokenizer_error != JT::Error::NoError) {
             fprintf(stderr, "Error while parsing json. %d\n", tokenizer_error);
@@ -223,7 +228,7 @@ bool JsonStreamer::matchAtDepth(const JT::Data &data) const
     if (memcmp(data.data, property.c_str(), data.size))
         return false;
 
-    return m_property.size() == m_current_depth+1;
+    return true;
 }
 
 void JsonStreamer::writeOutBuffer(const JT::SerializerBuffer &buffer)
@@ -239,7 +244,7 @@ void JsonStreamer::setStreamerOptions(bool compact)
 {
     JT::SerializerOptions options = m_serializer.options();
     options.setPretty(!compact);
-    options.skipDelimiter(m_config.hasProperty() && !compact);
+    options.skipDelimiter(!m_config.hasProperty() && !compact);
     m_serializer.setOptions(options);
 }
 

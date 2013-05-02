@@ -8,6 +8,10 @@
     "Object" : {
         "SomeSubObjectProp": "RED"
     },
+    "mesa" : {
+        "scm" : "git",
+        "branch" : "master"
+    },
     "Array" : [
         "String",
         null,
@@ -19,5 +23,8 @@
     "Object" : {
         "SomeSubObjectProp": "Green"
     },
-    "LastStringNode" : "More test data"
+    "LastStringNode" : "More test data",
+    "json_tools" : {
+            "scm" : "something"
+    }
 }

@@ -41,13 +41,16 @@ option::ArgStatus Arg::requiresExistingFile(const option::Option &option, bool m
     return option::ARG_ILLEGAL;
 }
 
-option::ArgStatus Arg::requiresNonExistingFile(const option::Option &option, bool)
+option::ArgStatus Arg::requiresNonExistingFile(const option::Option &option, bool msg)
 {
     struct stat stat_buf;
-    int success = stat(option.arg, &stat_buf);
-    if (success == ENOENT)
-        return option::ARG_OK;
+    if (stat(option.arg, &stat_buf)) {
+        if (errno == ENOENT)
+            return option::ARG_OK;
+    }
 
+    if (msg)
+        printError("Option '", option, "' requires a path to a non existing file\n");
     return option::ARG_ILLEGAL;
 }
 
