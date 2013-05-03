@@ -18,8 +18,17 @@ static bool DEBUG_RUN_COMMAND = getenv("BUILD_SHELL_DEBUG_RUN_COMMAND") != 0;
 
 Configuration::Configuration()
     : m_mode(Invalid)
+    , m_reset_to_sha(false)
     , m_sane(false)
 {
+#ifdef JSONMOD_PATH
+    std::string old_path = getenv("PATH");
+    std::string new_path = JSONMOD_PATH;
+    new_path.append(":");
+    new_path.append(old_path);
+    setenv("PATH", new_path.c_str(),1);
+#endif
+
 }
 
 void Configuration::setMode(Mode mode, std::string mode_string)
@@ -88,6 +97,16 @@ const std::string &Configuration::buildsetOutFile() const
     return m_buildset_out_file;
 }
 
+void Configuration::setResetToSha(bool reset)
+{
+    m_reset_to_sha = reset;
+}
+
+bool Configuration::resetToSha() const
+{
+    return m_reset_to_sha;
+}
+
 void Configuration::validate()
 {
     m_sane = false;
@@ -119,8 +138,8 @@ void Configuration::validate()
     }
 
     if (!m_src_dir.size() && m_buildset_file.size()) {
-        std::string basename_of_buildset = m_buildset_file;
-        m_src_dir = basename(&basename_of_buildset[0]);
+        std::string dirname_of_buildset = m_buildset_file;
+        m_src_dir = dirname(&dirname_of_buildset[0]);
     }
 
     if (!m_src_dir.size()) {
@@ -169,72 +188,69 @@ const std::list<std::string> &Configuration::scriptSearchPaths() const
     return m_script_search_paths;
 }
 
-int Configuration::runScript(const std::string script, const std::string &args) const
+int Configuration::runScript(const std::string &script, const std::string &args) const
 {
-    std::stringstream script_command;
+    if (!script.size())
+        return -1;
+
+    std::string pre_script_command;
     std::string env_file = findBuildEnvFile();
     if (env_file.size()) {
-        script_command << "source " << env_file << " && ";
+        pre_script_command.append("source ");
+        pre_script_command.append(env_file);
+        pre_script_command.append(" && ");
     }
 
-    std::string abs_script = findScript(script);
-    if (!abs_script.size())
-        return -1;
-    script_command << abs_script;
+    std::string post_script_command = " ";
+    post_script_command.append(args);
 
-    if (args.size()) {
-        script_command << " " << args;
+    std::string script_command = pre_script_command;
+    script_command.append(script);
+    script_command.append(post_script_command);
+
+    if (DEBUG_RUN_COMMAND) {
+        fprintf(stderr, "Executing script command %s\n", script_command.c_str());
     }
-
-    if (DEBUG_RUN_COMMAND)
-        fprintf(stderr, "Executing script command %s\n", script_command.str().c_str());
-    return system(script_command.str().c_str());
+    return system(script_command.c_str());
 }
 
-int Configuration::runScript(const std::string script, const std::list<std::string> &args) const
+int Configuration::createTempFile(const std::string &project, std::string &tmp_file)
 {
-    std::stringstream arguments;
-    for (auto it = args.begin(); it != args.end(); ++it) {
-        if (it != args.begin())
-            arguments << " ";
-        arguments << *it;
-    }
-    return runScript(script, arguments.str());
-}
-
-int Configuration::createTempFileFromCWD(std::string &tmp_file)
-{
-    char cwd[PATH_MAX];
-    getcwd(cwd, sizeof(cwd));
-    const char *base_name = basename(cwd);
-    size_t base_name_len = strlen(base_name);
     const char temp_file_prefix[] = "/tmp/build_shell_";
-    tmp_file.reserve(sizeof temp_file_prefix + base_name_len + 8);
+    tmp_file.reserve(sizeof temp_file_prefix + project.size() + 8);
     tmp_file.append(temp_file_prefix);
-    tmp_file.append(base_name);
+    tmp_file.append(project);
     tmp_file.append("_XXXXXX");
 
     return mkstemp(&tmp_file[0]);
 }
 
-std::string Configuration::findScript(const std::string script) const
+std::vector<std::string> Configuration::findScript(const std::string &primary, const std::string &fallback) const
 {
+    std::vector<std::string> retVec;
     const std::list<std::string> searchPath = scriptSearchPaths();
-    for (auto it = searchPath.begin(); it != searchPath.end(); ++it) {
-        std::string full_script_path = *it;
-        if (!full_script_path.back() != '/')
-            full_script_path.append("/");
-        full_script_path.append(script);
-        if (DEBUG_FIND_SCRIPT)
-            fprintf(stderr, "Looking for script %s\n", full_script_path.c_str());
-        if (access(full_script_path.c_str(), R_OK) == 0) {
+    for (int i = 0; i < 2; i++) {
+        std::string script = i == 0 ? primary : fallback;
+        for (auto it = searchPath.begin(); it != searchPath.end(); ++it) {
+            std::string full_script_path = *it;
+            if (!full_script_path.back() != '/')
+                full_script_path.append("/");
+            full_script_path.append(script);
             if (DEBUG_FIND_SCRIPT)
-                fprintf(stderr, "Found script %s\n", full_script_path.c_str());
-            return full_script_path;
+                fprintf(stderr, "Looking for script %s\n", full_script_path.c_str());
+            if (access(full_script_path.c_str(), R_OK) == 0) {
+                if (DEBUG_FIND_SCRIPT)
+                    fprintf(stderr, "Found script %s\n", full_script_path.c_str());
+                retVec.push_back(full_script_path);
+            }
         }
     }
-    fprintf(stderr, "Unable to find script: %s\n", script.c_str());
-    return std::string();
+
+    if (DEBUG_FIND_SCRIPT) {
+        fprintf(stderr, "found %zu scripts when looking for %s : %s\n", retVec.size(),
+                primary.c_str(), fallback.c_str());
+    }
+    return retVec;
 }
 
 std::string Configuration::findBuildEnvFile() const

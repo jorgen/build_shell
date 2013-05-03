@@ -1,0 +1,5 @@
+#!/bin/bash
+
+FILE=$@
+echo "Pulling git $(jsonmod -p scm.url $FILE) into $PWD"
+rm $FILE

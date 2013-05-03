@@ -36,6 +36,12 @@ void MmappedReadFile::setFile(int file)
 
 void MmappedReadFile::setFile(const std::string &file)
 {
+    if (!file.size()) {
+        setFile(-1);
+        m_close_file = false;
+        return;
+    }
+
     int file_desc = open(file.c_str(), O_RDONLY | O_CLOEXEC);
     if (file_desc < 0) {
         fprintf(stderr, "Failed to open file for readonly %s\n%s\n",

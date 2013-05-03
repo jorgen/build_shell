@@ -2,7 +2,7 @@
 #define CREATE_ACTION_H
 
 #include "action.h"
-#include "mmapped_file.h"
+#include "tree_builder.h"
 
 namespace JT {
     class ObjectNode;
@@ -20,11 +20,16 @@ public:
 private:
     bool handleCurrentSrcDir();
 
-    MmappedReadFile m_buildset_in;
+    int runScript(const std::string &project_name,
+                  const std::string &fallback,
+                  JT::ObjectNode *project_node,
+                  std::string &resulting_temp_file) const;
+
+
+    TreeBuilder m_tree_builder;
     JT::ObjectNode *m_out_tree;
     std::string m_out_file_name;
     int m_out_file;
-    bool m_error;
 };
 
 #endif //CREATE_ACTION_H

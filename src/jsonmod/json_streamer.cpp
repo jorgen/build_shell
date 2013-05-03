@@ -143,16 +143,12 @@ void JsonStreamer::stream()
                         m_print_subtree = true;
                         setStreamerOptions(true);
                     }
-                    {
-                        std::string propname(token.name.data, token.name.size);
-                    }
                     break;
                 case JT::Token::ObjectEnd:
                 case JT::Token::ArrayEnd:
                     if (m_last_matching_depth == m_current_depth -1
-                            && m_property.size() -1 == m_current_depth
                             && !m_found_on_depth.back()) {
-                        if (m_config.hasValue()) {
+                        if (m_property.size() -1 == m_current_depth && m_config.hasValue()) {
                             JT::Token new_token;
                             new_token.name_type = JT::Token::String;
                             new_token.name.data = m_property.back().c_str();
@@ -161,8 +157,30 @@ void JsonStreamer::stream()
                             new_token.value.data = m_config.value().c_str();
                             new_token.value.size = m_config.value().size();
                             m_serializer.write(new_token);
+                        } else if (m_config.createObject()) {
+                            for (size_t i = m_current_depth; i < m_property.size(); i++) {
+                                JT::Token new_token;
+                                new_token.name_type = JT::Token::String;
+                                new_token.name.data = m_property[i].c_str();
+                                new_token.name.size = m_property[i].size();
+                                new_token.value_type = JT::Token::ObjectStart;
+                                new_token.value.data = "{";
+                                new_token.value.size = 1;
+                                m_serializer.write(new_token);
+                            }
+                            for (size_t i = m_property.size(); i > m_current_depth; i--) {
+                                JT::Token new_token;
+                                new_token.name_type = JT::Token::Ascii;
+                                new_token.name.data = "";
+                                new_token.name.size = 0;
+                                new_token.value_type = JT::Token::ObjectEnd;
+                                new_token.value.data = "}";
+                                new_token.value.size = 1;
+                                m_serializer.write(new_token);
+                            }
                         }
                     }
+
                     if (m_current_depth -1 == m_last_matching_depth)
                         m_last_matching_depth--;
                     if (m_print_subtree && m_last_matching_depth == m_current_depth) {
@@ -175,7 +193,7 @@ void JsonStreamer::stream()
                     break;
             }
 
-            if (print_token || m_print_subtree || m_config.hasValue()) {
+            if (print_token || m_print_subtree || m_config.hasValue() || m_config.createObject()) {
                 m_serializer.write(token);
             }
 

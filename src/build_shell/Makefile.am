@@ -15,7 +15,13 @@ build_shell_SOURCES =	         	        			\
 	$(top_srcdir)/src/3rdparty/json_tools/src/json_tokenizer.cpp 	\
 	$(top_srcdir)/src/3rdparty/json_tools/src/json_tree.cpp		\
 	mmapped_file.cpp						\
-	mmapped_file.h
+	mmapped_file.h							\
+	pull_action.cpp							\
+	pull_action.h							\
+	tree_builder.cpp						\
+	tree_builder.h							\
+	tree_writer.cpp							\
+	tree_writer.h
 
 
 AM_CPPFLAGS = \
@@ -24,6 +30,7 @@ AM_CPPFLAGS = \
 
 if ENABLE_DEVELOPER_BUILD
     AM_CPPFLAGS += -DSCRIPTS_PATH=\"$(abs_top_srcdir)/data/build_shell/scripts\"
+    AM_CPPFLAGS += -DJSONMOD_PATH=\"$(abs_top_srcdir)/src/jsonmod\"
 else
     AM_CPPFLAGS += -DSCRIPTS_PATH=\"$(pkgdatadir)/build_shell/scripts\"
 endif

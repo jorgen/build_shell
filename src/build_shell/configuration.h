@@ -3,6 +3,8 @@
 
 #include <string>
 #include <list>
+#include <vector>
+#include <functional>
 
 class Configuration
 {
@@ -34,18 +36,20 @@ public:
     void setBuildsetOutFile(const char *buildset_out_file);
     const std::string &buildsetOutFile() const;
 
+    void setResetToSha(bool reset);
+    bool resetToSha() const;
+
     void validate();
     bool sane() const;
 
     const std::list<std::string> &scriptSearchPaths() const;
 
-    int runScript(const std::string script, const std::list<std::string> &args) const;
-    int runScript(const std::string script, const std::string &args) const;
+    std::vector<std::string> findScript(const std::string &script, const std::string &fallback) const;
+    int runScript(const std::string &script, const std::string &arg) const;
 
-    static int createTempFileFromCWD(std::string &tmp_file_name);
+    static int createTempFile(const std::string &project, std::string &tmp_file_name);
 private:
 
-    std::string findScript(const std::string script) const;
     std::string findBuildEnvFile() const;
     void initializeScriptSearchPaths();
     static std::string create_and_convert_to_abs(const std::string &path);
@@ -58,6 +62,7 @@ private:
     std::string m_install_dir;
     std::string m_buildset_file;
     std::string m_buildset_out_file;
+    bool m_reset_to_sha;
 
     std::list<std::string> m_script_search_paths;
 

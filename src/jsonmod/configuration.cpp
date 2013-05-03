@@ -13,6 +13,7 @@
 Configuration::Configuration()
     : m_inline(false)
     , m_compact(false)
+    , m_create_object(false)
 {
 
 }
@@ -80,6 +81,15 @@ void Configuration::setCompactPrint(bool compactPrint)
 bool Configuration::compactPrint() const
 {
     return m_compact;
+}
+
+void Configuration::setCreateObject(bool create)
+{
+    m_create_object = create;
+}
+bool Configuration::createObject() const
+{
+    return m_create_object;
 }
 
 bool Configuration::sane() const

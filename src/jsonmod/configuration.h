@@ -26,6 +26,9 @@ public:
     void setCompactPrint(bool compactPrint);
     bool compactPrint() const;
 
+    void setCreateObject(bool create);
+    bool createObject() const;
+
     bool sane() const;
 private:
     std::string m_input_file;
@@ -34,6 +37,7 @@ private:
 
     bool m_inline;
     bool m_compact;
+    bool m_create_object;
 };
 
 #endif //CONFIGURATION_H

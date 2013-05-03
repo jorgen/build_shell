@@ -24,6 +24,12 @@ src/.deps/
 src/Makefile
 src/Makefile.in
 src/*.o
+src/build_shell/*.o
+src/jsonmod/*.o
 src/build_shell-version.h
 stamp-h1
-
+*~
+src/build_shell/.deps/
+src/build_shell/build_shell
+src/jsonmod/.deps/
+src/jsonmod/jsonmod

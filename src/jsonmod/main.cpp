@@ -13,7 +13,8 @@ enum optionIndex {
     INLINE,
     PROPERTY,
     COMPACT,
-    VALUE
+    VALUE,
+    CREATE_OBJ
 };
 
 const option::Descriptor usage[] =
@@ -27,6 +28,7 @@ const option::Descriptor usage[] =
   {PROPERTY,      0, "p", "property",         Arg::requiresValue,        "  --property, -p \tProperty to retrun/modify." },
   {VALUE,         0, "v", "value",            Arg::requiresValue,        "  --value, -v\tValue to update property with."},
   {COMPACT,       0, "c", "compact",          option::Arg::None,         "  --compact, -h\tOutput in compact format."},
+  {CREATE_OBJ,    0, "o", "create-object",    Arg::requiresValue,        "  --create-object, -o\t Create object with path."},
   {UNKNOWN, 0,"" ,  ""   ,                    option::Arg::None,         "\nExamples:\n"
                                                                          "  jsonmod -i -p \"foo\" -v 43, /some/file \n"},
   {0,0,0,0,0,0}
@@ -74,6 +76,10 @@ int main(int argc, char **argv)
                 configuration.setInline(true);
                 break;
             case PROPERTY:
+                if (configuration.createObject()) {
+                    fprintf(stderr, "Create object and setting the property field is mutually exclusive\n");
+                    return -1;
+                }
                 configuration.setProperty(opt.arg);
                 break;
             case COMPACT:
@@ -81,6 +87,14 @@ int main(int argc, char **argv)
                 break;
             case VALUE:
                 configuration.setValue(opt.arg);
+                break;
+            case CREATE_OBJ:
+                if (configuration.hasProperty()) {
+                    fprintf(stderr, "Create object and setting the property field is mutually exclusive\n");
+                    return -1;
+                }
+                configuration.setProperty(opt.arg);
+                configuration.setCreateObject(true);
                 break;
             case UNKNOWN:
                 fprintf(stderr, "UNKNOWN!");

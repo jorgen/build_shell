@@ -10,8 +10,12 @@ public:
     virtual ~Action();
 
     virtual bool execute() = 0;
+
+    bool error() const;
+
 protected:
     const Configuration &m_configuration;
+    bool m_error;
 };
 
 #endif //ACTION_H

@@ -12,37 +12,23 @@
 #include <libgen.h>
 
 #include "json_tree.h"
+#include "tree_writer.h"
 
 CreateAction::CreateAction(const Configuration &configuration,
         const std::string &outfile)
     : Action(configuration)
-    , m_error(false)
+    , m_tree_builder(configuration.buildsetFile())
 {
-
-    if (m_configuration.buildsetFile().size()) {
-        m_buildset_in.setFile(m_configuration.buildsetFile());
-        const char *buildset_in_data = static_cast<const char *>(m_buildset_in.map());
-
-        if (buildset_in_data) {
-            JT::TreeBuilder tree_builder;
-            tree_builder.create_root_if_needed = true;
-            auto tree_build = tree_builder.build(buildset_in_data,m_buildset_in.size());
-            if (tree_build.second == JT::Error::NoError) {
-                m_out_tree = tree_build.first->asObjectNode();
-            }
-        }
-    }
+    m_out_tree = m_tree_builder.rootNode();
 
     if (!m_out_tree)
         m_out_tree = new JT::ObjectNode();
 
-    fprintf(stderr, "FOEWOFJWEJ\n");
     const std::string *actual_outfile = &outfile;
     if (!actual_outfile->size())
         actual_outfile = &configuration.buildsetOutFile();
 
     if (actual_outfile->size()) {
-        fprintf(stderr, "Actual out file %s\n", actual_outfile->c_str());
         m_out_file_name = *actual_outfile;
         mode_t create_mode = S_IROTH | S_IRGRP | S_IRUSR | S_IWUSR;
         m_out_file = open(m_out_file_name.c_str(), O_RDWR | O_CLOEXEC | O_CREAT | O_EXCL, create_mode);
@@ -60,65 +46,10 @@ CreateAction::~CreateAction()
 {
     if (m_out_file_name.size())
         close(m_out_file);
+
+    delete m_out_tree;
 }
 
-struct serialize_buffer
-{
-    int file;
-    char buffer[4096];
-    bool error = false;
-
-    void writeOutBuffer(const JT::SerializerBuffer &buffer)
-    {
-        size_t written = write(file,buffer.buffer,buffer.used);
-        if (written < buffer.used) {
-            fprintf(stderr, "Error while writing to outbuffer: %s\n", strerror(errno));
-            error = true;
-        }
-    }
-
-
-    void request_flush(JT::Serializer *serializer)
-    {
-        if (serializer->buffers().size()) {
-            JT::SerializerBuffer serializer_buffer = serializer->buffers().front();
-            serializer->clearBuffers();
-
-            writeOutBuffer(serializer_buffer);
-        }
-        serializer->appendBuffer(buffer,sizeof buffer);
-    }
-};
-
-static bool fill_file_with_node(JT::ObjectNode *node, int file)
-{
-    if (lseek(file,0,SEEK_SET))
-        return false;
-
-    serialize_buffer buffer;
-    buffer.file = file;
-
-    std::function<void(JT::Serializer *)> callback =
-        std::bind(&serialize_buffer::request_flush, &buffer, std::placeholders::_1);
-
-
-    JT::TreeSerializer serializer;
-    JT::SerializerOptions options = serializer.options();
-    options.setPretty(true);
-    serializer.setOptions(options);
-    serializer.addRequestBufferCallback(callback);
-    serializer.serialize(node);
-
-    if (serializer.buffers().size()) {
-        JT::SerializerBuffer serializer_buffer = serializer.buffers().front();
-        buffer.writeOutBuffer(serializer_buffer);
-    }
-
-    const char newline[] = "\n";
-    write(file, newline, sizeof newline);
-
-   return true;
-}
 
 bool CreateAction::execute()
 {
@@ -163,53 +94,92 @@ bool CreateAction::execute()
     //this should not fail ;)
     chdir(cwd);
 
-    fill_file_with_node(m_out_tree, m_out_file);
-    return true;
+    TreeWriter tree_writer(m_out_file, m_out_tree);
+    return !tree_writer.error();
 }
 
 
 bool CreateAction::handleCurrentSrcDir()
 {
-    std::string tmp_file;
-    int tmp_file_desc = Configuration::createTempFileFromCWD(tmp_file);
-    if (tmp_file_desc <= 0)
-        return false;
-
-
     char cwd[PATH_MAX];
     getcwd(cwd, sizeof(cwd));
     const char *base_name = basename(cwd);
+
     JT::ObjectNode *root_for_dir = m_out_tree->objectNodeAt(base_name);
     if (!root_for_dir) {
         root_for_dir = new JT::ObjectNode();
     }
 
-    fill_file_with_node(root_for_dir, tmp_file_desc);
-    close(tmp_file_desc);
-
-    int exit_code = 0;
-    if (access(".git", X_OK) == 0) {
-        exit_code = m_configuration.runScript("state_git.sh", tmp_file.c_str());
-    } else if (access(".svn", X_OK) == 0) {
-        exit_code = m_configuration.runScript("state_regular_dir.sh", tmp_file.c_str());
-    } else {
-        exit_code = m_configuration.runScript("state_regular_dir.sh", tmp_file.c_str());
+    JT::ObjectNode *scm_node = root_for_dir->objectNodeAt("scm");
+    if (!scm_node) {
+        JT::Property prop(JT::Token::String, JT::Data("scm",3,false));
+        root_for_dir->insertNode(prop, new JT::ObjectNode(), true);
     }
 
-    tmp_file_desc = open(tmp_file.c_str(), O_RDONLY|O_CLOEXEC);
-    if (tmp_file_desc < 0) {
-        fprintf(stderr, "Suspecting script for messing up temporary file: %s\n%s\n",
-                tmp_file.c_str(), strerror(errno));
+    std::string primary = "state_";
+    primary.append(base_name);
+    std::string fallback = "state_";
+    std::string postfix;
+    if (access(".git", X_OK) == 0) {
+        postfix = "git";
+    } else if (access(".svn", X_OK) == 0) {
+        postfix = "regular_dir";
+    } else {
+        postfix = "regular_dir";
+    }
+    fallback.append(postfix);
+
+
+    auto scripts = m_configuration.findScript(primary, fallback);
+    if (scripts.size() == 0) {
+        fprintf(stderr, "Could not find any scripts matching primary: %s nor fallback: %s\n",
+                primary.c_str(), fallback.c_str());
         return false;
     }
-    MmappedReadFile tmp_file_mmap_handler;
-    tmp_file_mmap_handler.setFile(tmp_file_desc);
+    bool script_success = false;
+    std::string final_temp_file;
+    for (auto it = scripts.begin(); it != scripts.end(); ++it) {
+        std::string tmp_file;
+        int tmp_file_desc = Configuration::createTempFile(base_name, tmp_file);
+        {
+            TreeWriter tree_writer(tmp_file_desc, root_for_dir, true);
+            if (tree_writer.error()) {
+                fprintf(stderr, "failed to write to tempfile\n");
+                return false;
+            }
+        }
 
-    const char *temp_file_data = static_cast<const char *>(tmp_file_mmap_handler.map());
+        int exit_code = m_configuration.runScript(*it, tmp_file);
+
+        if (exit_code) {
+            return true;
+        }
+
+        if (access(tmp_file.c_str(), F_OK) == 0) {
+            script_success = true;
+            final_temp_file = tmp_file;
+        }
+    }
+
+    if (!script_success) {
+        fprintf(stderr, "FEOWFOWEKFOWEKFFWEKO\n");
+        return false;
+    }
+
+    int final_temp_file_desc = open(final_temp_file.c_str(), O_RDONLY|O_CLOEXEC);
+    if (final_temp_file_desc < 0) {
+        fprintf(stderr, "Suspecting script for messing up temporary file: %s\n%s\n",
+                final_temp_file.c_str(), strerror(errno));
+        return false;
+    }
+    MmappedReadFile temp_mmap_file_handler;
+    temp_mmap_file_handler.setFile(final_temp_file_desc);
+
+    const char *temp_file_data = static_cast<const char *>(temp_mmap_file_handler.map());
 
     JT::TreeBuilder tree_builder;
     tree_builder.create_root_if_needed = true;
-    auto tree_build = tree_builder.build(temp_file_data, tmp_file_mmap_handler.size());
+    auto tree_build = tree_builder.build(temp_file_data, temp_mmap_file_handler.size());
     if (tree_build.second == JT::Error::NoError) {
         JT::Property property(JT::Token::String, JT::Data(base_name, strlen(base_name), true));
         JT::ObjectNode *root_for_cwd_dir = tree_build.first->asObjectNode();
@@ -217,8 +187,8 @@ bool CreateAction::handleCurrentSrcDir()
     } else {
         fprintf(stderr, "Failed to understand output from %s\n", base_name);
     }
-    close(tmp_file_desc);
-    unlink(tmp_file.c_str());
-    return exit_code == 0;
+    close(final_temp_file_desc);
+    unlink(final_temp_file.c_str());
+    return true;
 }
 
