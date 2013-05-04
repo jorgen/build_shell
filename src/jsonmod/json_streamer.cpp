@@ -181,11 +181,11 @@ void JsonStreamer::stream()
                         }
                     }
 
-                    if (m_current_depth -1 == m_last_matching_depth)
-                        m_last_matching_depth--;
-                    if (m_print_subtree && m_last_matching_depth == m_current_depth) {
+                    if (m_print_subtree && m_last_matching_depth == m_current_depth -1) {
                         finished_printing_subtree = true;
                     }
+                    if (m_current_depth -1 == m_last_matching_depth)
+                        m_last_matching_depth--;
                     m_found_on_depth.pop_back();
                     m_current_depth--;
                     break;
