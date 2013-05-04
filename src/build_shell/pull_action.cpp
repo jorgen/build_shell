@@ -14,7 +14,7 @@ PullAction::PullAction(const Configuration &configuration)
     : Action(configuration)
     , m_buildset_tree_builder(configuration.buildsetFile())
 {
-    m_buildset_tree = m_buildset_tree_builder.takeRootNode();
+    m_buildset_tree = m_buildset_tree_builder.rootNode();
     if (!m_buildset_tree) {
         fprintf(stderr, "Error loading buildset %s\n",
                 configuration.buildsetFile().c_str());
@@ -24,42 +24,6 @@ PullAction::PullAction(const Configuration &configuration)
 
 PullAction::~PullAction()
 {
-    delete m_buildset_tree;
-}
-
-static void addStringNodeToObject(const std::string &path, const std::string &value, JT::ObjectNode *root) {
-    std::vector<std::string> path_vector;
-
-    size_t pos = 0;
-    while (pos < path.size()) {
-        size_t new_pos = path.find('.', pos);
-        path_vector.push_back(path.substr(pos, new_pos - pos));
-        pos = new_pos;
-        if (new_pos != std::string::npos)
-            pos++;
-    }
-
-    JT::ObjectNode *last_node = root;
-    for (size_t i = 0; i < path_vector.size(); i++) {
-        if (i == path_vector.size() -1) {
-            JT::Token token;
-            token.value.data = value.c_str();
-            token.value.size = value.size();
-            token.value.temporary = true;
-            JT::StringNode *string_node = new JT::StringNode(&token);
-            JT::Property prop(JT::Token::String, JT::Data(path_vector[i].c_str(), path_vector[i].size(), true));
-            last_node->insertNode(prop,string_node,true);
-        }
-    }
-}
-
-bool stop_propogate(const std::string &, const std::string &input_file)
-{
-    if (access(input_file.c_str(), F_OK)) {
-        if (errno == ENOENT)
-            return true;
-    }
-    return false;
 }
 
 bool PullAction::execute()
@@ -68,8 +32,8 @@ bool PullAction::execute()
         return false;
 
     JT::ObjectNode *arguments = new JT::ObjectNode();
-    addStringNodeToObject("reset_to_sha", "true", arguments);
-    JT::Property arg_prop(JT::Token::String, JT::Data("\"arguments\"", sizeof "\"arguments\"" - 1, true));
+    arguments->addValueToObject("reset_to_sha", "true", JT::Token::String);
+    JT::Property arg_prop("arguments");
 
     char cwd[PATH_MAX];
     getcwd(cwd, sizeof(cwd));
