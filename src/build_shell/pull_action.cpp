@@ -33,7 +33,6 @@ bool PullAction::execute()
 
     JT::ObjectNode *arguments = new JT::ObjectNode();
     arguments->addValueToObject("reset_to_sha", "true", JT::Token::String);
-    JT::Property arg_prop("arguments");
 
     char cwd[PATH_MAX];
     getcwd(cwd, sizeof(cwd));
@@ -48,7 +47,8 @@ bool PullAction::execute()
         JT::ObjectNode *project_node = (*it).second->asObjectNode();
         if (!project_node)
             continue;
-        project_node->insertNode(arg_prop,arguments,true);
+
+        project_node->insertNode(std::string("arguments"), arguments, true);
         std::string temp_file_name;
         const std::string project_name = (*it).first.string();
 
