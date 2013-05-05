@@ -27,7 +27,7 @@ private:
 
 
     TreeBuilder m_tree_builder;
-    JT::ObjectNode *m_out_tree;
+    std::unique_ptr<JT::ObjectNode> m_out_tree;
     std::string m_out_file_name;
     int m_out_file;
 };

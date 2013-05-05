@@ -19,10 +19,10 @@ CreateAction::CreateAction(const Configuration &configuration,
     : Action(configuration)
     , m_tree_builder(configuration.buildsetFile())
 {
-    m_out_tree = m_tree_builder.rootNode();
+    m_out_tree.reset(m_tree_builder.takeRootNode());
 
-    if (!m_out_tree)
-        m_out_tree = new JT::ObjectNode();
+    if (!m_out_tree.get())
+        m_out_tree.reset(new JT::ObjectNode());
 
     const std::string *actual_outfile = &outfile;
     if (!actual_outfile->size())
@@ -46,8 +46,6 @@ CreateAction::~CreateAction()
 {
     if (m_out_file_name.size())
         close(m_out_file);
-
-    delete m_out_tree;
 }
 
 
@@ -94,7 +92,7 @@ bool CreateAction::execute()
     //this should not fail ;)
     chdir(cwd);
 
-    TreeWriter tree_writer(m_out_file, m_out_tree);
+    TreeWriter tree_writer(m_out_file, m_out_tree.get());
     return !tree_writer.error();
 }
 

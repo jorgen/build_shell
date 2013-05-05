@@ -9,6 +9,7 @@
 #include <sys/stat.h>
 #include <errno.h>
 
+#include <assert.h>
 
 PullAction::PullAction(const Configuration &configuration)
     : Action(configuration)
@@ -31,8 +32,8 @@ bool PullAction::execute()
     if (!m_buildset_tree || m_error)
         return false;
 
-    JT::ObjectNode *arguments = new JT::ObjectNode();
-    arguments->addValueToObject("reset_to_sha", "true", JT::Token::String);
+    std::unique_ptr<JT::ObjectNode> arguments(new JT::ObjectNode());
+    arguments->addValueToObject("reset_to_sha", "true", JT::Token::Bool);
 
     char cwd[PATH_MAX];
     getcwd(cwd, sizeof(cwd));
@@ -48,7 +49,7 @@ bool PullAction::execute()
         if (!project_node)
             continue;
 
-        project_node->insertNode(std::string("arguments"), arguments, true);
+        project_node->insertNode(std::string("arguments"), arguments.get(), true);
         std::string temp_file_name;
         const std::string project_name = (*it).first.string();
 
@@ -84,14 +85,16 @@ bool PullAction::execute()
             }
         }
         //have to remove the project node, so it will not be deleted multiple times
-        project_node->take("arguments");
+        JT::Node *removed_argnode = project_node->take("arguments");
+        assert(removed_argnode);
 
-        JT::StringNode *string_node = project_node->stringNodeAt("scm.type");
         std::string mode = should_clone? "clone_" : "pull_";
         std::string primary_script = mode;
         primary_script.append(project_name);
 
         std::string fallback_script = mode;
+
+        JT::StringNode *string_node = project_node->stringNodeAt("scm.type");
         if (string_node) {
             if (string_node->string() == "git") {
                 fallback_script.append("git");
