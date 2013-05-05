@@ -129,14 +129,6 @@ void Configuration::validate()
         return;
     }
 
-    if (m_src_dir.size()) {
-        if (access(m_src_dir.c_str(), W_OK)) {
-            fprintf(stderr, "Unable to access src dir %s, which is required for %s\n\n",
-                    m_src_dir.c_str(), m_mode_string.c_str());
-            return;
-        }
-    }
-
     if (!m_src_dir.size() && m_buildset_file.size()) {
         std::string dirname_of_buildset = m_buildset_file;
         m_src_dir = dirname(&dirname_of_buildset[0]);
@@ -148,25 +140,34 @@ void Configuration::validate()
             m_src_dir = current_wd;
     }
 
-    m_src_dir = Configuration::create_and_convert_to_abs(m_src_dir.c_str());
-    if (!m_src_dir.length()) {
+    std::string new_src_dir;
+    if (!Configuration::getAbsPath(m_src_dir, m_mode == Pull, new_src_dir)) {
+        fprintf(stderr, "Failed to set src dir to %s. Is it a valid directory?\n",
+                m_src_dir.c_str());
         return;
     }
+    m_src_dir = std::move(new_src_dir);
 
     if (m_build_dir.length()) {
-        m_build_dir = Configuration::create_and_convert_to_abs(m_build_dir.c_str());
-        if (!m_build_dir.length()) {
+        std::string new_build_dir;
+        if(!Configuration::getAbsPath(m_build_dir,true,new_build_dir)) {
+            fprintf(stderr, "Failed to verify build dir path. Is it a valid directory name? %s\n",
+                    m_build_dir.c_str());
             return;
         }
+        m_build_dir = std::move(new_build_dir);
     } else {
         m_build_dir = m_src_dir;
     }
 
     if (m_install_dir.length()) {
-        m_install_dir = Configuration::create_and_convert_to_abs(m_install_dir.c_str());
-        if (!m_install_dir.length()) {
+        std::string new_install_dir;
+        if (!Configuration::getAbsPath(m_install_dir, true, new_install_dir)) {
+            fprintf(stderr, "Failed to verify install dir path. Is it a valid directory name? %s\n",
+                    m_install_dir.c_str());
             return;
         }
+        m_install_dir = std::move(new_install_dir);
     } else {
         m_install_dir = m_build_dir;
     }
@@ -291,76 +292,82 @@ void Configuration::initializeScriptSearchPaths()
     const char *homedir = pw->pw_dir;
     std::string home_config_scripts(homedir);
     home_config_scripts.append("/.config/build_shell/scripts");
-    std::string abs_home_config_scripts =
-        create_and_convert_to_abs(home_config_scripts.c_str());
-    m_script_search_paths.push_back(abs_home_config_scripts);
+    std::string abs_home_config_scripts;
+    if (Configuration::getAbsPath(home_config_scripts,true,abs_home_config_scripts))
+        m_script_search_paths.push_back(abs_home_config_scripts);
 
     m_script_search_paths.push_back(SCRIPTS_PATH);
 }
 
-std::string Configuration::create_and_convert_to_abs(const std::string &dir)
+class ResetPath
 {
-    char path_max[PATH_MAX + 1];
-    char *ptr = realpath(dir.c_str(), path_max);
-    std::string ret_string;
-    if (!ptr) {
-        switch (errno) {
-            case EACCES:
-                fprintf(stderr, "Cant set src directory to %s. Access denided\n", dir.c_str());
-                break;
-            case ELOOP:
-                fprintf(stderr, "Cant set src directory to %s. To many symbolic links, possible loop\n", dir.c_str());
-                break;
-            case ENOENT:
-            case ENOTDIR:
-                if (Configuration::recursive_mkdir(dir)) {
-                    fprintf(stderr, "Unable to create directory %s Do you have sufficient permissions.\n", dir.c_str());
-                } else {
-                    ret_string = Configuration::create_and_convert_to_abs(dir);
-                }
-                break;
-            default:
-                fprintf(stderr, "Unknown error when finding the absolute path of src dir: %s\n", strerror(errno));
-                break;
-        }
-    } else {
-        ret_string = ptr;
+public:
+    ResetPath()
+    {
+        getcwd(initial_dir, sizeof initial_dir);
     }
 
-    return ret_string;
+    ~ResetPath()
+    {
+        chdir(initial_dir);
+    }
+    char initial_dir[PATH_MAX];
+};
+
+static bool change_to_dir(const std::string &dir, bool create)
+{
+    if (chdir(dir.c_str())) {
+        if (!create)
+            return false;
+        if (errno == ENOENT) {
+            if (mkdir(dir.c_str(),S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH))
+                return false;
+        }
+        if (chdir(dir.c_str())) {
+            return false;
+        }
+    }
+    return true;
 }
 
-bool Configuration::recursive_mkdir(const std::string &path)
+bool Configuration::getAbsPath(const std::string &path, bool create, std::string &abs_path)
 {
-    size_t first_slash;
-    size_t current_pos = 0;
+    if (!path.size())
+        return false;
+
+    ResetPath resetPath;
+    (void) resetPath;
 
     std::list<std::string>dirs;
 
-    if (path.at(0) == '/')
-        dirs.push_back("/");
 
+    size_t first_slash;
+    size_t current_pos = 0;
+
+    if (path[0] == '/') {
+        if (chdir("/")) {
+            fprintf(stderr, "change dir into root %s\n", strerror(errno));
+            return false;
+        }
+    }
     while ((first_slash = path.find('/', current_pos)) != std::string::npos) {
         if (current_pos != first_slash) {
-            dirs.push_back(path.substr(current_pos, first_slash - current_pos));
+            std::string dir = path.substr(current_pos, first_slash - current_pos);
+            if (!change_to_dir(dir,create))
+                return false;
         }
         current_pos = first_slash + 1;
     }
     if (current_pos != path.size() -1) {
-            dirs.push_back(path.substr(current_pos, first_slash - current_pos));
+        std::string dir = path.substr(current_pos, first_slash - current_pos);
+        if (!change_to_dir(dir,create))
+            return false;
     }
 
-    std::string intermediate_path;
-    for (auto it = dirs.begin(); it != dirs.end(); ++it) {
-        intermediate_path.append(*it);
-        if (access(intermediate_path.c_str(), X_OK)) {
-            if (mkdir(intermediate_path.c_str(), S_IRWXU)) {
-                return false;
-            }
-        }
-        if (intermediate_path.back() != '/')
-            intermediate_path.append("/");
-    }
+    char cwd[PATH_MAX];
+    getcwd(cwd, sizeof cwd);
+
+    abs_path = cwd;
 
     return true;
 }

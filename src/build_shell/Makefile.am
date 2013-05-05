@@ -21,7 +21,10 @@ build_shell_SOURCES =	         	        			\
 	tree_builder.cpp						\
 	tree_builder.h							\
 	tree_writer.cpp							\
-	tree_writer.h
+	tree_writer.h							\
+	build_action.cpp						\
+	build_action.h
+
 
 
 AM_CPPFLAGS = \

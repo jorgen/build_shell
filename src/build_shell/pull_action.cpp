@@ -39,19 +39,19 @@ bool PullAction::execute()
     getcwd(cwd, sizeof(cwd));
 
     for (auto it = m_buildset_tree->begin(); it != m_buildset_tree->end(); ++it) {
+        JT::ObjectNode *project_node = it->second->asObjectNode();
+        if (!project_node)
+            continue;
+
         if (chdir(m_configuration.srcDir().c_str())) {
             fprintf(stderr, "Could not move into src dir:%s\n%s\n",
                     m_configuration.srcDir().c_str(), strerror(errno));
             return false;
         }
 
-        JT::ObjectNode *project_node = (*it).second->asObjectNode();
-        if (!project_node)
-            continue;
-
         project_node->insertNode(std::string("arguments"), arguments.get(), true);
         std::string temp_file_name;
-        const std::string project_name = (*it).first.string();
+        const std::string project_name = it->first.string();
 
         bool should_clone = false;
         bool should_pull = false;
@@ -72,9 +72,9 @@ bool PullAction::execute()
                     project_name.c_str());
         }
 
-        int temp_file = Configuration::createTempFile((*it).first.string(), temp_file_name);
+        int temp_file = Configuration::createTempFile(it->first.string(), temp_file_name);
         if (temp_file < 0) {
-            fprintf(stderr, "Could not create temp file for project %s\n", (*it).first.string().c_str());
+            fprintf(stderr, "Could not create temp file for project %s\n", it->first.string().c_str());
             return false;
         }
         {

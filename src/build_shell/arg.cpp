@@ -14,9 +14,8 @@ void Arg::printError(const char* msg1, const option::Option& opt, const char* ms
 
 }
 
-option::ArgStatus Arg::requiresDirectory(const option::Option &option, bool msg)
+option::ArgStatus Arg::requiresArg(const option::Option &option, bool msg)
 {
-    //FIXME: validate that path is a valid path
     if (option.arg != 0)
         return option::ARG_OK;
 

@@ -28,15 +28,15 @@ const option::Descriptor usage[] =
                                                                             "  build\t builds a buildset file\n\n"
                                                                             "Options:" },
   {HELP,          0, "h" , "help",            option::Arg::None,            "  --help, -h\tPrint usage and exit." },
-  {SRC_DIR,       0, "s", "src-dir",          Arg::requiresDirectory,       "  --src-dir, -s  \tSource dir, where projects are cloned\v"
+  {SRC_DIR,       0, "s", "src-dir",          Arg::requiresArg,             "  --src-dir, -s  \tSource dir, where projects are cloned\v"
                                                                             "     and builds read their sources from." },
-  {BUILD_DIR,     0, "b", "build-dir",        Arg::requiresDirectory,       "  --build-dir, -b     \tBuild dir, defaults to source dir. This is\v"
+  {BUILD_DIR,     0, "b", "build-dir",        Arg::requiresArg,             "  --build-dir, -b     \tBuild dir, defaults to source dir. This is\v"
                                                                             "     where the projects will be built."},
-  {INSTALL_DIR,   0, "i", "install-dir",      Arg::requiresDirectory,       "  --install-dir, -i   \tInstall dir, defaults to build dir. This is the directory\v"
+  {INSTALL_DIR,   0, "i", "install-dir",      Arg::requiresArg,             "  --install-dir, -i   \tInstall dir, defaults to build dir. This is the directory\v"
                                                                             "     that will be used as prefix for projects."},
   {BUILDSET,      0, "f", "buildset",         Arg::requiresExistingFile,    "  --buildset -f  \tFile used as input for projects"},
   {BUILDSET_OUT,  0, "o", "buildset-out",     Arg::requiresNonExistingFile, "  --buildset-out -o  \tFile used for creating buildset file"},
-  {RESET_SHA,     0, "" , "reset-sha",          option::Arg::None,            "  --reset-sha \tIn pull mode reset to sha"},
+  {RESET_SHA,     0, "" , "reset-sha",        option::Arg::None,            "  --reset-sha \tIn pull mode reset to sha"},
 
   {UNKNOWN, 0,"" ,  ""   ,                    option::Arg::None,            "\nExamples:\n"
                                                                             "  build_shell --src-dir /some/file -f ../some/buildset_file pull\n"},

@@ -52,8 +52,7 @@ private:
 
     std::string findBuildEnvFile() const;
     void initializeScriptSearchPaths();
-    static std::string create_and_convert_to_abs(const std::string &path);
-    static bool recursive_mkdir(const std::string &path);
+    static bool getAbsPath(const std::string &path, bool create, std::string &abs_path);
 
     Mode m_mode;
     std::string m_mode_string;
