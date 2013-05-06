@@ -112,10 +112,17 @@ void JsonStreamer::stream()
                                 if (m_config.hasValue()) {
                                     token.value.data = m_config.value().c_str();
                                     token.value.size = m_config.value().size();
-                                } else {
+                                } else if (!m_config.createObject()) {
                                     token.name.data = "";
                                     token.name.size = 0;
                                     token.name_type = JT::Token::Ascii;
+                                    if (token.value_type == JT::Token::String) {
+                                        token.value_type = JT::Token::Ascii;
+                                        if (*token.value.data == '"') {
+                                            token.value.data++;
+                                            token.value.size -= 2;
+                                        }
+                                    }
                                 }
                             }
                             m_found_on_depth[m_current_depth] = true;
@@ -205,18 +212,18 @@ void JsonStreamer::stream()
 
 
         }
-        auto unflushed_out_buffers = m_serializer.buffers();
-        for (auto it = unflushed_out_buffers.begin(); it != unflushed_out_buffers.end(); ++it) {
-            writeOutBuffer(*it);
-        }
-        char new_line[] = "\n";
-        write(m_output_file, new_line, sizeof new_line - 1);
         if (tokenizer_error != JT::Error::NeedMoreData
                 && tokenizer_error != JT::Error::NoError) {
             fprintf(stderr, "Error while parsing json. %d\n", tokenizer_error);
             break;
         }
     }
+    auto unflushed_out_buffers = m_serializer.buffers();
+    for (auto it = unflushed_out_buffers.begin(); it != unflushed_out_buffers.end(); ++it) {
+        writeOutBuffer(*it);
+    }
+    char new_line[] = "\n";
+    write(m_output_file, new_line, sizeof new_line - 1);
     if (bytes_read < 0) {
         fprintf(stderr, "Error while reading input %s\n", strerror(errno));
         m_error = true;
@@ -262,7 +269,8 @@ void JsonStreamer::setStreamerOptions(bool compact)
 {
     JT::SerializerOptions options = m_serializer.options();
     options.setPretty(!compact);
-    options.skipDelimiter(!m_config.hasProperty() && !compact);
+    options.skipDelimiter(m_config.hasProperty() && !compact);
+    options.setAscii(m_config.hasProperty() && !compact);
     m_serializer.setOptions(options);
 }
 

@@ -19,6 +19,12 @@ static bool DEBUG_RUN_COMMAND = getenv("BUILD_SHELL_DEBUG_RUN_COMMAND") != 0;
 Configuration::Configuration()
     : m_mode(Invalid)
     , m_reset_to_sha(false)
+    , m_clean_explicitly_set(false)
+    , m_clean(true)
+    , m_configure_explicitly_set(false)
+    , m_configure(true)
+    , m_build_explicitly_set(false)
+    , m_build(true)
     , m_sane(false)
 {
 #ifdef JSONMOD_PATH
@@ -105,6 +111,39 @@ void Configuration::setResetToSha(bool reset)
 bool Configuration::resetToSha() const
 {
     return m_reset_to_sha;
+}
+
+void Configuration::setClean(bool clean)
+{
+    m_clean_explicitly_set = true;
+    m_clean = clean;
+}
+
+bool Configuration::clean() const
+{
+    return m_clean;
+}
+
+void Configuration::setConfigure(bool configure)
+{
+    m_configure_explicitly_set = true;
+    m_configure = configure;
+}
+
+bool Configuration::configure() const
+{
+    return m_configure;
+}
+
+void Configuration::setBuild(bool build)
+{
+    m_build_explicitly_set = true;
+    m_build = build;
+}
+
+bool Configuration::build() const
+{
+    return m_build;
 }
 
 void Configuration::validate()

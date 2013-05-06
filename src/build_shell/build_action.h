@@ -13,6 +13,7 @@ public:
 
     bool execute();
 private:
+    bool handleBuildForProject(const std::string &projectName, JT::ObjectNode *projectNode, const std::string &buildSystem);
     TreeBuilder m_buildset_tree_builder;
     JT::ObjectNode *m_buildset_tree;
 };

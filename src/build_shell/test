@@ -1,0 +1,170 @@
+{
+    "qt-creator" : {
+        "scm" : {
+            "type" : "git",
+            "url" : "ssh://codereview.qt-project.org:29418/qt-creator/qt-creator.git",
+            "branch" : "master",
+            "remote" : "origin",
+            "remote_branch" : "master",
+            "current_head" : "111392f6c5c98b265d12cbc40831ea3ddddb1f4b",
+            "common_ancestor" : "111392f6c5c98b265d12cbc40831ea3ddddb1f4b"
+        }
+    },
+    "libxkbcommon" : {
+        "scm" : {
+            "type" : "git",
+            "url" : "git://github.com/xkbcommon/libxkbcommon",
+            "branch" : "master",
+            "remote" : "origin",
+            "remote_branch" : "master",
+            "current_head" : "a392d2682bfbf5ce6c3ee153c6a08bb456da0660",
+            "common_ancestor" : "a392d2682bfbf5ce6c3ee153c6a08bb456da0660"
+        }
+    },
+    "weston" : {
+        "scm" : {
+            "type" : "git",
+            "url" : "git://anongit.freedesktop.org/wayland/weston",
+            "branch" : "master",
+            "remote" : "origin",
+            "remote_branch" : "master",
+            "current_head" : "5e011244c80295345ee4616b76a45cd7cbe3204b",
+            "common_ancestor" : "a84687174ced9bd5b2149ef893ee85514c2c7c40"
+        }
+    },
+    "qt4" : {
+        "scm" : {
+            "type" : "unknown"
+        }
+    },
+    "build_shell" : {
+        "scm" : {
+            "type" : "git",
+            "url" : "git@github.com:jorgen/build_shell.git",
+            "branch" : "master",
+            "remote" : "origin",
+            "remote_branch" : "master",
+            "current_head" : "69c69a8d4011ad9b3d8f3847eae8ad9644c14116",
+            "common_ancestor" : "69c69a8d4011ad9b3d8f3847eae8ad9644c14116"
+        }
+    },
+    "pixman" : {
+        "scm" : {
+            "type" : "git",
+            "url" : "git://anongit.freedesktop.org/pixman",
+            "branch" : "master",
+            "remote" : "origin",
+            "remote_branch" : "master",
+            "current_head" : "d8ac35af1208a4fa4d67f03fee10b5449fb8495a",
+            "common_ancestor" : "d8ac35af1208a4fa4d67f03fee10b5449fb8495a"
+        }
+    },
+    "gtk+" : {
+        "scm" : {
+            "type" : "git",
+            "url" : "git://git.gnome.org/gtk+",
+            "branch" : "master",
+            "remote" : "origin",
+            "remote_branch" : "master",
+            "current_head" : "3d2bf3a5302e475153366761bde6294047e25739",
+            "common_ancestor" : "3d2bf3a5302e475153366761bde6294047e25739"
+        }
+    },
+    "mesa" : {
+        "scm" : {
+            "type" : "unknown"
+        }
+    },
+    "yaml-cpp" : {
+        "scm" : {
+            "type" : "unknown"
+        }
+    },
+    "yat" : {
+        "scm" : {
+            "type" : "git",
+            "url" : "git@github.com:jorgen/yat.git",
+            "branch" : "master",
+            "remote" : "origin",
+            "remote_branch" : "master",
+            "current_head" : "47ec5d19a16c863b3a0d430dde6be67fd72780a2",
+            "common_ancestor" : "47ec5d19a16c863b3a0d430dde6be67fd72780a2"
+        }
+    },
+    "bugs" : {
+        "scm" : {
+            "type" : "unknown"
+        }
+    },
+    "gerrit" : {
+        "scm" : {
+            "type" : "git",
+            "url" : "https://gerrit.googlesource.com/gerrit",
+            "branch" : "master",
+            "remote" : "origin",
+            "remote_branch" : "master",
+            "current_head" : "e6832aee809f68c51a48fb4af659f4a5cfee82a6",
+            "common_ancestor" : "e6832aee809f68c51a48fb4af659f4a5cfee82a6"
+        }
+    },
+    "vimrc" : {
+        "scm" : {
+            "type" : "git",
+            "url" : "git@github.com:jorgen/vimrc.git",
+            "branch" : "master",
+            "remote" : "origin",
+            "remote_branch" : "master",
+            "current_head" : "7cb040279f97d215e5a6025f054aaeca91aef287",
+            "common_ancestor" : "7cb040279f97d215e5a6025f054aaeca91aef287"
+        }
+    },
+    "wayland" : {
+        "scm" : {
+            "type" : "git",
+            "url" : "git://anongit.freedesktop.org/wayland/wayland",
+            "branch" : "master",
+            "remote" : "origin",
+            "remote_branch" : "master",
+            "current_head" : "8c6fe682c29ead1f03c55656c5264812074c4efa",
+            "common_ancestor" : "00639de12050c8755965a569de4f6df9dc36171f"
+        }
+    },
+    "llvm" : {
+        "scm" : {
+            "type" : "git",
+            "url" : "http://llvm.org/git/llvm.git",
+            "branch" : "master",
+            "remote" : "origin",
+            "remote_branch" : "master",
+            "current_head" : "0c5cdc5c6e12aea4f68d267b4c279f0d01389c1a",
+            "common_ancestor" : "0c5cdc5c6e12aea4f68d267b4c279f0d01389c1a"
+        }
+    },
+    "qt" : {
+        "scm" : {
+            "type" : "unknown"
+        }
+    },
+    "build_script" : {
+        "scm" : {
+            "type" : "git",
+            "url" : "git@github.com:jorgen/build_script.git",
+            "branch" : "master",
+            "remote" : "origin",
+            "remote_branch" : "master",
+            "current_head" : "8ddcd041d9868d70be13643dd2a8e380dfbf5ce7",
+            "common_ancestor" : "8ddcd041d9868d70be13643dd2a8e380dfbf5ce7"
+        }
+    },
+    "cairo" : {
+        "scm" : {
+            "type" : "git",
+            "url" : "git://anongit.freedesktop.org/cairo",
+            "branch" : "master",
+            "remote" : "origin",
+            "remote_branch" : "master",
+            "current_head" : "e66e9ac12e3e11af76f14e8de3cfee72d4299864",
+            "common_ancestor" : "e66e9ac12e3e11af76f14e8de3cfee72d4299864"
+        }
+    }
+}

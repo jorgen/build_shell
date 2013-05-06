@@ -39,6 +39,14 @@ public:
     void setResetToSha(bool reset);
     bool resetToSha() const;
 
+    void setClean(bool clean);
+    bool clean() const;
+
+    void setConfigure(bool configure);
+    bool configure() const;
+
+    void setBuild(bool build);
+    bool build() const;
     void validate();
     bool sane() const;
 
@@ -63,6 +71,12 @@ private:
     std::string m_buildset_file;
     std::string m_buildset_out_file;
     bool m_reset_to_sha;
+    bool m_clean_explicitly_set;
+    bool m_clean;
+    bool m_configure_explicitly_set;
+    bool m_configure;
+    bool m_build_explicitly_set;
+    bool m_build;
 
     std::list<std::string> m_script_search_paths;
 

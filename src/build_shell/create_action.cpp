@@ -80,14 +80,19 @@ bool CreateAction::execute()
             continue;
         }
         if (S_ISDIR(buf.st_mode)) {
-            chdir(ent->d_name);
+            if (chdir(ent->d_name)) {
+                fprintf(stderr, "Failed to change into directory %s\n%s\n", ent->d_name, strerror(errno));
+                return false;
+            }
             if (!handleCurrentSrcDir()) {
                 fprintf(stderr, "Failed to handle dir %s\n", ent->d_name);
+                closedir(source_dir);
                 return false;
             }
             chdir(m_configuration.srcDir().c_str());
         }
     }
+    closedir(source_dir);
 
     //this should not fail ;)
     chdir(cwd);
@@ -101,7 +106,7 @@ bool CreateAction::handleCurrentSrcDir()
 {
     char cwd[PATH_MAX];
     getcwd(cwd, sizeof(cwd));
-    const char *base_name = basename(cwd);
+    std::string base_name = basename(cwd);
 
     JT::ObjectNode *root_for_dir = m_out_tree->objectNodeAt(base_name);
     if (!root_for_dir) {
@@ -118,9 +123,10 @@ bool CreateAction::handleCurrentSrcDir()
     primary.append(base_name);
     std::string fallback = "state_";
     std::string postfix;
-    if (access(".git", X_OK) == 0) {
+
+    if (access(".git", F_OK) == 0) {
         postfix = "git";
-    } else if (access(".svn", X_OK) == 0) {
+    } else if (access(".svn", F_OK) == 0) {
         postfix = "regular_dir";
     } else {
         postfix = "regular_dir";
@@ -149,11 +155,11 @@ bool CreateAction::handleCurrentSrcDir()
         if (access(tmp_file.c_str(), F_OK) == 0) {
             script_success = true;
             final_temp_file = tmp_file;
+            break;
         }
     }
 
     if (!script_success) {
-        fprintf(stderr, "FEOWFOWEKFOWEKFFWEKO\n");
         return false;
     }
 
@@ -172,11 +178,11 @@ bool CreateAction::handleCurrentSrcDir()
     tree_builder.create_root_if_needed = true;
     auto tree_build = tree_builder.build(temp_file_data, temp_mmap_file_handler.size());
     if (tree_build.second == JT::Error::NoError) {
-        JT::Property property(JT::Token::String, JT::Data(base_name, strlen(base_name), true));
+        JT::Property property(base_name);
         JT::ObjectNode *root_for_cwd_dir = tree_build.first->asObjectNode();
         m_out_tree->insertNode(property, root_for_cwd_dir, true);
     } else {
-        fprintf(stderr, "Failed to understand output from %s\n", base_name);
+        fprintf(stderr, "Failed to understand output from %s\n", base_name.c_str());
     }
     close(final_temp_file_desc);
     unlink(final_temp_file.c_str());

@@ -2,6 +2,7 @@
 #include "configuration.h"
 #include "create_action.h"
 #include "pull_action.h"
+#include "build_action.h"
 
 #include <vector>
 #include <iostream>
@@ -127,15 +128,22 @@ int main(int argc, char **argv)
             case Configuration::Pull:
                 action = new PullAction(configuration);
                 break;
+            case Configuration::Build:
+                action = new BuildAction(configuration);
+                break;
             default:
                 action = new CreateAction(configuration);
                 break;
         }
     }
 
-    bool success = action->execute();
+    bool error = action->error();
+    if (!error) {
+        fprintf(stderr, "Failure to initialize action object. Not executing\n");
+        error = !action->execute();
+    }
 
     delete action;
 
-    return !success;
+    return error;
 }

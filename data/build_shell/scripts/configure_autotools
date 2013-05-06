@@ -1,0 +1,5 @@
+#!/bin/bash
+
+FILE=$@
+source_path=$(jsonmod -p arguments.src_path $FILE)
+$source_path/autogen.sh

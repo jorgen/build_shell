@@ -3,7 +3,7 @@
 
 #include "action.h"
 #include "tree_builder.h"
-
+#include <memory>
 namespace JT {
     class ObjectNode;
 }
@@ -19,12 +19,6 @@ public:
 
 private:
     bool handleCurrentSrcDir();
-
-    int runScript(const std::string &project_name,
-                  const std::string &fallback,
-                  JT::ObjectNode *project_node,
-                  std::string &resulting_temp_file) const;
-
 
     TreeBuilder m_tree_builder;
     std::unique_ptr<JT::ObjectNode> m_out_tree;

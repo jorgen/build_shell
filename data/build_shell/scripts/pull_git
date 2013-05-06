@@ -2,7 +2,6 @@
 
 FILE=$@
 #if $(jsonmod -p attributes.sync
-#git pull --rebase
-echo "Pulling git $(jsonmod -p scm.url $FILE) into $PWD"
+git pull --rebase
 
 rm $FILE

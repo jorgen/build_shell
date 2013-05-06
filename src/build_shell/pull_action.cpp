@@ -8,6 +8,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <errno.h>
+#include <memory>
 
 #include <assert.h>
 
@@ -70,18 +71,9 @@ bool PullAction::execute()
             fprintf(stderr, "Don't know how to handle: %s in pull mode. Is it a regular file? Skipping.\n",
                     project_name.c_str());
         }
-        std::string temp_file;
-        flushProjectNodeToTemporaryFile(project_name,project_node,temp_file);
-        //have to remove the project node, so it will not be deleted multiple times
-        JT::Node *removed_argnode = project_node->take("arguments");
-        assert(removed_argnode);
 
-        std::string mode = should_clone? "clone_" : "pull_";
-        std::string primary_script = mode;
-        primary_script.append(project_name);
-
-        std::string fallback_script = mode;
-
+        std::string fallback_script;
+        std::string mode = should_clone? "clone" : "pull";
         JT::StringNode *string_node = project_node->stringNodeAt("scm.type");
         if (string_node) {
             if (string_node->string() == "git") {
@@ -93,33 +85,14 @@ bool PullAction::execute()
             fallback_script.append("regular_dir");
         }
 
-        auto scripts = m_configuration.findScript(primary_script, fallback_script);
-        if (!scripts.size()) {
-            fprintf(stderr, "Could not find any scripts for primary_script: %s or fallback_script %s\n",
-                    primary_script.c_str(), fallback_script.c_str());
-            return false;
-        }
+        bool success = executeScript(mode,project_name, fallback_script, project_node);
 
-        bool found = false;
-        for (auto it = scripts.begin(); it != scripts.end(); ++it) {
-            int exit_code = m_configuration.runScript(*it, temp_file.c_str());
-            if (exit_code) {
-                fprintf(stderr, "Error while running script %s\n", it->c_str());
-                return false;
-            }
+        //have to remove the project node, so it will not be deleted multiple times
+        JT::Node *removed_argnode = project_node->take("arguments");
+        assert(removed_argnode);
 
-            if (access(temp_file.c_str(), F_OK)) {
-                if (errno == ENOENT) {
-                    found = true;
-                    break;
-                }
-            }
-        }
-        if (!found) {
-            fprintf(stderr, "Failed to process pull action for %s\n", project_name.c_str());
-            unlink(temp_file.c_str());
+        if (!success)
             return false;
-        }
     }
 
     return true;

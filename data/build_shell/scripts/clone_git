@@ -1,7 +1,6 @@
 #!/bin/bash
 
 FILE=$@
-
-echo "Cloning git $(jsonmod -p scm.url $FILE)"
-
+URL=$(jsonmod -p scm.url $FILE)
+git clone $URL
 rm $FILE
