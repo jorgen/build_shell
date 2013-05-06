@@ -50,7 +50,6 @@ bool PullAction::execute()
         }
 
         project_node->insertNode(std::string("arguments"), arguments.get(), true);
-        std::string temp_file_name;
         const std::string project_name = it->first.string();
 
         bool should_clone = false;
@@ -71,19 +70,8 @@ bool PullAction::execute()
             fprintf(stderr, "Don't know how to handle: %s in pull mode. Is it a regular file? Skipping.\n",
                     project_name.c_str());
         }
-
-        int temp_file = Configuration::createTempFile(it->first.string(), temp_file_name);
-        if (temp_file < 0) {
-            fprintf(stderr, "Could not create temp file for project %s\n", it->first.string().c_str());
-            return false;
-        }
-        {
-            TreeWriter writer(temp_file, project_node);
-            if (writer.error()) {
-                fprintf(stderr, "Failed to write project node to temporary file %s\n", temp_file_name.c_str());
-                return false;
-            }
-        }
+        std::string temp_file;
+        flushProjectNodeToTemporaryFile(project_name,project_node,temp_file);
         //have to remove the project node, so it will not be deleted multiple times
         JT::Node *removed_argnode = project_node->take("arguments");
         assert(removed_argnode);
@@ -114,13 +102,13 @@ bool PullAction::execute()
 
         bool found = false;
         for (auto it = scripts.begin(); it != scripts.end(); ++it) {
-            int exit_code = m_configuration.runScript(*it, temp_file_name.c_str());
+            int exit_code = m_configuration.runScript(*it, temp_file.c_str());
             if (exit_code) {
                 fprintf(stderr, "Error while running script %s\n", it->c_str());
                 return false;
             }
 
-            if (access(temp_file_name.c_str(), F_OK)) {
+            if (access(temp_file.c_str(), F_OK)) {
                 if (errno == ENOENT) {
                     found = true;
                     break;
@@ -129,7 +117,7 @@ bool PullAction::execute()
         }
         if (!found) {
             fprintf(stderr, "Failed to process pull action for %s\n", project_name.c_str());
-            unlink(temp_file_name.c_str());
+            unlink(temp_file.c_str());
             return false;
         }
     }

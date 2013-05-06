@@ -48,11 +48,12 @@ public:
     int runScript(const std::string &script, const std::string &arg) const;
 
     static int createTempFile(const std::string &project, std::string &tmp_file_name);
+
+    static bool getAbsPath(const std::string &path, bool create, std::string &abs_path);
 private:
 
     std::string findBuildEnvFile() const;
     void initializeScriptSearchPaths();
-    static bool getAbsPath(const std::string &path, bool create, std::string &abs_path);
 
     Mode m_mode;
     std::string m_mode_string;

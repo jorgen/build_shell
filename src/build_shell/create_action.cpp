@@ -138,14 +138,7 @@ bool CreateAction::handleCurrentSrcDir()
     std::string final_temp_file;
     for (auto it = scripts.begin(); it != scripts.end(); ++it) {
         std::string tmp_file;
-        int tmp_file_desc = Configuration::createTempFile(base_name, tmp_file);
-        {
-            TreeWriter tree_writer(tmp_file_desc, root_for_dir, true);
-            if (tree_writer.error()) {
-                fprintf(stderr, "failed to write to tempfile\n");
-                return false;
-            }
-        }
+        flushProjectNodeToTemporaryFile(base_name, root_for_dir, tmp_file);
 
         int exit_code = m_configuration.runScript(*it, tmp_file);
 

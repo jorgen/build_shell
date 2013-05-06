@@ -3,6 +3,10 @@
 
 #include "configuration.h"
 
+namespace JT {
+    class ObjectNode;
+}
+
 class Action
 {
 public:
@@ -14,6 +18,7 @@ public:
     bool error() const;
 
 protected:
+    static bool flushProjectNodeToTemporaryFile(const std::string &project_name, JT::ObjectNode *node, std::string &file_flushed_to);
     const Configuration &m_configuration;
     bool m_error;
 };
