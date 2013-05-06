@@ -28,7 +28,18 @@ AM_INIT_AUTOMAKE([1.11 foreign no-dist-gzip dist-xz])
 CXXFLAGS="$CXXFLAGS -Wall -Wextra -ggdb"
 
 AC_LANG(C++)
-AC_PROG_CXX
+
+AC_CANONICAL_HOST
+case $host_os in
+  darwin* )
+    AC_PROG_CXX([clang++ g++])
+    ;;
+  *)
+    AC_PROG_CXX
+    ;;
+esac
+
+
 AX_CXX_COMPILE_STDCXX_11([ext])
 
 if test "x$CXX" = "xclang++"; then
