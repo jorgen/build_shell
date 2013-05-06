@@ -140,7 +140,7 @@ void JsonStreamer::stream()
                 case JT::Token::ArrayStart:
                     m_current_depth++;
                     m_found_on_depth.push_back(false);
-                    if (print_token) {
+                    if (print_token && !m_config.createObject()) {
                         if (m_config.hasValue()) {
                             fprintf(stderr, "Its not possible to change the value of and object or array\n");
                             m_error = true;
@@ -269,7 +269,7 @@ void JsonStreamer::setStreamerOptions(bool compact)
 {
     JT::SerializerOptions options = m_serializer.options();
     options.setPretty(!compact);
-    options.skipDelimiter(m_config.hasProperty() && !compact);
+    options.skipDelimiter((m_config.hasProperty() && !m_config.hasValue() && !m_config.createObject()) && !compact);
     options.setAscii(m_config.hasProperty() && !compact);
     m_serializer.setOptions(options);
 }

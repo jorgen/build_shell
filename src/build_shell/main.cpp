@@ -138,8 +138,9 @@ int main(int argc, char **argv)
     }
 
     bool error = action->error();
-    if (!error) {
+    if (error) {
         fprintf(stderr, "Failure to initialize action object. Not executing\n");
+    } else {
         error = !action->execute();
     }
 

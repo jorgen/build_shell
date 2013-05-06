@@ -82,6 +82,7 @@ BuildAction::BuildAction(const Configuration &configuration)
 
     std::string build_shell_meta_dir;
     if (!Configuration::getAbsPath("build_shell", true, build_shell_meta_dir)) {
+        fprintf(stderr, "Failed to get build_shell meta dir\n");
         m_error = true;
         return;
     }
@@ -98,13 +99,16 @@ BuildAction::BuildAction(const Configuration &configuration)
             return;
         }
         TreeWriter writer(build_env_desc,root_env_node,true);
-        if (writer.error())
+        if (writer.error()) {
+            fprintf(stderr, "Treewriter failed\n");
             m_error = true;
-        return;
+            return;
+        }
     }
 
     std::string build_shell_build_sets_dir;
     if (!Configuration::getAbsPath("build_shell/build_sets", true, build_shell_build_sets_dir)) {
+        fprintf(stderr, "Failed to get build_sets dir\n");
         m_error = true;
         return;
     }
@@ -112,12 +116,13 @@ BuildAction::BuildAction(const Configuration &configuration)
     time_t actual_time = time(0);
     struct tm *local_tm = localtime(&actual_time);
     std::string dateInFormat(20,'\0');
-    snprintf(&dateInFormat[0], 20,"%02i%02i%02i%02i%02i%04i",
-            local_tm->tm_sec, local_tm->tm_min, local_tm->tm_hour,
-            local_tm->tm_mday, local_tm->tm_mon, local_tm->tm_year);
+    snprintf(&dateInFormat[0], 20,"%02d:%02d:%02d-%02d-%02d-%04d",
+            local_tm->tm_hour, local_tm->tm_min, local_tm->tm_sec,
+            local_tm->tm_mday, local_tm->tm_mon+1, 1900 + local_tm->tm_year);
 
-    CreateAction create_action(m_configuration, build_shell_build_sets_dir + dateInFormat + ".buildset");
-    m_error = create_action.execute();
+    std::string full_buildset_dump_name = build_shell_build_sets_dir + "/" + dateInFormat.c_str() + std::string(".buildset");
+    CreateAction create_action(m_configuration, full_buildset_dump_name);
+    m_error = !create_action.execute();
 }
 
 BuildAction::~BuildAction()

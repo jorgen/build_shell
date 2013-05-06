@@ -27,18 +27,22 @@ AM_INIT_AUTOMAKE([1.11 foreign no-dist-gzip dist-xz])
 
 CXXFLAGS="$CXXFLAGS -Wall -Wextra -ggdb"
 
+AC_CANONICAL_HOST
+
 AC_LANG(C++)
 
-AC_CANONICAL_HOST
+compilers=""
 case $host_os in
   darwin* )
-    AC_PROG_CXX([clang++ g++])
+    compilers="clang++"
     ;;
   *)
-    AC_PROG_CXX
+    compilers=""
     ;;
 esac
 
+echo $compilers
+AC_PROG_CXX([$compilers])
 
 AX_CXX_COMPILE_STDCXX_11([ext])
 

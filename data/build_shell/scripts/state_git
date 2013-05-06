@@ -4,7 +4,9 @@ OUT_FILE=$1
 jsonmod -p scm.type -v git -i $OUT_FILE
 
 url=$(git config --get remote.origin.url)
-jsonmod -p scm.url -v $url -i $OUT_FILE
+if [ ! -z $url ]; then
+    jsonmod -p scm.url -v $url -i $OUT_FILE
+fi
 
 branch=$(basename $(git symbolic-ref HEAD))
 jsonmod -p scm.branch -v $branch -i $OUT_FILE
@@ -27,5 +29,4 @@ if [ ! -z $remote ] && [ ! -z $remote_branch ]; then
     common_ancestor=$(git merge-base HEAD $remote/$remote_branch)
     jsonmod -p scm.common_ancestor -v $common_ancestor -i $OUT_FILE
 fi
-cat $OUT_FILE
-exit 4
+
