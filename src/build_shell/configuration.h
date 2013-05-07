@@ -47,13 +47,17 @@ public:
 
     void setBuild(bool build);
     bool build() const;
+
+    void setInstall(bool install);
+    bool install() const;
+
     void validate();
     bool sane() const;
 
     const std::list<std::string> &scriptSearchPaths() const;
 
     std::vector<std::string> findScript(const std::string &script, const std::string &fallback) const;
-    int runScript(const std::string &script, const std::string &arg) const;
+    int runScript(const std::string &env_script, const std::string &script, const std::string &arg) const;
 
     static int createTempFile(const std::string &project, std::string &tmp_file_name);
 
@@ -77,6 +81,8 @@ private:
     bool m_configure;
     bool m_build_explicitly_set;
     bool m_build;
+    bool m_install_explicitly_set;
+    bool m_install;
 
     std::list<std::string> m_script_search_paths;
 

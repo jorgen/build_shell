@@ -85,7 +85,8 @@ bool PullAction::execute()
             fallback_script.append("regular_dir");
         }
 
-        bool success = executeScript(mode,project_name, fallback_script, project_node);
+        JT::ObjectNode *returned_project_node;
+        bool success = executeScript("",mode,project_name, fallback_script, project_node,&returned_project_node);
 
         //have to remove the project node, so it will not be deleted multiple times
         JT::Node *removed_argnode = project_node->take("arguments");

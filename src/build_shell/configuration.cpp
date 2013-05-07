@@ -25,6 +25,8 @@ Configuration::Configuration()
     , m_configure(true)
     , m_build_explicitly_set(false)
     , m_build(true)
+    , m_install_explicitly_set(false)
+    , m_install(true)
     , m_sane(false)
 {
 #ifdef JSONMOD_PATH
@@ -146,6 +148,17 @@ bool Configuration::build() const
     return m_build;
 }
 
+void Configuration::setInstall(bool install)
+{
+    m_install_explicitly_set = true;
+    m_install = install;
+}
+
+bool Configuration::install() const
+{
+    return m_install;
+}
+
 void Configuration::validate()
 {
     m_sane = false;
@@ -228,12 +241,15 @@ const std::list<std::string> &Configuration::scriptSearchPaths() const
     return m_script_search_paths;
 }
 
-int Configuration::runScript(const std::string &script, const std::string &args) const
+int Configuration::runScript(const std::string &env_script, const std::string &script, const std::string &args) const
 {
     if (!script.size())
         return -1;
 
     std::string pre_script_command;
+    if (env_script.size()) {
+        pre_script_command = std::string("source ") + env_script + " && ";
+    }
     std::string env_file = findBuildEnvFile();
     if (env_file.size()) {
         pre_script_command.append("source ");

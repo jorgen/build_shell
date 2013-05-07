@@ -15,7 +15,7 @@ public:
     TreeBuilder(const std::string &file);
     ~TreeBuilder();
 
-    JT::ObjectNode *rootNode();
+    JT::ObjectNode *rootNode() const;
     JT::ObjectNode *takeRootNode();
 
 private:

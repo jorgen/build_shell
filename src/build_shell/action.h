@@ -20,7 +20,7 @@ public:
 protected:
     static bool flushProjectNodeToTemporaryFile(const std::string &project_name, JT::ObjectNode *node, std::string &file_flushed_to);
 
-    bool executeScript(const std::string &step, const std::string &projectName, const std::string &fallback, JT::ObjectNode *projectNode);
+    virtual bool executeScript(const std::string &env_script, const std::string &step, const std::string &projectName, const std::string &fallback, JT::ObjectNode *projectNode, JT::ObjectNode **returnedObjectNode);
     const Configuration &m_configuration;
     bool m_error;
 };

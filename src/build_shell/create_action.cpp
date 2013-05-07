@@ -28,7 +28,6 @@ CreateAction::CreateAction(const Configuration &configuration,
     if (!actual_outfile->size())
         actual_outfile = &configuration.buildsetOutFile();
 
-    fprintf(stderr, "OUTFILE is %s\n", actual_outfile->c_str());
     if (actual_outfile->size()) {
         m_out_file_name = *actual_outfile;
         mode_t create_mode = S_IROTH | S_IRGRP | S_IRUSR | S_IWUSR;
@@ -147,7 +146,7 @@ bool CreateAction::handleCurrentSrcDir()
         std::string tmp_file;
         flushProjectNodeToTemporaryFile(base_name, root_for_dir, tmp_file);
 
-        int exit_code = m_configuration.runScript(*it, tmp_file);
+        int exit_code = m_configuration.runScript("", *it, tmp_file);
 
         if (exit_code) {
             return true;

@@ -30,7 +30,7 @@ TreeBuilder::~TreeBuilder()
     delete m_node;
 }
 
-JT::ObjectNode *TreeBuilder::rootNode()
+JT::ObjectNode *TreeBuilder::rootNode() const
 {
     return m_node;
 }

@@ -23,7 +23,9 @@ build_shell_SOURCES =	         	        			\
 	tree_writer.cpp							\
 	tree_writer.h							\
 	build_action.cpp						\
-	build_action.h
+	build_action.h							\
+	env_script_builder.cpp						\
+	env_script_builder.h
 
 
 

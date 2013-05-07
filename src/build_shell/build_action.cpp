@@ -62,6 +62,18 @@ static std::string autodetect_build_system(const std::string &source_path)
     return build_system;
 }
 
+static bool ensureFileExist(const std::string &file)
+{
+    if (access(file.c_str(), F_OK|W_OK)) {
+        mode_t create_mode = S_IRWXU | S_IRWXG;
+        int file_desc = open(file.c_str(), O_RDWR | O_CLOEXEC | O_CREAT | O_EXCL, create_mode);
+        if (file_desc < 0) {
+            fprintf(stderr, "Failed to create file: %s\n%s\n", file.c_str(), strerror(errno));
+            return false;
+        }
+    }
+    return true;
+}
 BuildAction::BuildAction(const Configuration &configuration)
     : Action(configuration)
     , m_buildset_tree_builder(configuration.buildsetFile())
@@ -87,24 +99,15 @@ BuildAction::BuildAction(const Configuration &configuration)
         return;
     }
 
-    std::string build_env_file = build_shell_meta_dir + "/" + "build_env.json";
-    if (access(build_env_file.c_str(), F_OK)) {
-        JT::ObjectNode *root_env_node = new JT::ObjectNode();
-        mode_t create_mode = S_IROTH | S_IRGRP | S_IRUSR | S_IWUSR;
-        int build_env_desc= open(build_env_file.c_str(), O_RDWR | O_CLOEXEC | O_CREAT | O_EXCL, create_mode);
-        if (build_env_desc < 0) {
-            delete root_env_node;
-            fprintf(stderr, "Failed to create build_env.json file: %s\n%s\n", build_env_file.c_str(), strerror(errno));
-            m_error = true;
-            return;
-        }
-        TreeWriter writer(build_env_desc,root_env_node,true);
-        if (writer.error()) {
-            fprintf(stderr, "Treewriter failed\n");
-            m_error = true;
-            return;
-        }
-    }
+    m_set_build_env_file = build_shell_meta_dir + "/" + "set_build_env.sh";
+    m_unset_build_env_file = build_shell_meta_dir + "/" + "unset_build_env.sh";
+
+    m_error = !ensureFileExist(m_set_build_env_file);
+    if (m_error)
+        return;
+    m_error = !ensureFileExist(m_unset_build_env_file);
+    if (m_error)
+        return;
 
     std::string build_shell_build_sets_dir;
     if (!Configuration::getAbsPath("build_shell/build_sets", true, build_shell_build_sets_dir)) {
@@ -120,13 +123,15 @@ BuildAction::BuildAction(const Configuration &configuration)
             local_tm->tm_hour, local_tm->tm_min, local_tm->tm_sec,
             local_tm->tm_mday, local_tm->tm_mon+1, 1900 + local_tm->tm_year);
 
-    std::string full_buildset_dump_name = build_shell_build_sets_dir + "/" + dateInFormat.c_str() + std::string(".buildset");
-    CreateAction create_action(m_configuration, full_buildset_dump_name);
+    m_stored_buildset = build_shell_build_sets_dir + "/" + dateInFormat.c_str() + std::string(".buildset");
+    CreateAction create_action(m_configuration, m_stored_buildset);
     m_error = !create_action.execute();
 }
 
 BuildAction::~BuildAction()
 {
+    std::string stored_buildset_finished = m_stored_buildset + "_finished";
+    CreateAction create_action(m_configuration,stored_buildset_finished);
 }
 
 bool BuildAction::execute()
@@ -150,7 +155,6 @@ bool BuildAction::execute()
 
         const std::string project_name = it->first.string();
         std::string project_build_path = m_configuration.buildDir() + "/" + project_name;
-        fprintf(stderr, "Project %s, full path %s\n", project_name.c_str(), project_build_path.c_str());
         std::string project_src_path = m_configuration.srcDir() + "/" + project_name;
 
         if (access(project_src_path.c_str(), X_OK|R_OK)) {
@@ -181,15 +185,24 @@ bool BuildAction::execute()
         arguments->addValueToObject("install_path", m_configuration.installDir(), JT::Token::String);
         arguments->addValueToObject("build_system", build_system, JT::Token::String);
         arguments->addValueToObject("cpu_count", cpu_buf, JT::Token::Number);
+        JT::ObjectNode *env_variables = new JT::ObjectNode();
+        arguments->insertNode(std::string("environment"), env_variables);
 
         chdir(project_build_path.c_str());
 
-        if (!executeScript("pre_build", project_name, build_system, project_node))
+        JT::ObjectNode *updated_project_node;
+        if (!executeScript("", "pre_build", project_name, build_system, project_node, &updated_project_node)) {
+            delete updated_project_node;
             return false;
+        }
+        if (updated_project_node) {
+            m_buildset_tree->insertNode(it->first,updated_project_node, true);
+        }
     }
 
     for (auto it = m_buildset_tree->begin(); it != m_buildset_tree->end(); ++it) {
         JT::ObjectNode *project_node = it->second->asObjectNode();
+        fprintf(stderr, "Starting build for project_node %p\n", project_node);
         if (!project_node)
             continue;
         const std::string project_name = it->first.string();
@@ -200,8 +213,13 @@ bool BuildAction::execute()
             fprintf(stderr, "Failed to move into directory %s to build\n", project_build_path.c_str());
             return false;
         }
-        if (!handleBuildForProject(project_name, project_node, project_build_system)) {
+        JT::ObjectNode *updated_project_node;
+        if (!handleBuildForProject(project_name, project_build_system, project_node, &updated_project_node)) {
+            delete updated_project_node;
             return false;
+        }
+        if (updated_project_node) {
+            m_buildset_tree->insertNode(it->first, updated_project_node,true);
         }
     }
 
@@ -217,29 +235,65 @@ bool BuildAction::execute()
             fprintf(stderr, "Failed to move into directory %s to do post build scripts\n", project_build_path.c_str());
             return false;
         }
-        if (!executeScript("post_build", project_name, project_build_system, project_node)) {
+        JT::ObjectNode *updated_project_node;
+        if (!executeScript(m_set_build_env_file,"post_build", project_name, project_build_system, project_node, &updated_project_node)) {
+            delete updated_project_node;
             return false;
+        }
+        if (updated_project_node) {
+            JT::Node *arguments = updated_project_node->take("arguments");
+            delete arguments;
+            m_buildset_tree->insertNode(it->first,updated_project_node, true);
+        } else {
+            JT::Node *arguments = project_node->take("arguments");
+            delete arguments;
         }
     }
     return true;
 }
 
-bool BuildAction::handleBuildForProject(const std::string &projectName, JT::ObjectNode *projectNode, const std::string &buildSystem)
+bool BuildAction::handleBuildForProject(const std::string &projectName, const std::string &buildSystem, JT::ObjectNode *projectNode, JT::ObjectNode **updatedProjectNode)
 {
+    m_env_script_builder.addProjectNode(projectNode);
+    m_env_script_builder.writeSetScript(m_set_build_env_file);
+    m_env_script_builder.writeUnsetScript(m_unset_build_env_file);
+
     if (m_configuration.clean()) {
-        if (!executeScript("clean", projectName, buildSystem, projectNode))
+        if (!executeScript(m_set_build_env_file, "clean", projectName, buildSystem, projectNode,updatedProjectNode))
             return false;
     }
 
+    if (*updatedProjectNode)
+        projectNode = *updatedProjectNode;
     if (m_configuration.configure()) {
-        if (!executeScript("configure", projectName, buildSystem, projectNode))
+        if (!executeScript(m_set_build_env_file, "configure", projectName, buildSystem, projectNode, updatedProjectNode)) {
+            delete projectNode;
+            return false;
+        }
+    }
+
+    if (*updatedProjectNode) {
+        delete projectNode;
+        projectNode = *updatedProjectNode;
+    }
+    if (m_configuration.build()) {
+        if (!executeScript(m_set_build_env_file, "build", projectName, buildSystem, projectNode, updatedProjectNode)) {
+            delete projectNode;
+            return false;
+        }
+    }
+
+    if (*updatedProjectNode) {
+        delete projectNode;
+        projectNode = *updatedProjectNode;
+    }
+    if (m_configuration.install() && projectNode->nodeAt("no_install") == nullptr) {
+        if (!executeScript(m_set_build_env_file, "install", projectName, buildSystem, projectNode,updatedProjectNode))
             return false;
     }
 
-    if (m_configuration.build()) {
-        if (!executeScript("configure", projectName, buildSystem, projectNode))
-            return false;
-    }
+   if (*updatedProjectNode)
+        delete projectNode;
 
     return true;
 }
