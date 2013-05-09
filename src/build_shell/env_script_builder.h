@@ -1,10 +1,13 @@
 #ifndef ENV_SCRIPT_BUILDER_H
 #define ENV_SCRIPT_BUILDER_H
 
+#include "configuration.h"
+
 #include <string>
 #include <memory>
 #include <map>
 #include <list>
+#include <vector>
 
 namespace JT {
     class ObjectNode;
@@ -29,7 +32,8 @@ public:
 class EnvScriptBuilder
 {
 public:
-    EnvScriptBuilder();
+    EnvScriptBuilder(const Configuration &configuration);
+    ~EnvScriptBuilder();
 
     void addProjectNode(JT::ObjectNode *project_root);
 
@@ -40,7 +44,11 @@ public:
     void writeUnsetScript(FILE *file, bool close);
 
 private:
-    std::map<std::string, std::list<EnvVariable>>  m_root_env;
+    void substitue_variable_value(std::string &value_string, JT::ObjectNode *project_root) const;
+
+    JT::ObjectNode *m_node;
+    const Configuration &m_configuration;
+    std::string m_out_file;
 };
 
 #endif

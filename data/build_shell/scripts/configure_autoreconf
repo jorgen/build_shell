@@ -1,15 +1,16 @@
 #!/bin/bash
 
 FILE=$@
-
 source_path=$(jsonmod -p arguments.src_path $FILE)
 install_path=$(jsonmod -p arguments.install_path $FILE)
 add_configure_args=$(jsonmod -p configure_args $FILE)
 no_install=$(jsonmod -p no_install $FILE)
 configure_args=""
+
+autoreconf -i $source_path
+
 if [ "$no_install" != "true" ]; then
-    configure_args="-prefix $install_path "
+    configure_args="--prefix=$install_path"
 fi
-configure_args="-confirm-license "
 configure_args="$configure_args $add_configure_args"
 $source_path/configure $configure_args

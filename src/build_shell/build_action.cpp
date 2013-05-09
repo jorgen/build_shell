@@ -2,6 +2,7 @@
 
 #include "tree_writer.h"
 #include "create_action.h"
+#include "available_builds.h"
 
 #include <unistd.h>
 #include <sys/stat.h>
@@ -11,6 +12,8 @@
 #include <sys/dir.h>
 #include <fcntl.h>
 #include <time.h>
+
+#include <memory>
 
 static bool reversComp(const char *file_name,const std::string &extension)
 {
@@ -43,16 +46,23 @@ static std::string autodetect_build_system(const std::string &source_path)
             continue;
         }
         if (S_ISREG(buf.st_mode)) {
+            std::string d_name = ent->d_name;
             if (reversComp(ent->d_name, ".pro")) {
                 build_system = "qmake";
                 break;
-            } else if (reversComp(ent->d_name, "CMakeLists.txt")) {
+            } else if (d_name == "CMakeLists.txt") {
                 build_system = "cmake";
                 break;
-            } else if (reversComp(ent->d_name, "autogen.sh")) {
+            } else if (d_name == "configure.ac") {
                 build_system = "autotools";
                 break;
             }
+        }
+    }
+    if (build_system == "autotools") {
+        std::string autogen = source_path + "/" + "autogen.sh";
+        if (access(autogen.c_str(), F_OK)) {
+            build_system = "autoreconf";
         }
     }
     closedir(source_dir);
@@ -77,6 +87,7 @@ static bool ensureFileExist(const std::string &file)
 BuildAction::BuildAction(const Configuration &configuration)
     : Action(configuration)
     , m_buildset_tree_builder(configuration.buildsetFile())
+    , m_env_script_builder(configuration)
 {
     m_buildset_tree = m_buildset_tree_builder.rootNode();
     if (!m_buildset_tree) {
@@ -101,6 +112,17 @@ BuildAction::BuildAction(const Configuration &configuration)
 
     m_set_build_env_file = build_shell_meta_dir + "/" + "set_build_env.sh";
     m_unset_build_env_file = build_shell_meta_dir + "/" + "unset_build_env.sh";
+
+    size_t last_build_dir_slash = m_configuration.buildsetFile().rfind('/');
+    std::string build_name;
+    if (last_build_dir_slash < m_configuration.buildsetFile().size()) {
+        build_name = m_configuration.buildsetFile().substr(last_build_dir_slash + 1);
+    } else {
+        build_name = m_configuration.buildsetFile();
+    }
+
+    AvailableBuilds available_builds(m_configuration);
+    available_builds.addAvailableBuild(build_name, m_set_build_env_file.c_str());
 
     m_error = !ensureFileExist(m_set_build_env_file);
     if (m_error)
@@ -142,10 +164,16 @@ bool BuildAction::execute()
     long num_cpu = sysconf( _SC_NPROCESSORS_ONLN );
     char cpu_buf[4];
     snprintf(cpu_buf, sizeof cpu_buf, "%ld", num_cpu);
+
+    bool found = !m_configuration.hasBuildFromProject();
+    const std::string &build_from_project = m_configuration.buildFromProject();
     for (auto it = m_buildset_tree->begin(); it != m_buildset_tree->end(); ++it) {
         JT::ObjectNode *project_node = it->second->asObjectNode();
         if (!project_node)
             continue;
+        if (!found && build_from_project != it->first.string())
+            continue;
+        found = true;
 
         if (chdir(m_configuration.buildDir().c_str())) {
             fprintf(stderr, "Could not move into build dir:%s\n%s\n",
@@ -198,13 +226,22 @@ bool BuildAction::execute()
         if (updated_project_node) {
             m_buildset_tree->insertNode(it->first,updated_project_node, true);
         }
+
+        if (m_configuration.onlyOne())
+            break;
     }
 
+    found = !m_configuration.hasBuildFromProject();
     for (auto it = m_buildset_tree->begin(); it != m_buildset_tree->end(); ++it) {
         JT::ObjectNode *project_node = it->second->asObjectNode();
-        fprintf(stderr, "Starting build for project_node %p\n", project_node);
         if (!project_node)
             continue;
+        if (!found && build_from_project != it->first.string()) {
+            m_env_script_builder.addProjectNode(project_node);
+            continue;
+        }
+        found = true;
+
         const std::string project_name = it->first.string();
         const std::string &project_build_path = project_node->stringAt("arguments.build_path");
         const std::string &project_build_system = project_node->stringAt("arguments.build_system");
@@ -220,13 +257,23 @@ bool BuildAction::execute()
         }
         if (updated_project_node) {
             m_buildset_tree->insertNode(it->first, updated_project_node,true);
+            project_node = updated_project_node;
         }
+        m_env_script_builder.addProjectNode(project_node);
+
+        if (m_configuration.onlyOne())
+            break;
     }
 
+    found = !m_configuration.hasBuildFromProject();
     for (auto it = m_buildset_tree->begin(); it != m_buildset_tree->end(); ++it) {
         JT::ObjectNode *project_node = it->second->asObjectNode();
         if (!project_node)
             continue;
+        if (!found && build_from_project != it->first.string())
+            continue;
+        found = true;
+
         const std::string project_name = it->first.string();
         const std::string &project_build_path = project_node->stringAt("arguments.build_path");
         const std::string &project_build_system = project_node->stringAt("arguments.build_system");
@@ -248,52 +295,57 @@ bool BuildAction::execute()
             JT::Node *arguments = project_node->take("arguments");
             delete arguments;
         }
+        if (m_configuration.onlyOne())
+            break;
     }
     return true;
 }
 
 bool BuildAction::handleBuildForProject(const std::string &projectName, const std::string &buildSystem, JT::ObjectNode *projectNode, JT::ObjectNode **updatedProjectNode)
 {
-    m_env_script_builder.addProjectNode(projectNode);
     m_env_script_builder.writeSetScript(m_set_build_env_file);
     m_env_script_builder.writeUnsetScript(m_unset_build_env_file);
 
+    std::unique_ptr<JT::ObjectNode> temp_pointer(nullptr);
+    JT::ObjectNode *project_node = projectNode;
+    JT::ObjectNode *updated_project_node = 0;
+    *updatedProjectNode = 0;
+
     if (m_configuration.clean()) {
-        if (!executeScript(m_set_build_env_file, "clean", projectName, buildSystem, projectNode,updatedProjectNode))
+        if (!executeScript(m_set_build_env_file, "clean", projectName, buildSystem, project_node,&updated_project_node))
             return false;
+    } else if (updated_project_node) {
+        project_node = updated_project_node;
+        temp_pointer.reset(project_node);
     }
 
-    if (*updatedProjectNode)
-        projectNode = *updatedProjectNode;
     if (m_configuration.configure()) {
-        if (!executeScript(m_set_build_env_file, "configure", projectName, buildSystem, projectNode, updatedProjectNode)) {
-            delete projectNode;
+        if (!executeScript(m_set_build_env_file, "configure", projectName, buildSystem, project_node, &updated_project_node)) {
             return false;
+        } else  if (updated_project_node) {
+            project_node = updated_project_node;
+            temp_pointer.reset(project_node);
         }
     }
 
-    if (*updatedProjectNode) {
-        delete projectNode;
-        projectNode = *updatedProjectNode;
-    }
     if (m_configuration.build()) {
-        if (!executeScript(m_set_build_env_file, "build", projectName, buildSystem, projectNode, updatedProjectNode)) {
-            delete projectNode;
+        if (!executeScript(m_set_build_env_file, "build", projectName, buildSystem, project_node, &updated_project_node)) {
             return false;
+        } else if (updated_project_node) {
+            project_node = updated_project_node;
+            temp_pointer.reset(project_node);
         }
     }
 
-    if (*updatedProjectNode) {
-        delete projectNode;
-        projectNode = *updatedProjectNode;
-    }
-    if (m_configuration.install() && projectNode->nodeAt("no_install") == nullptr) {
-        if (!executeScript(m_set_build_env_file, "install", projectName, buildSystem, projectNode,updatedProjectNode))
+    if (m_configuration.install() && project_node->nodeAt("no_install") == nullptr) {
+        if (!executeScript(m_set_build_env_file, "install", projectName, buildSystem, project_node,&updated_project_node)) {
             return false;
+        } else if (updated_project_node){
+            temp_pointer.reset(updated_project_node);
+        }
     }
 
-   if (*updatedProjectNode)
-        delete projectNode;
+   *updatedProjectNode = temp_pointer.release();
 
     return true;
 }

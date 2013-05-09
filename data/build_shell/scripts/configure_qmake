@@ -1,3 +1,5 @@
-#!/bin/basj
+#!/bin/bash
 
-qmake
+FILE=$@
+source_path=$(jsonmod -p arguments.src_path $FILE)
+qmake $source_path

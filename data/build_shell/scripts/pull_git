@@ -4,4 +4,3 @@ FILE=$@
 #if $(jsonmod -p attributes.sync
 git pull --rebase
 
-rm $FILE

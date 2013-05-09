@@ -25,7 +25,9 @@ build_shell_SOURCES =	         	        			\
 	build_action.cpp						\
 	build_action.h							\
 	env_script_builder.cpp						\
-	env_script_builder.h
+	env_script_builder.h						\
+	available_builds.cpp					        \
+	available_builds.h
 
 
 

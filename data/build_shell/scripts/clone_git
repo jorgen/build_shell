@@ -3,4 +3,3 @@
 FILE=$@
 URL=$(jsonmod -p scm.url $FILE)
 git clone $URL
-rm $FILE

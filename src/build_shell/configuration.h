@@ -51,6 +51,13 @@ public:
     void setInstall(bool install);
     bool install() const;
 
+    void setBuildFromProject(const std::string &project);
+    const std::string &buildFromProject() const;
+    bool hasBuildFromProject() const;
+
+    void setOnlyOne(bool one);
+    bool onlyOne() const;
+
     void validate();
     bool sane() const;
 
@@ -59,6 +66,7 @@ public:
     std::vector<std::string> findScript(const std::string &script, const std::string &fallback) const;
     int runScript(const std::string &env_script, const std::string &script, const std::string &arg) const;
 
+    const std::string &buildShellConfigPath() const;
     static int createTempFile(const std::string &project, std::string &tmp_file_name);
 
     static bool getAbsPath(const std::string &path, bool create, std::string &abs_path);
@@ -74,6 +82,8 @@ private:
     std::string m_install_dir;
     std::string m_buildset_file;
     std::string m_buildset_out_file;
+    std::string m_build_from_project;
+    std::string m_build_shell_config_path;
     bool m_reset_to_sha;
     bool m_clean_explicitly_set;
     bool m_clean;
@@ -83,6 +93,7 @@ private:
     bool m_build;
     bool m_install_explicitly_set;
     bool m_install;
+    bool m_only_one;
 
     std::list<std::string> m_script_search_paths;
 

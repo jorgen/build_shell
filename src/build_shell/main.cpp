@@ -3,6 +3,7 @@
 #include "create_action.h"
 #include "pull_action.h"
 #include "build_action.h"
+#include "available_builds.h"
 
 #include <vector>
 #include <iostream>
@@ -17,7 +18,9 @@ enum optionIndex {
     INSTALL_DIR,
     BUILDSET,
     BUILDSET_OUT,
-    RESET_SHA
+    RESET_SHA,
+    BUILD_FROM,
+    ONLY_ONE
 };
 
 const option::Descriptor usage[] =
@@ -38,6 +41,8 @@ const option::Descriptor usage[] =
   {BUILDSET,      0, "f", "buildset",         Arg::requiresExistingFile,    "  --buildset -f  \tFile used as input for projects"},
   {BUILDSET_OUT,  0, "o", "buildset-out",     Arg::requiresNonExistingFile, "  --buildset-out -o  \tFile used for creating buildset file"},
   {RESET_SHA,     0, "" , "reset-sha",        option::Arg::None,            "  --reset-sha \tIn pull mode reset to sha"},
+  {BUILD_FROM,    0, "" , "from",             Arg::requiresArg,             "  --from \tDoesn't perform the build steps for projectes before the mentioned project"},
+  {ONLY_ONE,      0, "" , "only-one",         option::Arg::None,            "  --only-one \tOnly build one project"},
 
   {UNKNOWN, 0,"" ,  ""   ,                    option::Arg::None,            "\nExamples:\n"
                                                                             "  build_shell --src-dir /some/file -f ../some/buildset_file pull\n"},
@@ -73,6 +78,15 @@ int main(int argc, char **argv)
             configuration.setMode(Configuration::Build, mode);
         } else if (mode == "rebuild") {
             configuration.setMode(Configuration::Rebuild, mode);
+        } else if (mode == "available") {
+            AvailableBuilds available(configuration);
+            available.printAvailable();
+            return 0;
+        } else if (mode == "build_shell_dev_build") {
+#ifdef JSONMOD_PATH
+            return 0;
+#endif
+            return 1;
         }
 
     } else {
@@ -105,6 +119,12 @@ int main(int argc, char **argv)
                 break;
             case RESET_SHA:
                 configuration.setResetToSha(true);
+                break;
+            case BUILD_FROM:
+                configuration.setBuildFromProject(opt.arg);
+                break;
+            case ONLY_ONE:
+                configuration.setOnlyOne(true);
                 break;
             case UNKNOWN:
                 fprintf(stderr, "UNKNOWN!");

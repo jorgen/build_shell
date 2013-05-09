@@ -56,7 +56,7 @@ bool Action::executeScript(const std::string &env_script, const std::string &ste
         }
         if (access(temp_file.c_str(), F_OK)) {
             temp_file_removed = true;
-            fprintf(stderr, "The script removed the temporary input file, assuming success\n");
+            fprintf(stderr, "The script removed the temporary input file, assuming failur\n");
             return_val = false;
             break;
         }
@@ -69,9 +69,8 @@ bool Action::executeScript(const std::string &env_script, const std::string &ste
         } else  {
             fprintf(stderr, "Failed to demarshal the temporary file returned from the script %s\n", (*it).c_str());
             return_val = false;
-            break;
         }
-
+        break;
     }
     if (!temp_file_removed) {
         unlink(temp_file.c_str());

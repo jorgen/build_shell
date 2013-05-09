@@ -27,6 +27,7 @@ Configuration::Configuration()
     , m_build(true)
     , m_install_explicitly_set(false)
     , m_install(true)
+    , m_only_one(false)
     , m_sane(false)
 {
 #ifdef JSONMOD_PATH
@@ -37,6 +38,9 @@ Configuration::Configuration()
     setenv("PATH", new_path.c_str(),1);
 #endif
 
+    struct passwd *pw = getpwuid(getuid());
+    const char *homedir = pw->pw_dir;
+    m_build_shell_config_path = std::string(homedir) + "/.config/build_shell";
 }
 
 void Configuration::setMode(Mode mode, std::string mode_string)
@@ -159,6 +163,30 @@ bool Configuration::install() const
     return m_install;
 }
 
+void Configuration::setBuildFromProject(const std::string &project)
+{
+    m_build_from_project = project;
+}
+const std::string &Configuration::buildFromProject() const
+{
+    return m_build_from_project;
+}
+
+bool Configuration::hasBuildFromProject() const
+{
+    return m_build_from_project.size();
+}
+
+void Configuration::setOnlyOne(bool one)
+{
+    m_only_one = one;
+}
+
+bool Configuration::onlyOne() const
+{
+    return m_only_one;
+}
+
 void Configuration::validate()
 {
     m_sane = false;
@@ -270,6 +298,11 @@ int Configuration::runScript(const std::string &env_script, const std::string &s
     return system(script_command.c_str());
 }
 
+const std::string &Configuration::buildShellConfigPath() const
+{
+    return m_build_shell_config_path;
+}
+
 int Configuration::createTempFile(const std::string &project, std::string &tmp_file)
 {
     const char temp_file_prefix[] = "/tmp/build_shell_";
@@ -343,10 +376,7 @@ void Configuration::initializeScriptSearchPaths()
             m_script_search_paths.push_back(src_dir_scripts);
     }
 
-    struct passwd *pw = getpwuid(getuid());
-    const char *homedir = pw->pw_dir;
-    std::string home_config_scripts(homedir);
-    home_config_scripts.append("/.config/build_shell/scripts");
+    std::string home_config_scripts = m_build_shell_config_path + "/scripts";
     std::string abs_home_config_scripts;
     if (Configuration::getAbsPath(home_config_scripts,true,abs_home_config_scripts))
         m_script_search_paths.push_back(abs_home_config_scripts);
