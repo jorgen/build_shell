@@ -1,0 +1,4 @@
+#!/bin/bash
+
+echo "Deep cleaning $PWD"
+git clean -xdf

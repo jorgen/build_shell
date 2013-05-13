@@ -1,0 +1,3 @@
+#!/bin/bash
+
+echo "Done know how to deep clean this directory: $PWD"

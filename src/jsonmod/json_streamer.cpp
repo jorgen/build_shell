@@ -1,3 +1,24 @@
+/*
+ * Copyright © 2013 Jørgen Lind
+
+ * Permission to use, copy, modify, distribute, and sell this software and its
+ * documentation for any purpose is hereby granted without fee, provided that
+ * the above copyright notice appear in all copies and that both that copyright
+ * notice and this permission notice appear in supporting documentation, and
+ * that the name of the copyright holders not be used in advertising or
+ * publicity pertaining to distribution of the software without specific,
+ * written prior permission.  The copyright holders make no representations
+ * about the suitability of this software for any purpose.  It is provided "as
+ * is" without express or implied warranty.
+
+ * THE COPYRIGHT HOLDERS DISCLAIM ALL WARRANTIES WITH REGARD TO THIS SOFTWARE,
+ * INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO
+ * EVENT SHALL THE COPYRIGHT HOLDERS BE LIABLE FOR ANY SPECIAL, INDIRECT OR
+ * CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE,
+ * DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+ * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE
+ * OF THIS SOFTWARE.
+*/
 #include "json_streamer.h"
 
 #include <stdio.h>
@@ -112,7 +133,7 @@ void JsonStreamer::stream()
                                 if (m_config.hasValue()) {
                                     token.value.data = m_config.value().c_str();
                                     token.value.size = m_config.value().size();
-                                } else if (!m_config.createObject()) {
+                                } else if (!m_config.createObject() && !m_config.printOnlyName()) {
                                     token.name.data = "";
                                     token.name.size = 0;
                                     token.name_type = JT::Token::Ascii;
@@ -140,7 +161,7 @@ void JsonStreamer::stream()
                 case JT::Token::ArrayStart:
                     m_current_depth++;
                     m_found_on_depth.push_back(false);
-                    if (print_token && !m_config.createObject()) {
+                    if (print_token && !m_config.createObject() && !m_config.printOnlyName()) {
                         if (m_config.hasValue()) {
                             fprintf(stderr, "Its not possible to change the value of and object or array\n");
                             m_error = true;
@@ -200,7 +221,14 @@ void JsonStreamer::stream()
                     break;
             }
 
-            if (print_token || m_print_subtree || m_config.hasValue() || m_config.createObject()) {
+            if (m_config.printOnlyName() && print_token) {
+                size_t written = write(m_output_file, token.name.data, token.name.size);
+                written += write(m_output_file, " ", 1);
+                if (written < token.name.size + 1) {
+                    fprintf(stderr, "Error while writing to outbuffer :%s\n", strerror(errno));
+                    m_error = true;
+                }
+            } else if (print_token || m_print_subtree || m_config.hasValue() || m_config.createObject()) {
                 m_serializer.write(token);
             }
 
@@ -248,6 +276,8 @@ bool JsonStreamer::matchAtDepth(const JT::Data &data) const
     if (m_current_depth >= m_property.size())
         return false;
     const std::string &property = m_property[m_current_depth];
+    if (property == "%{*}")
+        return true;
     if (data.size != property.size())
         return false;
     if (memcmp(data.data, property.c_str(), data.size))

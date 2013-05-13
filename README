@@ -1,0 +1,84 @@
+Build Shell is intended to help manage development builds
+
+Often developers end up managing many different environments on their
+development machine. The author has multiple different configuration of Qt
+build on his development machine, and some have dependencies on other projects
+not affiliated with qt-project, and hence not using qmake.
+
+It is also often cumbersome to move to a different development machine (say to
+a laptop for when you go travelling). Hence there is a need to automate
+managing the different development environments a developer has. And the
+solution should not be bounded to the build system nor the source control
+management system.
+
+Build Shell uses a json like format to describe a build, from now called a
+buildset. A buildset is fed into the build_shell application together with some
+parameters. Most importantly:
+
+-s --src-dir: This is the directory where sources will be pulled down and
+looked for when building
+
+-b --build-dir: This is the directory where the projects will make sub
+directories and build their projects inside the subdirectories
+
+-i --install-dir: This is the directory where projects that needs to install
+files will use as their prefix
+
+-f --buildset: This is the file which is used as input for where to pull
+sources down from and how to build them
+
+Also the build_shell executable takes an additional parameter called mode. Mode
+can be either:
+
+create: in Creation mode the build_shell application expects the -s parameter
+to be present. It will use this directory to create a buildset file. It can be
+used in conjunction with the -f parameter. Then build_set will use try and take
+the input build_set file and update it before it prints it to stdout.
+
+pull: in Pull mode build_shell will try and update the projects specified by in
+buildset file for the matching sub-directories given by the -s parameter
+
+build: in Build mode build_shell will try and build all the projects defined in
+the build_set file. It will build them in subdirectories of -b mathching the
+directories in -s. It will ignore directories not mentioned in the buildset
+file.
+
+The build mode till also generate a snapshot buildset file inside a special
+directory call $BUILD_DIR/build_shell/build_sets This is so that it is fairly
+easy to to backtrack to an older build (since the git shas etc are stored in
+the build_set file).
+
+The build mode will also generate two shell scripts. One for setting the
+environment suitable for this build, and on for unsetting the environment.
+Their located inside $BUILD_DIR/build_shell.
+
+Pne last thing the build mode does is that it register the build in a config
+file in $HOME/.config/build_shell/available_builds.json This file is used in by
+the build_shell completion script.
+
+The build_shell completion script is a script which is meant to be sourced in
+your .profile/.bashrc/.bash_profile file.
+
+It defines 3 handy functions:
+
+bs (tung in cheek)
+
+bss
+
+bscd
+
+Lets start with bss bss stands for build_shell select and allows you to easily
+select one of the builds registered in the available_builds.json. sources the
+set_build_env.sh file for the appropriate build.
+
+bs works as a wrapper around the build_shell command. The environment knows
+about the src-dir build-dir, install-dir and a copy of the current buildset
+file, once the set_build_env.sh of a build is sourced. So bs allows you to
+execute the build_shell commands for the current environment.
+
+bscd is a function which allows you to navigate between your build-dir and
+src-dir. Its quite handy.
+
+To play around with build_shell try configuring it with
+--enable-developer-build. This will setup defines while building so that there
+wont be a need to install anything.

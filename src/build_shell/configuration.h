@@ -1,3 +1,24 @@
+/*
+ * Copyright © 2013 Jørgen Lind
+
+ * Permission to use, copy, modify, distribute, and sell this software and its
+ * documentation for any purpose is hereby granted without fee, provided that
+ * the above copyright notice appear in all copies and that both that copyright
+ * notice and this permission notice appear in supporting documentation, and
+ * that the name of the copyright holders not be used in advertising or
+ * publicity pertaining to distribution of the software without specific,
+ * written prior permission.  The copyright holders make no representations
+ * about the suitability of this software for any purpose.  It is provided "as
+ * is" without express or implied warranty.
+
+ * THE COPYRIGHT HOLDERS DISCLAIM ALL WARRANTIES WITH REGARD TO THIS SOFTWARE,
+ * INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO
+ * EVENT SHALL THE COPYRIGHT HOLDERS BE LIABLE FOR ANY SPECIAL, INDIRECT OR
+ * CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE,
+ * DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+ * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE
+ * OF THIS SOFTWARE.
+*/
 #ifndef CONFIGURATION_H
 #define CONFIGURATION_H
 
@@ -42,6 +63,9 @@ public:
     void setClean(bool clean);
     bool clean() const;
 
+    void setDeepClean(bool deepClean);
+    bool deepClean() const;
+
     void setConfigure(bool configure);
     bool configure() const;
 
@@ -58,6 +82,12 @@ public:
     void setOnlyOne(bool one);
     bool onlyOne() const;
 
+    void setPullFirst(bool pull);
+    bool pullFirst() const;
+
+    void setRegisterBuild(bool dontRegister);
+    bool registerBuild() const;
+
     void validate();
     bool sane() const;
 
@@ -70,6 +100,7 @@ public:
     static int createTempFile(const std::string &project, std::string &tmp_file_name);
 
     static bool getAbsPath(const std::string &path, bool create, std::string &abs_path);
+    static bool removeRecursive(const std::string &path);
 private:
 
     std::string findBuildEnvFile() const;
@@ -87,13 +118,18 @@ private:
     bool m_reset_to_sha;
     bool m_clean_explicitly_set;
     bool m_clean;
+    bool m_deep_clean_explicitly_set;
+    bool m_deep_clean;
     bool m_configure_explicitly_set;
     bool m_configure;
     bool m_build_explicitly_set;
     bool m_build;
     bool m_install_explicitly_set;
     bool m_install;
+    bool m_only_one_explicitly_set;
     bool m_only_one;
+    bool m_pull_first;
+    bool m_register;
 
     std::list<std::string> m_script_search_paths;
 

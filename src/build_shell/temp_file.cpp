@@ -19,32 +19,59 @@
  * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE
  * OF THIS SOFTWARE.
 */
-#include "writer.h"
-#include <fcntl.h>
-#include <unistd.h>
-#include <stdlib.h>
+#include "temp_file.h"
 
-Writer::Writer(std::string file)
-    : m_file(0)
-    , m_file_desc(-1)
+#include <unistd.h>
+#include <string.h>
+
+TempFile::TempFile(const std::string &name_base)
+    : m_closed(false)
 {
-    m_file_desc = ::open(file.c_str(), (O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC));
-    if (m_file_desc >= 0) {
-        m_file = fdopen(m_file_desc, "w");
-        if (!m_file) {
-            fprintf(stderr, "Failed to open filestream for file %s\n", file.c_str());
-            exit(3);
-        }
-    } else {
-        fprintf(stderr, "Failed to open file %s\n", file.c_str());
-        exit(3);
-    }
+    const char temp_file_prefix[] = "/tmp/build_shell_";
+    m_filename.reserve(sizeof temp_file_prefix + name_base.size() + 8);
+    m_filename += temp_file_prefix + name_base + "_XXXXXX";
+
+    m_file_descriptor = mkstemp(&m_filename[0]);
 }
 
-Writer::~Writer()
+TempFile::~TempFile()
 {
-    if (m_file) {
-        fclose(m_file);
-        close(m_file_desc);
+    unlink(m_filename.c_str());
+}
+
+const std::string &TempFile::name() const
+{
+    return m_filename;
+}
+
+FILE *TempFile::fileStream(const char *mode)
+{
+    if (m_closed)
+        return 0;
+
+    for (auto it = m_streams.begin(); it != m_streams.end(); ++it) {
+        if (strcmp(it->mode, mode))
+            return it->file_stream;
+    }
+
+    FileStream stream;
+    stream.file_stream = fdopen(m_file_descriptor, mode);
+    stream.mode = mode;
+    m_streams.push_back(stream);
+    return stream.file_stream;
+}
+
+int TempFile::fileDescriptor() const
+{
+    return m_file_descriptor;
+}
+
+void TempFile::close()
+{
+    if (!m_closed) {
+        for (auto it = m_streams.begin(); it != m_streams.end(); ++it) {
+            fclose(it->file_stream);
+        }
+        ::close(m_file_descriptor);
     }
 }

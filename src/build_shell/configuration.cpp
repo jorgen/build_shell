@@ -1,3 +1,24 @@
+/*
+ * Copyright © 2013 Jørgen Lind
+
+ * Permission to use, copy, modify, distribute, and sell this software and its
+ * documentation for any purpose is hereby granted without fee, provided that
+ * the above copyright notice appear in all copies and that both that copyright
+ * notice and this permission notice appear in supporting documentation, and
+ * that the name of the copyright holders not be used in advertising or
+ * publicity pertaining to distribution of the software without specific,
+ * written prior permission.  The copyright holders make no representations
+ * about the suitability of this software for any purpose.  It is provided "as
+ * is" without express or implied warranty.
+
+ * THE COPYRIGHT HOLDERS DISCLAIM ALL WARRANTIES WITH REGARD TO THIS SOFTWARE,
+ * INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO
+ * EVENT SHALL THE COPYRIGHT HOLDERS BE LIABLE FOR ANY SPECIAL, INDIRECT OR
+ * CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE,
+ * DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+ * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE
+ * OF THIS SOFTWARE.
+*/
 #include "configuration.h"
 
 #include <limits.h>
@@ -10,6 +31,7 @@
 #include <sys/types.h>
 #include <pwd.h>
 #include <libgen.h>
+#include <dirent.h>
 
 #include <sstream>
 
@@ -20,14 +42,18 @@ Configuration::Configuration()
     : m_mode(Invalid)
     , m_reset_to_sha(false)
     , m_clean_explicitly_set(false)
-    , m_clean(true)
+    , m_clean(false)
+    , m_deep_clean_explicitly_set(false)
+    , m_deep_clean(false)
     , m_configure_explicitly_set(false)
     , m_configure(true)
     , m_build_explicitly_set(false)
     , m_build(true)
     , m_install_explicitly_set(false)
     , m_install(true)
+    , m_only_one_explicitly_set(false)
     , m_only_one(false)
+    , m_register(true)
     , m_sane(false)
 {
 #ifdef JSONMOD_PATH
@@ -40,7 +66,9 @@ Configuration::Configuration()
 
     struct passwd *pw = getpwuid(getuid());
     const char *homedir = pw->pw_dir;
-    m_build_shell_config_path = std::string(homedir) + "/.config/build_shell";
+    std::string config_path = std::string(homedir) + "/.config/build_shell";
+
+    Configuration::getAbsPath(config_path, true, m_build_shell_config_path);
 }
 
 void Configuration::setMode(Mode mode, std::string mode_string)
@@ -121,8 +149,10 @@ bool Configuration::resetToSha() const
 
 void Configuration::setClean(bool clean)
 {
-    m_clean_explicitly_set = true;
-    m_clean = clean;
+    if (!m_deep_clean) {
+        m_clean_explicitly_set = true;
+        m_clean = clean;
+    }
 }
 
 bool Configuration::clean() const
@@ -130,10 +160,25 @@ bool Configuration::clean() const
     return m_clean;
 }
 
+void Configuration::setDeepClean(bool deepClean)
+{
+    m_deep_clean_explicitly_set = true;
+    m_deep_clean = deepClean;
+    m_clean = false;
+    m_configure = true;
+}
+
+bool Configuration::deepClean() const
+{
+    return m_deep_clean;
+}
+
 void Configuration::setConfigure(bool configure)
 {
-    m_configure_explicitly_set = true;
-    m_configure = configure;
+    if (!m_deep_clean) {
+        m_configure_explicitly_set = true;
+        m_configure = configure;
+    }
 }
 
 bool Configuration::configure() const
@@ -166,6 +211,9 @@ bool Configuration::install() const
 void Configuration::setBuildFromProject(const std::string &project)
 {
     m_build_from_project = project;
+    if (!m_only_one_explicitly_set) {
+        m_only_one = true;
+    }
 }
 const std::string &Configuration::buildFromProject() const
 {
@@ -179,12 +227,33 @@ bool Configuration::hasBuildFromProject() const
 
 void Configuration::setOnlyOne(bool one)
 {
+    m_only_one_explicitly_set = true;
     m_only_one = one;
 }
 
 bool Configuration::onlyOne() const
 {
     return m_only_one;
+}
+
+void Configuration::setPullFirst(bool pull)
+{
+    m_pull_first = pull;
+}
+
+bool Configuration::pullFirst() const
+{
+    return m_pull_first;
+}
+
+void Configuration::setRegisterBuild(bool registerBuild)
+{
+    m_register = registerBuild;
+}
+
+bool Configuration::registerBuild() const
+{
+    return m_register;
 }
 
 void Configuration::validate()
@@ -455,5 +524,42 @@ bool Configuration::getAbsPath(const std::string &path, bool create, std::string
     abs_path = cwd;
 
     return true;
+}
+
+bool Configuration::removeRecursive(const std::string &path)
+{
+    DIR *d = opendir(path.c_str());
+    bool success = true;
+
+    if (d) {
+        struct dirent *p;
+
+        while (success && (p=readdir(d)))
+        {
+            /* Skip the names "." and ".." as we don't want to recurse on them. */
+            if (!strcmp(p->d_name, ".") || !strcmp(p->d_name, ".."))
+            {
+                continue;
+            }
+
+            struct stat statbuf;
+
+            std::string child_file = path + "/" + p->d_name;
+
+            if (!stat(child_file.c_str(), &statbuf)) {
+                if (S_ISDIR(statbuf.st_mode)) {
+                    success = removeRecursive(child_file);
+                } else {
+                    success = unlink(child_file.c_str());
+                }
+            }
+        }
+
+        closedir(d);
+    }
+
+    success = rmdir(path.c_str()) == 0;
+
+    return success;
 }
 

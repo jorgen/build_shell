@@ -1,3 +1,25 @@
+/*
+ * Copyright © 2013 Jørgen Lind
+
+ * Permission to use, copy, modify, distribute, and sell this software and its
+ * documentation for any purpose is hereby granted without fee, provided that
+ * the above copyright notice appear in all copies and that both that copyright
+ * notice and this permission notice appear in supporting documentation, and
+ * that the name of the copyright holders not be used in advertising or
+ * publicity pertaining to distribution of the software without specific,
+ * written prior permission.  The copyright holders make no representations
+ * about the suitability of this software for any purpose.  It is provided "as
+ * is" without express or implied warranty.
+
+ * THE COPYRIGHT HOLDERS DISCLAIM ALL WARRANTIES WITH REGARD TO THIS SOFTWARE,
+ * INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO
+ * EVENT SHALL THE COPYRIGHT HOLDERS BE LIABLE FOR ANY SPECIAL, INDIRECT OR
+ * CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE,
+ * DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+ * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE
+ * OF THIS SOFTWARE.
+*/
+
 #include "arg.h"
 #include "configuration.h"
 #include "create_action.h"
@@ -20,7 +42,13 @@ enum optionIndex {
     BUILDSET_OUT,
     RESET_SHA,
     BUILD_FROM,
-    ONLY_ONE
+    ONLY_ONE,
+    CONTINUE,
+    PULL_FIRST,
+    CLEAN,
+    DEEP_CLEAN,
+    SKIP_CONFIGURE,
+    NO_REGISTER
 };
 
 const option::Descriptor usage[] =
@@ -43,6 +71,15 @@ const option::Descriptor usage[] =
   {RESET_SHA,     0, "" , "reset-sha",        option::Arg::None,            "  --reset-sha \tIn pull mode reset to sha"},
   {BUILD_FROM,    0, "" , "from",             Arg::requiresArg,             "  --from \tDoesn't perform the build steps for projectes before the mentioned project"},
   {ONLY_ONE,      0, "" , "only-one",         option::Arg::None,            "  --only-one \tOnly build one project"},
+  {CONTINUE,      0, "" , "continue",         option::Arg::None,            "  --continue \tDisables only-one\n"
+                                                                            "             \t    This is usefull when using the --from option as the option enables"
+                                                                            "             \t    --only-one by default"},
+  {PULL_FIRST,    0, "" , "pull-first",       option::Arg::None,            "  --pull-first \tPull/Clone before building"},
+  {CLEAN,         0, "" , "clean",            option::Arg::None,            "  --clean \tRun clean scripts"},
+  {DEEP_CLEAN,    0, "" , "deep-clean",       option::Arg::None,            "  --deep-clean\tRemove build directory if differentg from source dir\n"
+                                                                            "              \t    and run deep clean script on source. This option discard clean"},
+  {SKIP_CONFIGURE,0, "" , "skip-configure",   option::Arg::None,            "  --skip-configure \tSkipping the configure step when building"},
+  {NO_REGISTER,   0, "" , "no-register",      option::Arg::None,            "  --no-register    \tDon't register the build"},
 
   {UNKNOWN, 0,"" ,  ""   ,                    option::Arg::None,            "\nExamples:\n"
                                                                             "  build_shell --src-dir /some/file -f ../some/buildset_file pull\n"},
@@ -125,6 +162,24 @@ int main(int argc, char **argv)
                 break;
             case ONLY_ONE:
                 configuration.setOnlyOne(true);
+                break;
+            case CONTINUE:
+                configuration.setOnlyOne(false);
+                break;
+            case PULL_FIRST:
+                configuration.setPullFirst(true);
+                break;
+            case CLEAN:
+                configuration.setClean(true);
+                break;
+            case DEEP_CLEAN:
+                configuration.setDeepClean(true);
+                break;
+            case SKIP_CONFIGURE:
+                configuration.setConfigure(false);
+                break;
+            case NO_REGISTER:
+                configuration.setRegisterBuild(false);
                 break;
             case UNKNOWN:
                 fprintf(stderr, "UNKNOWN!");

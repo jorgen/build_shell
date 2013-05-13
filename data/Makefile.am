@@ -6,12 +6,18 @@ dist_build_shell_script_DATA =				\
 	build_shell/scripts/build_autotools	        \
 	build_shell/scripts/build_qmake		        \
 	build_shell/scripts/build_qtbase	        \
+        build_shell/scripts/clean_autoreconf		\
+        build_shell/scripts/clean_autotools		\
+        build_shell/scripts/clean_qmake			\
+        build_shell/scripts/clean_qtbase		\
 	build_shell/scripts/clone_git		        \
 	build_shell/scripts/clone_regular_dir	        \
 	build_shell/scripts/configure_autoreconf        \
 	build_shell/scripts/configure_autotools	        \
 	build_shell/scripts/configure_qmake	        \
 	build_shell/scripts/configure_qtbase	        \
+	build_shell/scripts/deep_clean_git		\
+	build_shell/scripts/deep_clean_regular		\
 	build_shell/scripts/install_autoreconf	        \
 	build_shell/scripts/install_autotools	        \
 	build_shell/scripts/install_qmake	        \

@@ -1,0 +1,155 @@
+{
+    "build_set" : {
+        "name" : "wayland",
+        "author" : "Jørgen Lind"
+        "email" : "jorgen.lind@gmail.com"
+    },
+    "wayland" : {
+        "scm" : {
+            "type" : "git",
+            "url" : "git://anongit.freedesktop.org/wayland/wayland",
+            "branch" : "master",
+            "remote" : "origin",
+            "remote_branch" : "master",
+            "current_head" : "e920572e5cc120b3d03b0b2c40af67927fcb73d7",
+            "common_ancestor" : "e920572e5cc120b3d03b0b2c40af67927fcb73d7"
+        },
+        "env" : {
+            "ACLOCAL" : {
+                "value" : "aclocal -I {$install_path}/share/aclocal",
+                "overwrite" : true
+            },
+            "PATH" : "{$build_path}/bin"
+        }
+    },
+    "libxkbcommon" : {
+        "scm" : {
+            "type" : "git",
+            "url" : "git://github.com/xkbcommon/libxkbcommon",
+            "branch" : "master",
+            "remote" : "origin",
+            "remote_branch" : "master",
+            "current_head" : "a392d2682bfbf5ce6c3ee153c6a08bb456da0660",
+            "common_ancestor" : "a392d2682bfbf5ce6c3ee153c6a08bb456da0660"
+        },
+        "configure_args" : "--with-xkb-config-root=/usr/share/X11/xkb"
+    },
+    "mesa" : {
+        "scm" : {
+            "type" : "git",
+            "url" : "git://anongit.freedesktop.org/mesa/mesa",
+            "branch" : "master",
+            "remote" : "origin",
+            "remote_branch" : "master",
+            "current_head" : "38d2a16c0113b905c46804695c4fafd1b5865d08",
+            "common_ancestor" : "38d2a16c0113b905c46804695c4fafd1b5865d08"
+        },
+        "configure_args" : "--enable-gles2 --enable-gallium-egl --with-egl-platforms=x11,wayland,drm --enable-gbm --enable-shared-glapi --with-gallium-drivers=swrast
+    },
+    "pixman" : {
+        "scm" : {
+            "type" : "git",
+            "url" : "git://anongit.freedesktop.org/pixman",
+            "branch" : "master",
+            "remote" : "origin",
+            "remote_branch" : "master",
+            "current_head" : "5a7179191dba6c592a63cad8aa8bc8af7ab5e586",
+            "common_ancestor" : "5a7179191dba6c592a63cad8aa8bc8af7ab5e586"
+        }
+    },
+    "cairo" : {
+        "scm" : {
+            "type" : "git",
+            "url" : "git://anongit.freedesktop.org/cairo",
+            "branch" : "master",
+            "remote" : "origin",
+            "remote_branch" : "master",
+            "current_head" : "1704292e493b3c635e115df59d07330d19b39514",
+            "common_ancestor" : "1704292e493b3c635e115df59d07330d19b39514"
+        },
+        "configure_args" : "--enable-gl --enable-xcb"
+    },
+    "libunwind" : {
+        "scm" : {
+            "type" : "git",
+            "url" : "git://git.sv.gnu.org/libunwind",
+            "branch" : "master",
+            "remote" : "origin",
+            "remote_branch" : "master",
+            "current_head" : "612e1056f69fb95409586ff715f614c0bbc013d8",
+            "common_ancestor" : "612e1056f69fb95409586ff715f614c0bbc013d8"
+        }
+    },
+    "weston" : {
+        "scm" : {
+            "type" : "git",
+            "url" : "git://anongit.freedesktop.org/wayland/weston",
+            "branch" : "master",
+            "remote" : "origin",
+            "remote_branch" : "master",
+            "current_head" : "2bf876282fa640f8f3f33bab2c9fd1df1cafa1c4",
+            "common_ancestor" : "2bf876282fa640f8f3f33bab2c9fd1df1cafa1c4"
+        },
+        "configure_args" : "--disable-weston-launch"
+    },
+    "qtbase" : {
+        "scm" : {
+            "type" : "git",
+            "url" : "ssh://codereview.qt-project.org:29418/qt/qtbase.git",
+            "branch" : "stable",
+            "remote" : "origin",
+            "remote_branch" : "stable",
+            "current_head" : "1d22f20887d370fed21356ae063e5556be210c63",
+            "common_ancestor" : "1d22f20887d370fed21356ae063e5556be210c63"
+        },
+        "configure_args" : "-developer-build -debug -opengl es2 -opensource -nomake tests",
+        "no_install" : true,
+        "env" : {
+            "PATH" : "{$build_path}/bin"
+        }
+    },
+    "qtjsbackend" : {
+        "scm" : {
+            "type" : "git",
+            "url" : "ssh://codereview.qt-project.org:29418/qt/qtjsbackend.git",
+            "branch" : "stable",
+            "remote" : "origin",
+            "remote_branch" : "stable",
+            "current_head" : "1dd094a4da1b472dbeae79fe9d6962e817a47b45",
+            "common_ancestor" : "1dd094a4da1b472dbeae79fe9d6962e817a47b45"
+        }
+    },
+    "qtdeclarative" : {
+        "scm" : {
+            "type" : "git",
+            "url" : "ssh://codereview.qt-project.org:29418/qt/qtdeclarative.git",
+            "branch" : "stable",
+            "remote" : "origin",
+            "remote_branch" : "stable",
+            "current_head" : "cec16f1e67aeec0e8a82a06cda6aaca5d95f4d94",
+            "common_ancestor" : "cec16f1e67aeec0e8a82a06cda6aaca5d95f4d94"
+        }
+    },
+    "qtwayland" : {
+        "scm" : {
+            "type" : "git",
+            "url" : "ssh://codereview.qt-project.org:29418/qt/qtwayland.git",
+            "branch" : "stable",
+            "remote" : "origin",
+            "remote_branch" : "stable",
+            "current_head" : "62eba6f0dfff1b17c8d9fea41cc39cb04162c842",
+            "common_ancestor" : "62eba6f0dfff1b17c8d9fea41cc39cb04162c842"
+        }
+    },
+    "gtk+" : {
+        "scm" : {
+            "type" : "git",
+            "url" : "git://git.gnome.org/gtk+",
+            "branch" : "master",
+            "remote" : "origin",
+            "remote_branch" : "master",
+            "current_head" : "ed1eddabf064769747e927a68f2dc59bd8241ebf",
+            "common_ancestor" : "ed1eddabf064769747e927a68f2dc59bd8241ebf"
+        }
+    }
+}

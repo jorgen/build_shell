@@ -41,7 +41,6 @@ case $host_os in
     ;;
 esac
 
-echo $compilers
 AC_PROG_CXX([$compilers])
 
 AX_CXX_COMPILE_STDCXX_11([ext])

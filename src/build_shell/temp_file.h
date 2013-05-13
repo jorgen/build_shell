@@ -19,32 +19,46 @@
  * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE
  * OF THIS SOFTWARE.
 */
-#include "writer.h"
-#include <fcntl.h>
-#include <unistd.h>
-#include <stdlib.h>
+#ifndef TEMP_FILE_H
+#define TEMP_FILE_H
 
-Writer::Writer(std::string file)
-    : m_file(0)
-    , m_file_desc(-1)
-{
-    m_file_desc = ::open(file.c_str(), (O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC));
-    if (m_file_desc >= 0) {
-        m_file = fdopen(m_file_desc, "w");
-        if (!m_file) {
-            fprintf(stderr, "Failed to open filestream for file %s\n", file.c_str());
-            exit(3);
-        }
-    } else {
-        fprintf(stderr, "Failed to open file %s\n", file.c_str());
-        exit(3);
-    }
-}
+#include <stdio.h>
 
-Writer::~Writer()
+#include <string>
+#include <list>
+
+class FileStream
 {
-    if (m_file) {
-        fclose(m_file);
-        close(m_file_desc);
-    }
-}
+public:
+    FileStream()
+        : file_stream(0)
+        , mode("\0")
+    { }
+
+    FILE *file_stream;
+    const char *mode;
+};
+
+class TempFile
+{
+public:
+    TempFile(const std::string &name_base);
+    ~TempFile();
+
+    const std::string &name() const;
+    FILE *fileStream(const char *mode);
+    int fileDescriptor() const;
+
+    void close();
+    bool closed() const { return m_closed; }
+
+private:
+    std::string m_filename;
+    bool m_closed;
+
+    std::list<FileStream> m_streams;
+
+    int m_file_descriptor;
+};
+
+#endif
