@@ -53,6 +53,7 @@ Configuration::Configuration()
     , m_install(true)
     , m_only_one_explicitly_set(false)
     , m_only_one(false)
+    , m_pull_first(false)
     , m_register(true)
     , m_sane(false)
 {
@@ -343,9 +344,9 @@ int Configuration::runScript(const std::string &env_script, const std::string &s
     if (!script.size())
         return -1;
 
-    std::string pre_script_command;
+    std::string pre_script_command = "bash -c \"";
     if (env_script.size()) {
-        pre_script_command = std::string("source ") + env_script + " && ";
+        pre_script_command += std::string("source ") + env_script + " && ";
     }
     std::string env_file = findBuildEnvFile();
     if (env_file.size()) {
@@ -360,6 +361,7 @@ int Configuration::runScript(const std::string &env_script, const std::string &s
     std::string script_command = pre_script_command;
     script_command.append(script);
     script_command.append(post_script_command);
+    script_command.append("\"");
 
     if (DEBUG_RUN_COMMAND) {
         fprintf(stderr, "Executing script command %s\n", script_command.c_str());
