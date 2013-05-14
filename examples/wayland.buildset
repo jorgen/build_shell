@@ -1,9 +1,4 @@
 {
-    "build_set" : {
-        "name" : "wayland",
-        "author" : "Jørgen Lind"
-        "email" : "jorgen.lind@gmail.com"
-    },
     "wayland" : {
         "scm" : {
             "type" : "git",
@@ -44,7 +39,7 @@
             "current_head" : "38d2a16c0113b905c46804695c4fafd1b5865d08",
             "common_ancestor" : "38d2a16c0113b905c46804695c4fafd1b5865d08"
         },
-        "configure_args" : "--enable-gles2 --enable-gallium-egl --with-egl-platforms=x11,wayland,drm --enable-gbm --enable-shared-glapi --with-gallium-drivers=swrast
+        "configure_args" : "--enable-gles2 --enable-gallium-egl --with-egl-platforms=x11,wayland,drm --enable-gbm --enable-shared-glapi --with-gallium-drivers=swrast"
     },
     "pixman" : {
         "scm" : {
@@ -139,17 +134,7 @@
             "remote_branch" : "stable",
             "current_head" : "62eba6f0dfff1b17c8d9fea41cc39cb04162c842",
             "common_ancestor" : "62eba6f0dfff1b17c8d9fea41cc39cb04162c842"
-        }
-    },
-    "gtk+" : {
-        "scm" : {
-            "type" : "git",
-            "url" : "git://git.gnome.org/gtk+",
-            "branch" : "master",
-            "remote" : "origin",
-            "remote_branch" : "master",
-            "current_head" : "ed1eddabf064769747e927a68f2dc59bd8241ebf",
-            "common_ancestor" : "ed1eddabf064769747e927a68f2dc59bd8241ebf"
-        }
+        },
+        "configure_args" : "CONFIG+=wayland-compositor"
     }
 }

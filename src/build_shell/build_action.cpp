@@ -381,7 +381,9 @@ bool BuildAction::handleBuildForProject(const std::string &projectName, const st
         getcwd(&cwd[0], PATH_MAX);
 
         if (build_path.size() && build_path != src_path) {
-            Configuration::removeRecursive(build_path.c_str());
+            if (!Configuration::removeRecursive(build_path.c_str())) {
+                fprintf(stderr, "Failed to remove build dir %s\n", build_path.c_str());
+            }
             std::string actual_build_path;
             Configuration::getAbsPath(build_path, true, actual_build_path);
         }

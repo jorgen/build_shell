@@ -550,7 +550,7 @@ bool Configuration::removeRecursive(const std::string &path)
                 if (S_ISDIR(statbuf.st_mode)) {
                     success = removeRecursive(child_file);
                 } else {
-                    success = unlink(child_file.c_str());
+                    success = (unlink(child_file.c_str()) == 0);
                 }
             }
         }
