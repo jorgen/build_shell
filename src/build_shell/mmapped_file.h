@@ -43,10 +43,10 @@ public:
 
     void setCloseFileOnDestruct(bool close);
 private:
-    int m_file_to_map = -1;
-    void *m_data = 0;
-    size_t m_mapped_length = 0;
-    bool m_close_file = false;
+    int m_file_to_map;
+    void *m_data;
+    size_t m_mapped_length;
+    bool m_close_file;
 };
 
 #endif

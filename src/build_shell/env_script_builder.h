@@ -38,6 +38,7 @@ class EnvVariable
 {
 public:
     EnvVariable()
+        : overwrite(false)
     { }
     EnvVariable(bool overwrite, const std::string &value)
         : overwrite(overwrite)
@@ -47,7 +48,7 @@ public:
     bool operator<(const EnvVariable &other) const
     { return value < other.value; }
 
-    bool overwrite = false;
+    bool overwrite;
     std::string value;
 };
 

@@ -30,10 +30,18 @@
 #include <errno.h>
 
 MmappedReadFile::MmappedReadFile()
+    : m_file_to_map(-1)
+    , m_data(0)
+    , m_mapped_length(0)
+    , m_close_file(false)
 {
 }
 
 MmappedReadFile::MmappedReadFile(const std::string &file)
+    : m_file_to_map(-1)
+    , m_data(0)
+    , m_mapped_length(0)
+    , m_close_file(false)
 {
     setFile(file);
 }

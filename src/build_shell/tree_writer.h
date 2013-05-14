@@ -41,7 +41,7 @@ private:
 
     int m_file;
     char m_buffer[4096];
-    bool m_error = false;
+    bool m_error;
     bool m_close_file;
 };
 
