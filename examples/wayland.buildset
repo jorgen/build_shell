@@ -15,7 +15,8 @@
                 "overwrite" : true
             },
             "PATH" : "{$build_path}/bin"
-        }
+        },
+        "configure_args" : "--disable-documentation"
     },
     "libxkbcommon" : {
         "scm" : {
