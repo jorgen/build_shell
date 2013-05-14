@@ -60,7 +60,14 @@ EnvScriptBuilder::~EnvScriptBuilder()
 
     delete m_environment_node;
 }
-
+static void addOrRemoveIfEmpty(JT::ObjectNode *node, const std::string &property, const std::string &value)
+{
+    if (value.size()) {
+        node->insertNode(property, new JT::StringNode(value), true);
+    } else {
+        delete node->take(property);
+    }
+}
 void EnvScriptBuilder::addProjectNode(const std::string &project_name, JT::ObjectNode *project_root)
 {
     if (!project_root)
@@ -77,6 +84,8 @@ void EnvScriptBuilder::addProjectNode(const std::string &project_name, JT::Objec
         m_environment_node->insertNode(project_name, project_environment);
     }
 
+    addOrRemoveIfEmpty(project_environment, "src_path", project_root->stringAt("arguments.src_path"));
+    addOrRemoveIfEmpty(project_environment, "build_path", project_root->stringAt("arguments.build_path"));
     for (auto it = project_root->begin(); it != project_root->end(); ++it) {
         if (it->first.string() != "env" && it->first.string() != "buildsystem_env")
             continue;
@@ -100,7 +109,7 @@ void EnvScriptBuilder::addProjectNode(const std::string &project_name, JT::Objec
             }
 
             std::string value_string = value->string();
-            if (substitue_variable_value(value_string, project_root))
+            if (substitue_variable_value(value_string, project_environment))
                 value->setString(value_string);
         }
     }
@@ -153,15 +162,17 @@ bool EnvScriptBuilder::substitue_variable_value(std::string &value_string, JT::O
             const std::string variable = value_string.substr(start_pos, end_pos - start_pos);
 
             std::map<std::string, std::string> variables;
-            const std::string &project_src_path = project_root->stringAt("arguments.src_path");
+            const std::string &project_src_path = project_root->stringAt("src_path");
             variables["src_path"] = project_src_path;
-            const std::string &project_build_path = project_root->stringAt("arguments.build_path");
+            const std::string &project_build_path = project_root->stringAt("build_path");
             variables["build_path"] = project_build_path;
             variables["install_path"] = m_configuration.installDir();
 
             if (variables.count(variable)) {
                 value_string.replace(start_pos -2, end_pos - start_pos + 3, variables.at(variable));
                 return true;
+            } else {
+                fprintf(stderr, "Failed to find variable substitute for %s\n", value_string.c_str());
             }
         }
     }
