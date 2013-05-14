@@ -53,6 +53,7 @@ Configuration::Configuration()
     , m_install(true)
     , m_only_one_explicitly_set(false)
     , m_only_one(false)
+    , m_pull_first(false)
     , m_register(true)
     , m_sane(false)
 {
