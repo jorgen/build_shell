@@ -146,7 +146,7 @@ build_shell_cd_with_component()
     fi
 }
 
-bscd()
+bcd()
 {
     local other=false
     local component=""
@@ -173,7 +173,7 @@ bscd()
     build_shell_cd_with_component $BUILD_SHELL_BUILD_DIR $component
 }
 
-_build_shell_bscd()
+_build_shell_bcd()
 {
     local cur prev opts
     COMPREPLY=()
@@ -193,7 +193,7 @@ _build_shell_bscd()
 
 complete -F _build_shell bs
 complete -F _build_shell_select bss
-complete -F _build_shell_bscd bscd
+complete -F _build_shell_bcd bcd
 
 BUILD_SHELL_REAL_SCRIPT_FILE=${BASH_SOURCE[0]}
 if [ -L ${BASH_SOURCE[0]} ]; then
