@@ -54,6 +54,12 @@ AC_ARG_ENABLE(developer-build, [  --enable-developer-build],,
         enable_developer_build=yes)
 AM_CONDITIONAL(ENABLE_DEVELOPER_BUILD, test x$enable_developer_build = xyes)
 
+AC_DEFUN([AC_PROG_BASH], [AC_CHECK_PROG(HAS_BASH_EXEC,bash,yes)])
+AC_PROG_BASH
+if test x"${HAS_BASH_EXEC}" != x"yes" ; then
+    AC_MSG_ERROR([Buildshell rellies on a bash executable being in the path.])
+fi
+
 AC_SUBST(GCC_CFLAGS)
 
 AC_CONFIG_FILES([Makefile

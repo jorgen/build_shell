@@ -339,12 +339,33 @@ const std::list<std::string> &Configuration::scriptSearchPaths() const
     return m_script_search_paths;
 }
 
+static int exec_script(const std::string &command)
+{
+    pid_t process = fork();
+
+    if (process) {
+        int child_status;
+
+        pid_t tpid;
+        do {
+            tpid = wait(&child_status);
+        } while(tpid != process);
+        return WEXITSTATUS(child_status);
+    } else {
+        execlp("bash", "bash", "-c", command.c_str(), 0);
+        fprintf(stderr, "SHOULD NOT EITHER HAPPEN %s\n", strerror(errno));
+        exit(1);
+    }
+    fprintf(stderr, "SHOULD NOT HAPPEN\n");
+    return 0;
+}
+
 int Configuration::runScript(const std::string &env_script, const std::string &script, const std::string &args) const
 {
     if (!script.size())
         return -1;
 
-    std::string pre_script_command = "bash -c \"";
+    std::string pre_script_command;
     if (env_script.size()) {
         pre_script_command += std::string("source ") + env_script + " && ";
     }
@@ -358,15 +379,12 @@ int Configuration::runScript(const std::string &env_script, const std::string &s
     std::string post_script_command = " ";
     post_script_command.append(args);
 
-    std::string script_command = pre_script_command;
-    script_command.append(script);
-    script_command.append(post_script_command);
-    script_command.append("\"");
+    std::string script_command = pre_script_command + script + post_script_command;
 
     if (DEBUG_RUN_COMMAND) {
         fprintf(stderr, "Executing script command %s\n", script_command.c_str());
     }
-    return system(script_command.c_str());
+    return exec_script(script_command);
 }
 
 const std::string &Configuration::buildShellConfigPath() const
