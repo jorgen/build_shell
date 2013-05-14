@@ -65,7 +65,7 @@ bs (tung in cheek)
 
 bss
 
-bscd
+bcd
 
 Lets start with bss bss stands for build_shell select and allows you to easily
 select one of the builds registered in the available_builds.json. sources the
@@ -76,7 +76,7 @@ about the src-dir build-dir, install-dir and a copy of the current buildset
 file, once the set_build_env.sh of a build is sourced. So bs allows you to
 execute the build_shell commands for the current environment.
 
-bscd is a function which allows you to navigate between your build-dir and
+bcd is a function which allows you to navigate between your build-dir and
 src-dir. Its quite handy.
 
 To play around with build_shell try configuring it with
