@@ -148,6 +148,11 @@ build_shell_cd_with_component()
 
 bcd()
 {
+    if [ -z $BUILD_SHELL_BUILD_DIR ]; then
+        echo "No build shell selected"
+        return 0
+    fi
+
     local other=false
     local component=""
     if [[ $1 == "-" ]]; then
@@ -175,6 +180,10 @@ bcd()
 
 _build_shell_bcd()
 {
+    if [ -z $BUILD_SHELL_BUILD_DIR ]; then
+        return 0
+    fi
+
     local cur prev opts
     COMPREPLY=()
     cur="${COMP_WORDS[COMP_CWORD]}"
