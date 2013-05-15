@@ -84,8 +84,8 @@ void EnvScriptBuilder::addProjectNode(const std::string &project_name, JT::Objec
         m_environment_node->insertNode(project_name, project_environment);
     }
 
-    addOrRemoveIfEmpty(project_environment, "src_path", project_root->stringAt("arguments.src_path"));
-    addOrRemoveIfEmpty(project_environment, "build_path", project_root->stringAt("arguments.build_path"));
+    addOrRemoveIfEmpty(project_environment, "project_src_path", project_root->stringAt("arguments.src_path"));
+    addOrRemoveIfEmpty(project_environment, "project_build_path", project_root->stringAt("arguments.build_path"));
     for (auto it = project_root->begin(); it != project_root->end(); ++it) {
         if (it->first.string() != "env" && it->first.string() != "buildsystem_env")
             continue;
@@ -107,10 +107,6 @@ void EnvScriptBuilder::addProjectNode(const std::string &project_name, JT::Objec
                     continue;
                 }
             }
-
-            std::string value_string = value->string();
-            if (substitue_variable_value(value_string, project_environment))
-                value->setString(value_string);
         }
     }
 }
@@ -153,7 +149,7 @@ void EnvScriptBuilder::writeScripts(const std::string &setFileName, const std::s
     }
 }
 
-bool EnvScriptBuilder::substitue_variable_value(std::string &value_string, JT::ObjectNode *project_root) const
+bool EnvScriptBuilder::substitue_variable_value(const std::map<std::string, std::string> jsonVariableMap, std::string &value_string) const
 {
     size_t start_pos = value_string.find("{$") + 2;
     if (start_pos < value_string.size()) {
@@ -161,25 +157,27 @@ bool EnvScriptBuilder::substitue_variable_value(std::string &value_string, JT::O
         if (end_pos < value_string.size()) {
             const std::string variable = value_string.substr(start_pos, end_pos - start_pos);
 
-            std::map<std::string, std::string> variables;
-            const std::string &project_src_path = project_root->stringAt("src_path");
-            variables["src_path"] = project_src_path;
-            const std::string &project_build_path = project_root->stringAt("build_path");
-            variables["build_path"] = project_build_path;
-            variables["install_path"] = m_configuration.installDir();
-
-            if (variables.count(variable)) {
-                value_string.replace(start_pos -2, end_pos - start_pos + 3, variables.at(variable));
+            if (jsonVariableMap.count(variable) && jsonVariableMap.at(variable).size()) {
+                value_string.replace(start_pos -2, end_pos - start_pos + 3, jsonVariableMap.at(variable));
                 return true;
             } else {
                 fprintf(stderr, "Failed to find variable substitute for %s\n", value_string.c_str());
+                return false;
             }
         }
+    }
+    return true;
+}
+
+static bool containsValue(const std::string &value, const std::list<EnvVariable> &list) {
+    for (auto it = list.begin(); it != list.end(); it++) {
+        if (it->value == value)
+            return true;
     }
     return false;
 }
 
-static void populateMapFromEnvironmentNode(JT::ObjectNode *environmentNode, std::map<std::string, std::list<EnvVariable>> &map)
+void EnvScriptBuilder::populateMapFromEnvironmentNode(JT::ObjectNode *environmentNode, const std::map<std::string, std::string> &jsonVariableMap, std::map<std::string, std::list<EnvVariable>> &map) const
 {
     for (auto it = environmentNode->begin(); it != environmentNode->end(); ++it) {
         EnvVariable variable;
@@ -194,23 +192,40 @@ static void populateMapFromEnvironmentNode(JT::ObjectNode *environmentNode, std:
             found = true;
         }
         if (found) {
-            if (variable.overwrite)
-                map[it->first.string()].clear();
+            if (substitue_variable_value(jsonVariableMap, variable.value)) {
+                if (variable.overwrite) {
+                    map[it->first.string()].clear();
+                }
 
-            map[it->first.string()].push_back(variable);
+                const std::string &variable_name = it->first.string();
+                std::list<EnvVariable> &variable_list = map[variable_name];
+                if (!containsValue(variable.value, variable_list))
+                    variable_list.push_back(variable);
+            }
         }
     }
 }
 
-static void populateMapFromProjectNode(JT::ObjectNode *projectNode, std::map<std::string, std::list<EnvVariable>> &map)
+void EnvScriptBuilder::populateMapFromProjectNode(JT::ObjectNode *projectNode, std::map<std::string, std::list<EnvVariable>> &map) const
 {
+    std::map<std::string, std::string> json_variable_map;
+
+    const std::string &project_src_path = projectNode->stringAt("project_src_path");
+    const std::string &project_build_path = projectNode->stringAt("project_build_path");
+
+    json_variable_map["project_src_path"] = project_src_path;
+    json_variable_map["project_build_path"] = project_build_path;
+    json_variable_map["install_path"] = m_configuration.installDir();
+    json_variable_map["build_path"] = m_configuration.buildDir();
+    json_variable_map["src_dir"] = m_configuration.srcDir();
+
     for (auto it = projectNode->begin(); it != projectNode->end(); ++it) {
         if (it->first.string() != "env" && it->first.string() != "buildsystem_env")
             continue;
         JT::ObjectNode *env_node = it->second->asObjectNode();
         if (!env_node)
             continue;
-        populateMapFromEnvironmentNode(env_node, map);
+        populateMapFromEnvironmentNode(env_node, json_variable_map, map);
     }
 }
 
@@ -235,7 +250,7 @@ static void writeEnvironmentVariable(FILE *file, const std::string &name, const 
     if (overwrite) {
         fprintf(file, "    export %s=\"%s\"\n", name.c_str(), value.c_str());
     } else {
-        fprintf(file, "    export %s=\"%s\":$%s\n", name.c_str(), value.c_str(), name.c_str());
+        fprintf(file, "    export %s=\"%s:$%s\"\n", name.c_str(), value.c_str(), name.c_str());
     }
     fprintf(file, "else\n");
     fprintf(file, "    export %s=\"%s\"\n", name.c_str(), value.c_str());
@@ -271,7 +286,7 @@ static void writeAddDirToVariable(FILE *file, const std::string &dir, const std:
     fprintf(file, "            if [ ! -n \"$BUILD_SHELL_OLD_%s\" ]; then\n", variable.c_str());
     fprintf(file, "                export BUILD_SHELL_OLD_%s=$%s\n", variable.c_str(), variable.c_str());
     fprintf(file, "            fi\n");
-    fprintf(file, "            export %s=\"%s\":$%s\n", variable.c_str(), dir.c_str(), variable.c_str());
+    fprintf(file, "            export %s=\"%s:$%s\"\n", variable.c_str(), dir.c_str(), variable.c_str());
     fprintf(file, "            unset %s_VARIABLE_FOUND\n", variable.c_str());
     fprintf(file, "        fi\n");
     fprintf(file, "    else\n");

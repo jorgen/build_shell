@@ -58,6 +58,10 @@ bs()
         flags="--from $component $flags"
     fi
 
+    if [ -n $BUILD_SHELL_SHOW_CMD ]; then
+        echo "build_shell --no-register -s $BUILD_SHELL_SRC_DIR -b $BUILD_SHELL_BUILD_DIR -i $BUILD_SHELL_INSTALL_DIR -f $BUILD_SHELL_CURRENT_BUILDSET $mode $flags"
+    fi
+
     build_shell --no-register -s $BUILD_SHELL_SRC_DIR -b $BUILD_SHELL_BUILD_DIR -i $BUILD_SHELL_INSTALL_DIR -f $BUILD_SHELL_CURRENT_BUILDSET $mode $flags
 
 }

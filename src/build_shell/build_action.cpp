@@ -205,6 +205,28 @@ BuildAction::~BuildAction()
 
 }
 
+class ArgumentsCleanup
+{
+public:
+    ArgumentsCleanup(JT::ObjectNode *root_node)
+        : m_root_node(root_node)
+    {
+
+    }
+
+    ~ArgumentsCleanup()
+    {
+        for (auto it = m_root_node->begin(); it != m_root_node->end(); ++it) {
+            JT::ObjectNode *project_node = it->second->asObjectNode();
+            if (!project_node)
+                continue;
+            delete project_node->take("arguments");
+        }
+    }
+
+    JT::ObjectNode *m_root_node;
+};
+
 bool BuildAction::execute()
 {
     if (!m_buildset_tree || m_error)
@@ -214,15 +236,14 @@ bool BuildAction::execute()
     char cpu_buf[4];
     snprintf(cpu_buf, sizeof cpu_buf, "%ld", num_cpu);
 
+    ArgumentsCleanup argCleanup(m_buildset_tree);
+
     bool found = !m_configuration.hasBuildFromProject();
     const std::string &build_from_project = m_configuration.buildFromProject();
     for (auto it = m_buildset_tree->begin(); it != m_buildset_tree->end(); ++it) {
         JT::ObjectNode *project_node = it->second->asObjectNode();
         if (!project_node)
             continue;
-        if (!found && build_from_project != it->first.string())
-            continue;
-        found = true;
 
         if (chdir(m_configuration.buildDir().c_str())) {
             fprintf(stderr, "Could not move into build dir:%s\n%s\n",
@@ -264,6 +285,10 @@ bool BuildAction::execute()
         arguments->addValueToObject("cpu_count", cpu_buf, JT::Token::Number);
         JT::ObjectNode *env_variables = new JT::ObjectNode();
         arguments->insertNode(std::string("environment"), env_variables);
+
+        if (!found && build_from_project != it->first.string())
+            continue;
+        found = true;
 
         chdir(project_build_path.c_str());
 
@@ -337,16 +362,13 @@ bool BuildAction::execute()
             return false;
         }
         if (updated_project_node) {
-            JT::Node *arguments = updated_project_node->take("arguments");
-            delete arguments;
             m_buildset_tree->insertNode(it->first,updated_project_node, true);
-        } else {
-            JT::Node *arguments = project_node->take("arguments");
-            delete arguments;
         }
+
         if (m_configuration.onlyOne())
             break;
     }
+
     return true;
 }
 

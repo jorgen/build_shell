@@ -14,7 +14,6 @@
                 "value" : "aclocal -I {$install_path}/share/aclocal",
                 "overwrite" : true
             },
-            "PATH" : "{$build_path}/bin"
         },
         "configure_args" : "--disable-documentation"
     },
@@ -101,7 +100,7 @@
         "configure_args" : "-developer-build -debug -opengl es2 -opensource -nomake tests",
         "no_install" : true,
         "env" : {
-            "PATH" : "{$build_path}/bin"
+            "PATH" : "{$project_build_path}/bin"
         }
     },
     "qtjsbackend" : {

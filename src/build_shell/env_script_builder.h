@@ -45,11 +45,9 @@ public:
         , value(value)
     {}
 
-    bool operator<(const EnvVariable &other) const
-    { return value < other.value; }
-
     bool overwrite;
     std::string value;
+
 };
 
 class EnvScriptBuilder
@@ -64,13 +62,16 @@ public:
     void writeScripts(const std::string &setFileName, const std::string &unsetFileName, const std::string &toProject);
 
 private:
-    bool substitue_variable_value(std::string &value_string, JT::ObjectNode *project_root) const;
+    bool substitue_variable_value(const std::map<std::string, std::string> jsonVariableMap, std::string &value_string) const;
 
     std::map<std::string, std::list<EnvVariable>> make_variable_map_up_until(const std::string &project_name) const;
 
     void writeSetScript(const std::string &buildSetName, const std::string &unsetFileName, const std::map<std::string, std::list<EnvVariable>> &variables, FILE *file, bool close);
     void writeUnsetScript(const std::string &file, const std::map<std::string, std::list<EnvVariable>> &variables);
     void writeUnsetScript(FILE *file, bool close, const std::map<std::string, std::list<EnvVariable>> &variables);
+
+    void populateMapFromEnvironmentNode(JT::ObjectNode *environmentNode, const std::map<std::string, std::string> &jsonVariableMap, std::map<std::string, std::list<EnvVariable>> &map) const;
+    void populateMapFromProjectNode(JT::ObjectNode *projectNode, std::map<std::string, std::list<EnvVariable>> &map) const;
 
     JT::ObjectNode *m_environment_node;
     const Configuration &m_configuration;

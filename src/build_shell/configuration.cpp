@@ -26,12 +26,14 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 #include <errno.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <pwd.h>
 #include <libgen.h>
 #include <dirent.h>
+#include <assert.h>
 
 #include <sstream>
 
@@ -352,11 +354,11 @@ static int exec_script(const std::string &command)
         } while(tpid != process);
         return WEXITSTATUS(child_status);
     } else {
-        execlp("bash", "bash", "-c", command.c_str(), 0);
-        fprintf(stderr, "SHOULD NOT EITHER HAPPEN %s\n", strerror(errno));
+        execlp("bash", "bash", "-c", command.c_str(), nullptr);
+        fprintf(stderr, "Failed to execute %s : %s\n", command.c_str(), strerror(errno));
         exit(1);
     }
-    fprintf(stderr, "SHOULD NOT HAPPEN\n");
+    assert(false);
     return 0;
 }
 
