@@ -48,6 +48,7 @@ enum optionIndex {
     CLEAN,
     DEEP_CLEAN,
     SKIP_CONFIGURE,
+    SKIP_BUILD,
     NO_REGISTER
 };
 
@@ -71,14 +72,15 @@ const option::Descriptor usage[] =
   {RESET_SHA,     0, "" , "reset-sha",        option::Arg::None,            "  --reset-sha \tIn pull mode reset to sha"},
   {BUILD_FROM,    0, "" , "from",             Arg::requiresArg,             "  --from \tDoesn't perform the build steps for projectes before the mentioned project"},
   {ONLY_ONE,      0, "" , "only-one",         option::Arg::None,            "  --only-one \tOnly build one project"},
-  {CONTINUE,      0, "" , "continue",         option::Arg::None,            "  --continue \tDisables only-one\n"
+  {CONTINUE,      0, "" , "continue",         option::Arg::None,            "  --continue \tDisables only-one"
                                                                             "             \t    This is usefull when using the --from option as the option enables"
                                                                             "             \t    --only-one by default"},
   {PULL_FIRST,    0, "" , "pull-first",       option::Arg::None,            "  --pull-first \tPull/Clone before building"},
   {CLEAN,         0, "" , "clean",            option::Arg::None,            "  --clean \tRun clean scripts"},
   {DEEP_CLEAN,    0, "" , "deep-clean",       option::Arg::None,            "  --deep-clean\tRemove build directory if differentg from source dir\n"
                                                                             "              \t    and run deep clean script on source. This option discard clean"},
-  {SKIP_CONFIGURE,0, "" , "skip-configure",   option::Arg::None,            "  --skip-configure \tSkipping the configure step when building"},
+  {SKIP_CONFIGURE,0, "" , "skip-configure",   option::Arg::None,            "  --skip-configure \tSkipping the configure step when running in build mode"},
+  {SKIP_BUILD,    0, "" , "skip-build",       option::Arg::None,            "  --skip-build     \tSkipping the build step when running in build mode"},
   {NO_REGISTER,   0, "" , "no-register",      option::Arg::None,            "  --no-register    \tDon't register the build"},
 
   {UNKNOWN, 0,"" ,  ""   ,                    option::Arg::None,            "\nExamples:\n"
@@ -177,6 +179,9 @@ int main(int argc, char **argv)
                 break;
             case SKIP_CONFIGURE:
                 configuration.setConfigure(false);
+                break;
+            case SKIP_BUILD:
+                configuration.setBuild(false);
                 break;
             case NO_REGISTER:
                 configuration.setRegisterBuild(false);
