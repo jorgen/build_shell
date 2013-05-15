@@ -128,6 +128,17 @@ int main(int argc, char **argv)
             return 1;
         }
 
+    } else if (parser.nonOptionsCount() == 2) {
+        std::string mode = parser.nonOption(0);
+        if ( mode == "get_env_file") {
+            AvailableBuilds available(configuration);
+            available.printGetEnv(parser.nonOption(1));
+            return 0;
+        } else {
+            fprintf(stderr, "\nFailed to recognize mode\n\n");
+            option::printUsage(std::cerr, usage);
+            return 1;
+        }
     } else {
         fprintf(stderr, "\nFailed to recognize mode\n\n");
         option::printUsage(std::cerr, usage);

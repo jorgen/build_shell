@@ -159,7 +159,7 @@ BuildAction::BuildAction(const Configuration &configuration)
 
     if (m_configuration.registerBuild()) {
         AvailableBuilds available_builds(m_configuration);
-        available_builds.addAvailableBuild(build_name, m_set_build_env_file.c_str());
+        available_builds.addAvailableBuild(m_configuration.buildDir(), m_set_build_env_file.c_str());
     }
 
     m_error = !ensureFileExist(m_set_build_env_file);

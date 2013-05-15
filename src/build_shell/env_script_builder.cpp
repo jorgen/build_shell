@@ -60,6 +60,7 @@ EnvScriptBuilder::~EnvScriptBuilder()
 
     delete m_environment_node;
 }
+
 static void addOrRemoveIfEmpty(JT::ObjectNode *node, const std::string &property, const std::string &value)
 {
     if (value.size()) {
@@ -68,6 +69,7 @@ static void addOrRemoveIfEmpty(JT::ObjectNode *node, const std::string &property
         delete node->take(property);
     }
 }
+
 void EnvScriptBuilder::addProjectNode(const std::string &project_name, JT::ObjectNode *project_root)
 {
     if (!project_root)
@@ -118,9 +120,7 @@ void EnvScriptBuilder::writeSetScript(TempFile &tempFile, const std::string &toP
         return;
     }
     auto variables = make_variable_map_up_until(toProject);
-    std::string build_set_name = tempFile.name();
-    build_set_name = dirname(&build_set_name[0]);
-    writeSetScript(build_set_name, "", variables, tempFile.fileStream("w+"),false);
+    writeSetScript("", variables, tempFile.fileStream("w+"),false);
 }
 
 void EnvScriptBuilder::writeScripts(const std::string &setFileName, const std::string &unsetFileName, const std::string &toProject)
@@ -135,7 +135,7 @@ void EnvScriptBuilder::writeScripts(const std::string &setFileName, const std::s
         }
         std::string build_set_name = setFileName;
         build_set_name = dirname(&build_set_name[0]);
-        writeSetScript(build_set_name, unsetFileName, variables, out_file,true);
+        writeSetScript(unsetFileName, variables, out_file,true);
     }
 
     if (unsetFileName.size()) {
@@ -297,7 +297,7 @@ static void writeAddDirToVariable(FILE *file, const std::string &dir, const std:
     fprintf(file, "\n");
 }
 
-void EnvScriptBuilder::writeSetScript(const std::string &buildSetName, const std::string &unsetFileName, const std::map<std::string, std::list<EnvVariable>> &variables, FILE *file, bool close)
+void EnvScriptBuilder::writeSetScript(const std::string &unsetFileName, const std::map<std::string, std::list<EnvVariable>> &variables, FILE *file, bool close)
 {
     fprintf(file, "#!/bin/bash\n");
     fprintf(file, "\n");
@@ -305,7 +305,6 @@ void EnvScriptBuilder::writeSetScript(const std::string &buildSetName, const std
     fprintf(file, "    source \"$BUILD_SHELL_BUILD_DIR/set_build_env.sh\"\n");
     fprintf(file, "fi\n");
     fprintf(file, "\n");
-    fprintf(file, "export BUILD_SHELL_NAME=\"%s\"\n", buildSetName.c_str());
     fprintf(file, "export BUILD_SHELL_SRC_DIR=\"%s\"\n", m_configuration.srcDir().c_str());
     fprintf(file, "export BUILD_SHELL_BUILD_DIR=\"%s\"\n", m_configuration.buildDir().c_str());
     fprintf(file, "export BUILD_SHELL_INSTALL_DIR=\"%s\"\n", m_configuration.installDir().c_str());

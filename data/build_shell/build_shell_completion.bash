@@ -3,11 +3,7 @@
 bs()
 {
     if [ -z $1 ]; then
-        if [ -z $BUILD_SHELL_BUILD_DIR ]; then
-            echo "No build selected"
-        else
-            echo "Using build in: $BUILD_SHELL_BUILD_DIR"
-        fi
+        bs_name
         return 0
     fi
 
@@ -66,12 +62,54 @@ bs()
 
 }
 
+bs_name()
+{
+    if [ -z $BUILD_SHELL_BUILD_DIR ]; then
+        echo "No build selected"
+        return 0
+    fi
+
+    if [ -z $1 ]; then
+        BUILD_SHELL_NAME=$(jsonmod -d %.% -p $BUILD_SHELL_BUILD_DIR%.%name $HOME/.config/build_shell/available_builds.json)
+        if [ ! -z $BUILD_SHELL_NAME ]; then
+            echo "Using $BUILD_SHELL_NAME with build_dir $BUILD_SHELL_BUILD_DIR"
+        else
+            echo "Using unnamed build in: $BUILD_SHELL_BUILD_DIR"
+        fi
+    else
+        local new_name=$1
+        local names=$(jsonmod -d %.% -p "%{*}%.%name" $HOME/.config/build_shell/available_builds.json)
+        while read -r line; do
+            if [[ $new_name == $line ]]; then
+                echo "Trying to use name for buildset which is allready in use"
+                return 1
+            fi
+        done <<< "$names"
+
+        $(jsonmod -i -d %.% -p "$BUILD_SHELL_BUILD_DIR%.%name" -v $new_name $HOME/.config/build_shell/available_builds.json)
+        BUILD_SHELL_NAME=$new_name
+
+    fi
+
+    return 0
+}
+
 bss()
 {
+    if [ ! -n $1 ]; then
+        return 0
+    fi
+
     local ENVIRONMENT=$1
     local CONFIG_DIR="$HOME/.config/build_shell"
     if [ -e $CONFIG_DIR/available_builds.json ]; then
-        source $(jsonmod $CONFIG_DIR/available_builds.json -p $ENVIRONMENT.set_env_file)
+        env_set_file=$(build_shell get_env_file $ENVIRONMENT)
+        if [ -z $env_set_file ]; then
+            echo "Failed to find environment $ENVIRONMENT"
+            return 1
+        fi
+        source $env_set_file
+        BUILD_SHELL_NAME=$(jsonmod -d %.% -p $BUILD_SHELL_BUILD_DIR%.%name $HOME/.config/build_shell/available_builds.json)
     fi
 }
 

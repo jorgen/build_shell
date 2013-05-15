@@ -63,10 +63,13 @@ void AvailableBuilds::printAvailable()
             continue;
         }
 
-        fprintf(stdout, "%s ", it->first.string().c_str());
+        const std::string &name = it->second->stringAt("name");
+        if (name.size()) {
+            fprintf(stdout, "%s\n", name.c_str());
+        } else {
+            fprintf(stdout, "%s\n", it->first.string().c_str());
+        }
     }
-
-    fprintf(stdout, "\n");
 
     if (altered) {
         flushTreeToFile(root);
@@ -75,18 +78,59 @@ void AvailableBuilds::printAvailable()
     delete root;
 }
 
-void AvailableBuilds::addAvailableBuild(const std::string name, const std::string set_env_file)
+void AvailableBuilds::printGetEnv(const std::string &identifier)
 {
-    std::string verified_name = name;
-    std::replace(verified_name.begin(), verified_name.end(), '.', '_');
     JT::ObjectNode *root = rootNode();
     if (!root) {
         fprintf(stderr, "Could not find any json structure in  %s\n", m_available_builds_file.c_str());
         return;
     }
-    JT::ObjectNode *build = new JT::ObjectNode();
-    root->insertNode(verified_name,build);
-    build->addValueToObject("set_env_file", set_env_file, JT::Token::String);
+
+    bool altered = false;
+    for (auto it = root->begin(); it != root->end(); ++it) {
+        const std::string &setenv_file = it->second->stringAt("set_env_file");
+        if (!setenv_file.size() || access(setenv_file.c_str(), F_OK)) {
+            altered = true;
+            delete root->take(it->first.string());
+            continue;
+        }
+
+        const std::string &name = it->second->stringAt("name");
+        bool found = false;
+        if (name.size()) {
+            if (name == identifier)
+                found = true;
+        } else {
+            if (it->first.string() == identifier)
+                found = true;
+        }
+
+        if (found) {
+            const std::string &setenv_file = it->second->stringAt("set_env_file");
+            fprintf(stdout, "%s\n", setenv_file.c_str());
+        }
+    }
+
+    if (altered) {
+        flushTreeToFile(root);
+    }
+
+    delete root;
+}
+
+void AvailableBuilds::addAvailableBuild(const std::string path, const std::string set_env_file)
+{
+    JT::ObjectNode *root = rootNode();
+    if (!root) {
+        fprintf(stderr, "Could not find any json structure in  %s\n", m_available_builds_file.c_str());
+        return;
+    }
+    JT::ObjectNode *build = root->objectNodeAt(path, "%$.$%");
+    if (!build) {
+        build = new JT::ObjectNode();
+        root->insertNode(path,build);
+    }
+    build->addValueToObject("set_env_file", set_env_file, JT::Token::String, "%$.$%");
     flushTreeToFile(root);
 }
 

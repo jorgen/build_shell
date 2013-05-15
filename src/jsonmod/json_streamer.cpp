@@ -263,11 +263,13 @@ void JsonStreamer::createPropertyVector()
     const std::string &property = m_config.property();
     size_t pos = 0;
     while (pos < property.size()) {
-        size_t new_pos = property.find('.', pos);
+        size_t new_pos = property.find(m_config.delimiter(), pos);
         m_property.push_back(property.substr(pos, new_pos - pos));
-        pos = new_pos;
-        if (new_pos != std::string::npos)
-            pos++;
+        if (new_pos < std::string::npos - m_config.delimiter().size()) {
+            pos = new_pos + m_config.delimiter().size();
+        } else {
+            pos = new_pos;
+        }
     }
 }
 

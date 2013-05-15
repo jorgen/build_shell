@@ -32,7 +32,8 @@
 #include <errno.h>
 
 Configuration::Configuration()
-    : m_inline(false)
+    : m_delimiter(".")
+    , m_inline(false)
     , m_compact(false)
     , m_create_object(false)
     , m_print_only_name(false)
@@ -122,6 +123,16 @@ void Configuration::setPrintOnlyName(bool onlyName)
 bool Configuration::printOnlyName() const
 {
     return m_print_only_name;
+}
+
+void Configuration::setDelimiter(const std::string &delimiter)
+{
+    m_delimiter = delimiter;
+}
+
+const std::string &Configuration::delimiter() const
+{
+    return m_delimiter;
 }
 
 bool Configuration::sane() const

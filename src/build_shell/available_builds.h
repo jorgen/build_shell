@@ -32,6 +32,7 @@ public:
     ~AvailableBuilds();
 
     void printAvailable();
+    void printGetEnv(const std::string &identifier);
     void addAvailableBuild(const std::string name, const std::string set_env_file);
 
 private:

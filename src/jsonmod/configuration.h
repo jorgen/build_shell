@@ -53,11 +53,15 @@ public:
     void setPrintOnlyName(bool onlyName);
     bool printOnlyName() const;
 
+    void setDelimiter(const std::string &delimiter);
+    const std::string &delimiter() const;
+
     bool sane() const;
 private:
     std::string m_input_file;
     std::string m_property;
     std::string m_value;
+    std::string m_delimiter;
 
     bool m_inline;
     bool m_compact;

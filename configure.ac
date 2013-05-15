@@ -27,9 +27,9 @@ AM_INIT_AUTOMAKE([1.11 foreign no-dist-gzip dist-xz])
 
 CXXFLAGS="$CXXFLAGS -Wall -Wextra -ggdb"
 
-AC_CANONICAL_HOST
-
 AC_LANG(C++)
+
+AC_CANONICAL_HOST
 
 compilers=""
 case $host_os in
