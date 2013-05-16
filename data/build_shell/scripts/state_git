@@ -8,7 +8,12 @@ if [ ! -z $url ]; then
     jsonmod -p scm.url -v $url -i $OUT_FILE
 fi
 
-branch=$(basename $(git symbolic-ref HEAD))
+ref=$(git symbolic-ref HEAD)
+if [ $? -eq 0 ]; then
+    branch=$(git symbolic-ref HEAD)
+else
+    branch="(no branch)"
+fi
 jsonmod -p scm.branch -v $branch -i $OUT_FILE
 
 remote=$(git config --get "branch.$branch.remote")

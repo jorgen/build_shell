@@ -301,8 +301,8 @@ void EnvScriptBuilder::writeSetScript(const std::string &unsetFileName, const st
 {
     fprintf(file, "#!/bin/bash\n");
     fprintf(file, "\n");
-    fprintf(file, "if [ -n \"$BUILD_SHELL_BUILD_DIR\" ] && [ -e \"$BUILD_SHELL_BUILD_DIR/set_build_env.sh\" ]; then\n");
-    fprintf(file, "    source \"$BUILD_SHELL_BUILD_DIR/set_build_env.sh\"\n");
+    fprintf(file, "if [ -n \"$BUILD_SHELL_BUILD_DIR\" ] && [ -e \"$BUILD_SHELL_BUILD_DIR/build_shell/unset_build_env.sh\" ]; then\n");
+    fprintf(file, "    source \"$BUILD_SHELL_BUILD_DIR/build_shell/unset_build_env.sh\"\n");
     fprintf(file, "fi\n");
     fprintf(file, "\n");
     fprintf(file, "export BUILD_SHELL_SRC_DIR=\"%s\"\n", m_configuration.srcDir().c_str());
@@ -361,7 +361,7 @@ void write_strict_unset_for_variable(FILE *file, const std::string &variable)
     fprintf(file, "    unset %s\n", variable.c_str());
     fprintf(file, "    unset BUILD_SHELL_DEFINED_%s\n", variable.c_str());
     fprintf(file, "elif [ -n \"$BUILD_SHELL_OLD_%s\" ]; then\n", variable.c_str());
-    fprintf(file, "    export %s=\"BUILD_SHELL_OLD_%s\"\n", variable.c_str(), variable.c_str());
+    fprintf(file, "    export %s=\"$BUILD_SHELL_OLD_%s\"\n", variable.c_str(), variable.c_str());
     fprintf(file, "    unset BUILD_SHELL_OLD_%s\n", variable.c_str());
     fprintf(file, "fi\n");
 }
