@@ -405,6 +405,8 @@ bool BuildAction::handleBuildForProject(const std::string &projectName, const st
         if (build_path.size() && build_path != src_path) {
             if (!Configuration::removeRecursive(build_path.c_str())) {
                 fprintf(stderr, "Failed to remove build dir %s\n", build_path.c_str());
+                m_error = true;
+                return false;
             }
             std::string actual_build_path;
             Configuration::getAbsPath(build_path, true, actual_build_path);
@@ -421,8 +423,9 @@ bool BuildAction::handleBuildForProject(const std::string &projectName, const st
                     temp_pointer.reset(project_node);
                 }
             }
-            chdir(cwd.c_str());
         }
+
+        chdir(cwd.c_str());
     }
 
     if (m_configuration.configure()) {
@@ -441,13 +444,13 @@ bool BuildAction::handleBuildForProject(const std::string &projectName, const st
             project_node = updated_project_node;
             temp_pointer.reset(project_node);
         }
-    }
 
-    if (m_configuration.install() && project_node->nodeAt("no_install") == nullptr) {
-        if (!executeScript(temp_file.name(), "install", projectName, buildSystem, project_node,&updated_project_node)) {
-            return false;
-        } else if (updated_project_node){
-            temp_pointer.reset(updated_project_node);
+        if (m_configuration.install() && project_node->nodeAt("no_install") == nullptr) {
+            if (!executeScript(temp_file.name(), "install", projectName, buildSystem, project_node,&updated_project_node)) {
+                return false;
+            } else if (updated_project_node){
+                temp_pointer.reset(updated_project_node);
+            }
         }
     }
 

@@ -568,12 +568,10 @@ bool Configuration::removeRecursive(const std::string &path)
 
             std::string child_file = path + "/" + p->d_name;
 
-            if (!stat(child_file.c_str(), &statbuf)) {
-                if (S_ISDIR(statbuf.st_mode)) {
-                    success = removeRecursive(child_file);
-                } else {
-                    success = (unlink(child_file.c_str()) == 0);
-                }
+            if (!stat(child_file.c_str(), &statbuf) && S_ISDIR(statbuf.st_mode)) {
+                success = removeRecursive(child_file);
+            } else {
+                success = (unlink(child_file.c_str()) == 0);
             }
         }
 
