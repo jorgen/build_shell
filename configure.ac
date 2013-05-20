@@ -48,6 +48,9 @@ AX_CXX_COMPILE_STDCXX_11([ext])
 if test "x$CXX" = "xclang++"; then
     CXXFLAGS="$CXXFLAGS -stdlib=libc++"
     LDFLAGS="$LDFLAGS -stdlib=libc++"
+else
+    CXXFLAGS="$CXXFLAGS -pthread"
+    LDFLAGS="$LDFLAGS -pthread"
 fi
 
 AC_ARG_ENABLE(developer-build, [  --enable-developer-build],,

@@ -94,9 +94,12 @@ public:
     const std::list<std::string> &scriptSearchPaths() const;
 
     std::vector<std::string> findScript(const std::string &script, const std::string &fallback) const;
-    int runScript(const std::string &env_script, const std::string &script, const std::string &arg) const;
+    int runScript(const std::string &env_script, const std::string &script, const std::string &arg, const std::string &redirect_out_to) const;
 
     const std::string &buildShellConfigPath() const;
+    const std::string &buildSetConfigPath() const;
+    const std::string &scriptExecutionLogPath() const;
+
     static int createTempFile(const std::string &project, std::string &tmp_file_name);
 
     static bool getAbsPath(const std::string &path, bool create, std::string &abs_path);
@@ -115,6 +118,8 @@ private:
     std::string m_buildset_out_file;
     std::string m_build_from_project;
     std::string m_build_shell_config_path;
+    std::string m_buildset_config_path;
+    std::string m_script_log_path;
     bool m_reset_to_sha;
     bool m_clean_explicitly_set;
     bool m_clean;

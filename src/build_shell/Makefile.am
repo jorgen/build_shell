@@ -29,7 +29,9 @@ build_shell_SOURCES =	         	        			\
 	available_builds.cpp					        \
 	available_builds.h						\
 	temp_file.cpp							\
-	temp_file.h
+	temp_file.h   							\
+	stderr_worker.cpp						\
+	stderr_worker.h
 
 
 

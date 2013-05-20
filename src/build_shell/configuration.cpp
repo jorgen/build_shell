@@ -21,6 +21,8 @@
 */
 #include "configuration.h"
 
+#include "stderr_worker.h"
+
 #include <limits.h>
 #include <stdlib.h>
 #include <string.h>
@@ -103,6 +105,8 @@ const std::string &Configuration::srcDir() const
 void Configuration::setBuildDir(const char *build_dir)
 {
     m_build_dir = build_dir;
+    m_buildset_config_path = std::string();
+    m_script_log_path = std::string();
 }
 
 const std::string &Configuration::buildDir() const
@@ -341,19 +345,31 @@ const std::list<std::string> &Configuration::scriptSearchPaths() const
     return m_script_search_paths;
 }
 
-static int exec_script(const std::string &command)
+static int exec_script(const std::string &command, const std::string &redirect_out_to)
 {
+    StdErrWorker stdErrWorker(redirect_out_to);
+
     pid_t process = fork();
 
     if (process) {
         int child_status;
+        pid_t wpid;
+        //stdErrWorker.processPipe();
+        //stdErrWorker.closeStdErrWritePipe();
 
-        pid_t tpid;
         do {
-            tpid = wait(&child_status);
-        } while(tpid != process);
+            wpid = wait(&child_status);
+        } while(wpid != process);
+
+        //stdErrWorker.join();
         return WEXITSTATUS(child_status);
     } else {
+        if (redirect_out_to.size()) {
+//            stdErrWorker.closeStdErrReadPipe();
+//
+//            stdErrWorker.setupRedirectStdOut();
+//            stdErrWorker.setupRedirectStdErr();
+        }
         execlp("bash", "bash", "-c", command.c_str(), nullptr);
         fprintf(stderr, "Failed to execute %s : %s\n", command.c_str(), strerror(errno));
         exit(1);
@@ -362,7 +378,7 @@ static int exec_script(const std::string &command)
     return 0;
 }
 
-int Configuration::runScript(const std::string &env_script, const std::string &script, const std::string &args) const
+int Configuration::runScript(const std::string &env_script, const std::string &script, const std::string &args, const std::string &redirect_out_to) const
 {
     if (!script.size())
         return -1;
@@ -386,12 +402,34 @@ int Configuration::runScript(const std::string &env_script, const std::string &s
     if (DEBUG_RUN_COMMAND) {
         fprintf(stderr, "Executing script command %s\n", script_command.c_str());
     }
-    return exec_script(script_command);
+
+    return exec_script(script_command, redirect_out_to);
 }
 
 const std::string &Configuration::buildShellConfigPath() const
 {
     return m_build_shell_config_path;
+}
+
+const std::string &Configuration::buildSetConfigPath() const
+{
+    if (m_build_dir.size() && !m_buildset_config_path.size()) {
+        std::string config_path = m_build_dir + "/" + "build_shell";
+        Configuration *self = const_cast<Configuration *>(this);
+        Configuration::getAbsPath(config_path, true, self->m_buildset_config_path);
+    }
+
+    return m_buildset_config_path;
+}
+
+const std::string &Configuration::scriptExecutionLogPath() const
+{
+    if (m_build_dir.size() && !m_script_log_path.size()) {
+        std::string log_path = m_build_dir + "/" + "build_shell/logs";
+        Configuration *self = const_cast<Configuration *>(this);
+        Configuration::getAbsPath(log_path, true, self->m_script_log_path);
+    }
+    return m_script_log_path;
 }
 
 int Configuration::createTempFile(const std::string &project, std::string &tmp_file)
