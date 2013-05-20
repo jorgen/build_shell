@@ -26,6 +26,7 @@
 #include "tree_builder.h"
 
 #include <unistd.h>
+#include <stdio.h>
 Action::Action(const Configuration &configuration)
     : m_configuration(configuration)
     , m_error(false)
@@ -61,7 +62,7 @@ bool Action::executeScript(const std::string &env_script, const std::string &ste
     bool return_val = true;
     *returnedObjectNode = 0;
     std::string temp_file;
-
+    std::string log_file = m_configuration.scriptExecutionLogPath() +  "/" + projectName + "_" + step + ".log";
     if (!flushProjectNodeToTemporaryFile(projectName, projectNode, temp_file))
         return false;
     std::string primary_script = step + "_" + projectName;
@@ -69,7 +70,7 @@ bool Action::executeScript(const std::string &env_script, const std::string &ste
     auto scripts = m_configuration.findScript(primary_script, fallback_script);
     bool temp_file_removed = false;
     for (auto it = scripts.begin(); it != scripts.end(); ++it) {
-        int exit_code = m_configuration.runScript(env_script, (*it), temp_file);
+        int exit_code = m_configuration.runScript(env_script, (*it), temp_file, log_file);
         if (exit_code) {
             fprintf(stderr, "Script %s for project %s failed in execution\n", it->c_str(), projectName.c_str());
             return_val = false;

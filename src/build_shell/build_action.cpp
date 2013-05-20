@@ -374,6 +374,7 @@ bool BuildAction::execute()
 
 bool BuildAction::handleBuildForProject(const std::string &projectName, const std::string &buildSystem, JT::ObjectNode *projectNode, JT::ObjectNode **updatedProjectNode)
 {
+    fprintf(stderr, "Processing buildstep for %s\n", projectName.c_str());
     TempFile temp_file(projectName + "_env");
     m_env_script_builder.writeSetScript(temp_file, projectName);
     temp_file.close();

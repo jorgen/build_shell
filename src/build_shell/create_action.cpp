@@ -136,7 +136,7 @@ bool CreateAction::handleCurrentSrcDir()
 
     JT::ObjectNode *scm_node = root_for_dir->objectNodeAt("scm");
     if (!scm_node) {
-        JT::Property prop(JT::Token::String, JT::Data("scm",3,false));
+        JT::Property prop(std::string("scm"));
         root_for_dir->insertNode(prop, new JT::ObjectNode(), true);
     }
 
@@ -154,59 +154,15 @@ bool CreateAction::handleCurrentSrcDir()
     }
     fallback.append(postfix);
 
+    JT::ObjectNode *updated_node;
+    bool script_success = executeScript("", "state", primary, postfix, root_for_dir, &updated_node);
 
-    auto scripts = m_configuration.findScript(primary, fallback);
-    if (scripts.size() == 0) {
-        fprintf(stderr, "Could not find any scripts matching primary: %s nor fallback: %s\n",
-                primary.c_str(), fallback.c_str());
-        return false;
-    }
-    bool script_success = false;
-    std::string final_temp_file;
-    for (auto it = scripts.begin(); it != scripts.end(); ++it) {
-        std::string tmp_file;
-        flushProjectNodeToTemporaryFile(base_name, root_for_dir, tmp_file);
-
-        int exit_code = m_configuration.runScript("", *it, tmp_file);
-
-        if (exit_code) {
-            return true;
-        }
-
-        if (access(tmp_file.c_str(), F_OK) == 0) {
-            script_success = true;
-            final_temp_file = tmp_file;
-            break;
-        }
+    if (!updated_node) {
+        updated_node = new JT::ObjectNode();
     }
 
-    if (!script_success) {
-        return false;
-    }
+    m_out_tree->insertNode(base_name, updated_node, true);
 
-    int final_temp_file_desc = open(final_temp_file.c_str(), O_RDONLY|O_CLOEXEC);
-    if (final_temp_file_desc < 0) {
-        fprintf(stderr, "Suspecting script for messing up temporary file: %s\n%s\n",
-                final_temp_file.c_str(), strerror(errno));
-        return false;
-    }
-    MmappedReadFile temp_mmap_file_handler;
-    temp_mmap_file_handler.setFile(final_temp_file_desc);
-
-    const char *temp_file_data = static_cast<const char *>(temp_mmap_file_handler.map());
-
-    JT::TreeBuilder tree_builder;
-    tree_builder.create_root_if_needed = true;
-    auto tree_build = tree_builder.build(temp_file_data, temp_mmap_file_handler.size());
-    if (tree_build.second == JT::Error::NoError) {
-        JT::Property property(base_name);
-        JT::ObjectNode *root_for_cwd_dir = tree_build.first->asObjectNode();
-        m_out_tree->insertNode(property, root_for_cwd_dir, true);
-    } else {
-        fprintf(stderr, "Failed to understand output from %s\n", base_name.c_str());
-    }
-    close(final_temp_file_desc);
-    unlink(final_temp_file.c_str());
-    return true;
+    return script_success;
 }
 
