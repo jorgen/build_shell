@@ -3,9 +3,9 @@
         "scm" : {
             "type" : "git",
             "url" : "git://anongit.freedesktop.org/wayland/wayland",
-            "branch" : "1.0",
+            "branch" : "1.1",
             "remote" : "origin",
-            "remote_branch" : "1.0",
+            "remote_branch" : "1.1",
             "current_head" : "8c6fe682c29ead1f03c55656c5264812074c4efa",
             "common_ancestor" : "8c6fe682c29ead1f03c55656c5264812074c4efa"
         },
@@ -97,9 +97,9 @@
         "scm" : {
             "type" : "git",
             "url" : "git://anongit.freedesktop.org/wayland/weston",
-            "branch" : "1.0",
+            "branch" : "1.1",
             "remote" : "origin",
-            "remote_branch" : "1.0",
+            "remote_branch" : "1.1",
             "current_head" : "5e011244c80295345ee4616b76a45cd7cbe3204b",
             "common_ancestor" : "5e011244c80295345ee4616b76a45cd7cbe3204b"
         },
