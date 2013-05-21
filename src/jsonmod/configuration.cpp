@@ -37,6 +37,7 @@ Configuration::Configuration()
     , m_compact(false)
     , m_create_object(false)
     , m_print_only_name(false)
+    , m_strict(false)
 {
 
 }
@@ -133,6 +134,16 @@ void Configuration::setDelimiter(const std::string &delimiter)
 const std::string &Configuration::delimiter() const
 {
     return m_delimiter;
+}
+
+void Configuration::setStrict(bool strict)
+{
+    m_strict = strict;
+}
+
+bool Configuration::strict() const
+{
+    return m_strict;
 }
 
 bool Configuration::sane() const

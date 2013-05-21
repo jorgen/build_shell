@@ -130,7 +130,8 @@
             "remote_branch" : "stable",
             "current_head" : "1dd094a4da1b472dbeae79fe9d6962e817a47b45",
             "common_ancestor" : "1dd094a4da1b472dbeae79fe9d6962e817a47b45"
-        }
+        },
+        "no_install" : true
     },
     "qtdeclarative" : {
         "scm" : {
@@ -142,6 +143,7 @@
             "current_head" : "cec16f1e67aeec0e8a82a06cda6aaca5d95f4d94",
             "common_ancestor" : "cec16f1e67aeec0e8a82a06cda6aaca5d95f4d94"
         }
+        "no_install" : true
     },
     "qtwayland" : {
         "scm" : {
@@ -154,5 +156,6 @@
             "common_ancestor" : "62eba6f0dfff1b17c8d9fea41cc39cb04162c842"
         },
         "configure_args" : "CONFIG+=wayland-compositor"
+        "no_install" : true
     }
 }

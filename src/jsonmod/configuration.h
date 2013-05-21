@@ -56,6 +56,9 @@ public:
     void setDelimiter(const std::string &delimiter);
     const std::string &delimiter() const;
 
+    void setStrict(bool strict);
+    bool strict() const;
+
     bool sane() const;
 private:
     std::string m_input_file;
@@ -67,6 +70,7 @@ private:
     bool m_compact;
     bool m_create_object;
     bool m_print_only_name;
+    bool m_strict;
 };
 
 #endif //CONFIGURATION_H

@@ -37,7 +37,11 @@ TreeBuilder::TreeBuilder(const std::string &file)
         return;
     JT::TreeBuilder tree_builder;
     tree_builder.create_root_if_needed = true;
-    auto tree_build = tree_builder.build(data, m_mapped_file.size());
+    JT::Tokenizer tokenizer;
+    tokenizer.allowNewLineAsTokenDelimiter(true);
+    tokenizer.allowSuperfluousComma(true);
+    tokenizer.addData(data, m_mapped_file.size());
+    auto tree_build = tree_builder.build(&tokenizer);
     if (tree_build.second == JT::Error::NoError) {
         m_node = tree_build.first->asObjectNode();
     }

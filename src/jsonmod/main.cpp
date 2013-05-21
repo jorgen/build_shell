@@ -37,7 +37,8 @@ enum optionIndex {
     VALUE,
     CREATE_OBJ,
     ONLY_NAME,
-    DELIMITER
+    DELIMITER,
+    STRICT
 };
 
 const option::Descriptor usage[] =
@@ -54,6 +55,7 @@ const option::Descriptor usage[] =
   {CREATE_OBJ,    0, "o", "create-object",    Arg::requiresValue,        "  --create-object, -o\t Create object with path."},
   {ONLY_NAME,     0, "n", "only-name",        option::Arg::None,         "  --only-name, -n\t Only print the name of the object."},
   {DELIMITER,     0, "d", "delimiter",        Arg::requiresValue,        "  --delimiter, -d\t Delimiter to use between objects nodes."},
+  {STRICT,        0, "s", "strict",           option::Arg::None,         "  --strict    \t Use strict json parsing"},
   {UNKNOWN, 0,"" ,  ""   ,                    option::Arg::None,         "\nExamples:\n"
                                                                          "  jsonmod -i -p \"foo\" -v 43, /some/file \n"},
   {0,0,0,0,0,0}
@@ -126,6 +128,9 @@ int main(int argc, char **argv)
                 break;
             case DELIMITER:
                 configuration.setDelimiter(opt.arg);
+                break;
+            case STRICT:
+                configuration.setStrict(true);
                 break;
             case UNKNOWN:
                 fprintf(stderr, "UNKNOWN!");

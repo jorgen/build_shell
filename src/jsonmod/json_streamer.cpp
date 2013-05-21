@@ -74,6 +74,8 @@ JsonStreamer::JsonStreamer(const Configuration &config)
     std::function<void(JT::Serializer *)> callback=
         std::bind(&JsonStreamer::requestFlushOutBuffer, this, std::placeholders::_1);
 
+    m_tokenizer.allowNewLineAsTokenDelimiter(!m_config.strict());
+    m_tokenizer.allowSuperfluousComma(!m_config.strict());
     m_serializer.addRequestBufferCallback(callback);
 
     setStreamerOptions(m_config.compactPrint());
