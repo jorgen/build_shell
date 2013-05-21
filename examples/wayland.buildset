@@ -3,19 +3,28 @@
         "scm" : {
             "type" : "git",
             "url" : "git://anongit.freedesktop.org/wayland/wayland",
-            "branch" : "master",
+            "branch" : "1.0",
             "remote" : "origin",
-            "remote_branch" : "master",
-            "current_head" : "e920572e5cc120b3d03b0b2c40af67927fcb73d7",
-            "common_ancestor" : "e920572e5cc120b3d03b0b2c40af67927fcb73d7"
+            "remote_branch" : "1.0",
+            "current_head" : "8c6fe682c29ead1f03c55656c5264812074c4efa",
+            "common_ancestor" : "8c6fe682c29ead1f03c55656c5264812074c4efa"
         },
         "env" : {
             "ACLOCAL" : {
                 "value" : "aclocal -I {$install_path}/share/aclocal",
                 "overwrite" : true
-            },
+            }
         },
         "configure_args" : "--disable-documentation"
+    },
+    "macros" : {
+        "scm" : {
+            "type" : "git",
+            "url" : "git://anongit.freedesktop.org/xorg/util/macros",
+            "branch" : "master",
+            "remote" : "origin",
+            "remote_branch" : "master"
+        }
     },
     "libxkbcommon" : {
         "scm" : {
@@ -29,6 +38,15 @@
         },
         "configure_args" : "--with-xkb-config-root=/usr/share/X11/xkb"
     },
+    "drm" : {
+        "scm" : {
+            "type" : "git",
+            "url" : "git://anongit.freedesktop.org/mesa/drm",
+            "branch" : "master",
+            "remote" : "origin",
+            "remote_branch" : "master"
+        }
+    },
     "mesa" : {
         "scm" : {
             "type" : "git",
@@ -39,7 +57,7 @@
             "current_head" : "38d2a16c0113b905c46804695c4fafd1b5865d08",
             "common_ancestor" : "38d2a16c0113b905c46804695c4fafd1b5865d08"
         },
-        "configure_args" : "--enable-gles2 --enable-gallium-egl --with-egl-platforms=x11,wayland,drm --enable-gbm --enable-shared-glapi --with-gallium-drivers=swrast"
+        "configure_args" : "--enable-gles2 --disable-gallium-egl --with-egl-platforms=x11,wayland,drm --enable-gbm --enable-shared-glapi --with-gallium-drivers=swrast"
     },
     "pixman" : {
         "scm" : {
@@ -79,13 +97,13 @@
         "scm" : {
             "type" : "git",
             "url" : "git://anongit.freedesktop.org/wayland/weston",
-            "branch" : "master",
+            "branch" : "1.0",
             "remote" : "origin",
-            "remote_branch" : "master",
-            "current_head" : "2bf876282fa640f8f3f33bab2c9fd1df1cafa1c4",
-            "common_ancestor" : "2bf876282fa640f8f3f33bab2c9fd1df1cafa1c4"
+            "remote_branch" : "1.0",
+            "current_head" : "5e011244c80295345ee4616b76a45cd7cbe3204b",
+            "common_ancestor" : "5e011244c80295345ee4616b76a45cd7cbe3204b"
         },
-        "configure_args" : "--disable-weston-launch"
+        "configure_args" : "--disable-weston-launch --disable-colord"
     },
     "qtbase" : {
         "scm" : {
