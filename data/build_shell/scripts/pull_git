@@ -1,6 +1,5 @@
 #!/bin/bash
 
 FILE=$@
-#if $(jsonmod -p attributes.sync
 git pull --rebase
 

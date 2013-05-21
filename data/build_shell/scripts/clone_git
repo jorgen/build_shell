@@ -2,4 +2,5 @@
 
 FILE=$@
 URL=$(jsonmod -p scm.url $FILE)
-git clone $URL
+REMOTE_BRANCH=$(jsonmod -p scm.remote_branch $FILE)
+git clone --branch $REMOTE_BRANCH $URL
