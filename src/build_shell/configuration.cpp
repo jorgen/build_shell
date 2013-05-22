@@ -606,17 +606,27 @@ bool Configuration::removeRecursive(const std::string &path)
 
             std::string child_file = path + "/" + p->d_name;
 
-            if (!stat(child_file.c_str(), &statbuf) && S_ISDIR(statbuf.st_mode)) {
+            if (!lstat(child_file.c_str(), &statbuf)
+                && !S_ISLNK(statbuf.st_mode)
+                && S_ISDIR(statbuf.st_mode))
+            {
                 success = removeRecursive(child_file);
             } else {
                 success = (unlink(child_file.c_str()) == 0);
+                if (!success)
+                    fprintf(stderr, "unlinking failed on file: %s %s\n", child_file.c_str(), strerror(errno));
             }
         }
 
         closedir(d);
     }
 
-    success = rmdir(path.c_str()) == 0;
+
+    if (success) {
+        success = rmdir(path.c_str()) == 0;
+        if (!success)
+            fprintf(stderr, "rmdir failed on: %s %s\n", path.c_str(), strerror(errno));
+    }
 
     return success;
 }
