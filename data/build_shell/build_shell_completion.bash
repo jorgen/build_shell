@@ -22,6 +22,11 @@ bs()
     local component=$2
     local flags="${*:3}"
 
+    if [[ $mode == "rebuild" ]]; then
+        mode="build"
+        flags="$flags --skip-configure"
+    fi
+
     if [[ $mode != "pull" ]] && [[ $mode != "build" ]]; then
         echo "unknown build shell mode $mode"
         exit 1
@@ -138,7 +143,7 @@ _build_shell()
     prev="${COMP_WORDS[COMP_CWORD-1]}"
 
     if [ "$COMP_CWORD" -eq 1 ]; then
-        opts="pull build"
+        opts="pull build rebuild"
         COMPREPLY=( $(compgen -W "${opts}" ${cur}) )
         return 0
     fi
