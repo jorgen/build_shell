@@ -465,5 +465,11 @@ bool BuildAction::handleBuildForProject(const std::string &projectName, const st
 
    *updatedProjectNode = temp_pointer.release();
 
-    return true;
+   std::string print_success = std::string() +
+       "************************************************************************\n"
+       "\t\t BUILD SUCCESS: " + projectName + "\n"
+       "************************************************************************\n"
+       "\n";
+   write(STDOUT_FILENO, print_success.c_str(), print_success.size());
+   return true;
 }

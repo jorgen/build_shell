@@ -94,7 +94,10 @@ public:
     const std::list<std::string> &scriptSearchPaths() const;
 
     std::vector<std::string> findScript(const std::string &script, const std::string &fallback) const;
-    int runScript(const std::string &env_script, const std::string &script, const std::string &arg, const std::string &redirect_out_to) const;
+    int runScript(const std::string &env_script,
+                  const std::string &script,
+                  const std::string &arg,
+                  int redirect_out_to) const;
 
     const std::string &buildShellConfigPath() const;
     const std::string &buildSetConfigPath() const;

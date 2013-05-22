@@ -69,11 +69,39 @@ CreateAction::~CreateAction()
         close(m_out_file);
 }
 
+class LogFileHandler
+{
+public:
+    LogFileHandler(const std::string &logFile)
+        : error(false)
+    {
+        mode_t mode = S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH;
+        log_file = open(logFile.c_str(), O_WRONLY|O_APPEND|O_CREAT|O_TRUNC|O_CLOEXEC, mode);
+        if (log_file < 0) {
+            fprintf(stderr, "Failed to open file %s for stderr redirection %s\n", logFile.c_str(),
+                    strerror(errno));
+            error = true;;
+        }
+    }
+
+    ~LogFileHandler()
+    {
+        if (!error) {
+            close(log_file);
+        }
+    }
+
+    int log_file;
+    bool error;
+};
 
 bool CreateAction::execute()
 {
     if (m_error)
         return false;
+
+    std::string log_file = m_configuration.scriptExecutionLogPath() + "/buildset_creation.log";
+    LogFileHandler log_file_handler(log_file);
 
     DIR *source_dir = opendir(m_configuration.srcDir().c_str());
     if (!source_dir) {
@@ -105,7 +133,7 @@ bool CreateAction::execute()
                 fprintf(stderr, "Failed to change into directory %s\n%s\n", ent->d_name, strerror(errno));
                 return false;
             }
-            if (!handleCurrentSrcDir()) {
+            if (!handleCurrentSrcDir(log_file_handler.log_file)) {
                 fprintf(stderr, "Failed to handle dir %s\n", ent->d_name);
                 closedir(source_dir);
                 return false;
@@ -123,11 +151,17 @@ bool CreateAction::execute()
 }
 
 
-bool CreateAction::handleCurrentSrcDir()
+bool CreateAction::handleCurrentSrcDir(int log_file)
 {
     char cwd[PATH_MAX];
     getcwd(cwd, sizeof(cwd));
     std::string base_name = basename(cwd);
+    std::string log = std::string() +
+        "***********************************************************\n"
+        "\tLog for " + cwd + "\n"
+        "***********************************************************\n"
+        "\n";
+    write(log_file, log.c_str(), log.size());
 
     JT::ObjectNode *root_for_dir = m_out_tree->objectNodeAt(base_name);
     if (!root_for_dir) {
@@ -155,7 +189,7 @@ bool CreateAction::handleCurrentSrcDir()
     fallback.append(postfix);
 
     JT::ObjectNode *updated_node;
-    bool script_success = executeScript("", "state", primary, postfix, root_for_dir, &updated_node);
+    bool script_success = executeScript("", "state", primary, postfix, log_file,  root_for_dir, &updated_node);
 
     if (!updated_node) {
         updated_node = new JT::ObjectNode();

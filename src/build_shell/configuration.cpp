@@ -40,7 +40,6 @@
 #include <sstream>
 
 static bool DEBUG_FIND_SCRIPT = getenv("BUILD_SHELL_DEBUG_FIND_SCRIPT") != 0;
-static bool DEBUG_RUN_COMMAND = getenv("BUILD_SHELL_DEBUG_RUN_COMMAND") != 0;
 
 Configuration::Configuration()
     : m_mode(Invalid)
@@ -346,7 +345,7 @@ const std::list<std::string> &Configuration::scriptSearchPaths() const
     return m_script_search_paths;
 }
 
-static int exec_script(const std::string &command, const std::string &redirect_out_to)
+static int exec_script(const std::string &command, int redirect_out_to)
 {
     ChildProcessIoHandler childProcessIoHandler(redirect_out_to);
 
@@ -356,10 +355,6 @@ static int exec_script(const std::string &command, const std::string &redirect_o
         int child_status;
         pid_t wpid;
 
-        fprintf(stdout, "Executing command: \"%s\"\n", command.c_str());
-        if (redirect_out_to.size()) {
-            fprintf(stdout, "Output is logged in %s\n", redirect_out_to.c_str());
-        }
         childProcessIoHandler.setupMasterProcessState();
 
         do {
@@ -367,7 +362,7 @@ static int exec_script(const std::string &command, const std::string &redirect_o
         } while(wpid != process);
         return WEXITSTATUS(child_status);
     } else {
-        if (redirect_out_to.size()) {
+        if (redirect_out_to >= 0) {
             childProcessIoHandler.setupChildProcessState();
         }
         execlp("bash", "bash", "-c", command.c_str(), nullptr);
@@ -378,7 +373,10 @@ static int exec_script(const std::string &command, const std::string &redirect_o
     return 0;
 }
 
-int Configuration::runScript(const std::string &env_script, const std::string &script, const std::string &args, const std::string &redirect_out_to) const
+int Configuration::runScript(const std::string &env_script,
+                             const std::string &script,
+                             const std::string &args,
+                             int redirect_out_to) const
 {
     if (!script.size())
         return -1;
@@ -398,10 +396,6 @@ int Configuration::runScript(const std::string &env_script, const std::string &s
     post_script_command.append(args);
 
     std::string script_command = pre_script_command + script + post_script_command;
-
-    if (DEBUG_RUN_COMMAND) {
-        fprintf(stderr, "Executing script command %s\n", script_command.c_str());
-    }
 
     return exec_script(script_command, redirect_out_to);
 }

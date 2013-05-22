@@ -29,16 +29,14 @@
 
 #include <vector>
 
-ChildProcessIoHandler::ChildProcessIoHandler(const std::string &out_file)
-    : m_out_file(-1)
+ChildProcessIoHandler::ChildProcessIoHandler(int out_file)
+    : m_out_file(out_file)
     , m_stdout_pipe{-1,-1}
     , m_stderr_pipe{-1,-1}
     , m_error(true)
     , m_print_stdout(false)
     , m_print_stderr(true)
 {
-    if (!out_file.size())
-        return;
 
     if (::pipe(m_stderr_pipe)) {
         fprintf(stderr, "Failed to open pipe for stderr redirection %s\n", strerror(errno));
@@ -47,14 +45,6 @@ ChildProcessIoHandler::ChildProcessIoHandler(const std::string &out_file)
 
     if (::pipe(m_stdout_pipe)) {
         fprintf(stderr, "Failed to open pipe for stdout redirection %s\n", strerror(errno));
-        return;
-    }
-
-    mode_t mode = S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH;
-    m_out_file = open(out_file.c_str(), O_WRONLY|O_APPEND|O_CREAT|O_TRUNC|O_CLOEXEC, mode);
-    if (m_out_file < 0) {
-        fprintf(stderr, "Failed to open file %s for stderr redirection %s\n", out_file.c_str(),
-                strerror(errno));
         return;
     }
 
@@ -94,6 +84,9 @@ void ChildProcessIoHandler::setupChildProcessState()
 
 static bool flushToFile(int file, char *buffer, ssize_t size)
 {
+    if (file < 0)
+        return true;
+
     ssize_t written = 0;
     while (written < size) {
         ssize_t w = write(file, buffer, size);

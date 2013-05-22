@@ -28,7 +28,7 @@
 class ChildProcessIoHandler
 {
 public:
-    ChildProcessIoHandler(const std::string &out_file);
+    ChildProcessIoHandler(int out_file);
     ~ChildProcessIoHandler();
 
     void setupMasterProcessState();

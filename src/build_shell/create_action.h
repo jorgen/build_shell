@@ -39,7 +39,7 @@ public:
     bool execute();
 
 private:
-    bool handleCurrentSrcDir();
+    bool handleCurrentSrcDir(int log_file);
 
     TreeBuilder m_tree_builder;
     std::unique_ptr<JT::ObjectNode> m_out_tree;

@@ -27,6 +27,10 @@
 
 #include <unistd.h>
 #include <stdio.h>
+#include <fcntl.h>
+#include <string.h>
+#include <errno.h>
+
 Action::Action(const Configuration &configuration)
     : m_configuration(configuration)
     , m_error(false)
@@ -57,12 +61,48 @@ bool Action::flushProjectNodeToTemporaryFile(const std::string &project_name, JT
     return true;
 }
 
-bool Action::executeScript(const std::string &env_script, const std::string &step, const std::string &projectName, const std::string &fallback, JT::ObjectNode *projectNode, JT::ObjectNode **returnedObjectNode)
+bool Action::executeScript(const std::string &step,
+                           const std::string &projectName,
+                           const std::string &fallback,
+                           JT::ObjectNode *projectNode,
+                           JT::ObjectNode **returnedObjectNode)
+{
+    return executeScript("",step, projectName,fallback, projectNode, returnedObjectNode);
+}
+bool Action::executeScript(const std::string &env_script,
+                           const std::string &step,
+                           const std::string &projectName,
+                           const std::string &fallback,
+                           JT::ObjectNode *projectNode,
+                           JT::ObjectNode **returnedObjectNode)
+{
+    std::string log_file_str = m_configuration.scriptExecutionLogPath() +  "/" + projectName + "_" + step + ".log";
+    mode_t mode = S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH;
+    int log_file = open(log_file_str.c_str(), O_WRONLY|O_APPEND|O_CREAT|O_TRUNC|O_CLOEXEC, mode);
+    if (log_file < 0) {
+        fprintf(stderr, "Failed to open file %s for stderr redirection %s\n", log_file_str.c_str(),
+                strerror(errno));
+        return false;
+    }
+
+    bool returnVal = executeScript(env_script, step, projectName, fallback, log_file, projectNode, returnedObjectNode);
+
+    close(log_file);
+
+    return returnVal;
+}
+
+bool Action::executeScript(const std::string &env_script,
+                           const std::string &step,
+                           const std::string &projectName,
+                           const std::string &fallback,
+                           int log_file,
+                           JT::ObjectNode *projectNode,
+                           JT::ObjectNode **returnedObjectNode)
 {
     bool return_val = true;
     *returnedObjectNode = 0;
     std::string temp_file;
-    std::string log_file = m_configuration.scriptExecutionLogPath() +  "/" + projectName + "_" + step + ".log";
     if (!flushProjectNodeToTemporaryFile(projectName, projectNode, temp_file))
         return false;
     std::string primary_script = step + "_" + projectName;
