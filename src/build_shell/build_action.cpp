@@ -129,6 +129,7 @@ BuildAction::BuildAction(const Configuration &configuration)
         fprintf(stderr, "Error loading buildset %s\n",
                 configuration.buildsetFile().c_str());
         m_error = true;
+        return;
     }
 
     if (chdir(m_configuration.buildDir().c_str())) {
@@ -191,6 +192,8 @@ BuildAction::BuildAction(const Configuration &configuration)
 
 BuildAction::~BuildAction()
 {
+    if (m_error)
+        return;
     m_env_script_builder.writeScripts(m_set_build_env_file, m_unset_build_env_file,"");
     std::string stored_buildset_finished = m_stored_buildset + "_finished";
     CreateAction create_action(m_configuration,stored_buildset_finished);
@@ -202,7 +205,6 @@ BuildAction::~BuildAction()
         return;
     }
     TreeWriter finished(stored_buildset_finished, m_buildset_tree);
-
 }
 
 class ArgumentsCleanup
@@ -248,6 +250,7 @@ bool BuildAction::execute()
         if (chdir(m_configuration.buildDir().c_str())) {
             fprintf(stderr, "Could not move into build dir:%s\n%s\n",
                     m_configuration.buildDir().c_str(), strerror(errno));
+            m_error = true;
             return false;
         }
 
@@ -258,6 +261,7 @@ bool BuildAction::execute()
         if (access(project_src_path.c_str(), X_OK|R_OK)) {
             fprintf(stderr, "Problem accessing source path: %s for project %s. Can not complete build\n",
                     project_src_path.c_str(), project_name.c_str());
+            m_error = true;
             return false;
         }
 
@@ -272,6 +276,7 @@ bool BuildAction::execute()
                 if (failed_mkdir) {
                     fprintf(stderr, "Failed to verify build path %s for project %s. Can not complete build\n",
                             project_build_path.c_str(), project_name.c_str());
+                    m_error = true;
                     return false;
                 }
         }
@@ -322,6 +327,7 @@ bool BuildAction::execute()
 
         if (chdir(project_build_path.c_str())) {
             fprintf(stderr, "Failed to move into directory %s to build\n", project_build_path.c_str());
+            m_error = true;
             return false;
         }
         JT::ObjectNode *updated_project_node;
@@ -354,6 +360,7 @@ bool BuildAction::execute()
 
         if (chdir(project_build_path.c_str())) {
             fprintf(stderr, "Failed to move into directory %s to do post build scripts\n", project_build_path.c_str());
+            m_error = true;
             return false;
         }
         JT::ObjectNode *updated_project_node;
@@ -415,7 +422,9 @@ bool BuildAction::handleBuildForProject(const std::string &projectName, const st
 
         if (src_path.size()) {
             if (chdir(src_path.c_str())) {
-                fprintf(stderr, "Failed to change to source directory. Skipping deep clean %s\n", strerror(errno));
+                fprintf(stderr, "Failed to change to source directory. Deep clean failed%s\n", strerror(errno));
+                m_error = true;
+                return false;
             } else {
                 if (!executeScript(temp_file.name(), "deep_clean", projectName, scm_type, project_node, &updated_project_node)) {
                     return false;

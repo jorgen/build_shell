@@ -63,7 +63,6 @@ ChildProcessIoHandler::ChildProcessIoHandler(const std::string &out_file)
 
 ChildProcessIoHandler::~ChildProcessIoHandler()
 {
-    fprintf(stderr, "CLOSING\n");
     if (m_stderr_pipe[1] >= 0) {
         close(m_stderr_pipe[1]);
     }
@@ -72,7 +71,6 @@ ChildProcessIoHandler::~ChildProcessIoHandler()
     }
 
     m_thread.join();
-    fprintf(stderr, "CLOSED\n");
 }
 
 void ChildProcessIoHandler::setupMasterProcessState()

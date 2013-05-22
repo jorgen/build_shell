@@ -297,7 +297,8 @@ void Configuration::validate()
     }
 
     std::string new_src_dir;
-    if (!Configuration::getAbsPath(m_src_dir, m_mode == Pull, new_src_dir)) {
+    bool should_create = m_mode == Pull || (m_mode == Build && m_pull_first);
+    if (!Configuration::getAbsPath(m_src_dir, should_create, new_src_dir)) {
         fprintf(stderr, "Failed to set src dir to %s. Is it a valid directory?\n",
                 m_src_dir.c_str());
         return;
@@ -355,6 +356,10 @@ static int exec_script(const std::string &command, const std::string &redirect_o
         int child_status;
         pid_t wpid;
 
+        fprintf(stdout, "Executing command: \"%s\"\n", command.c_str());
+        if (redirect_out_to.size()) {
+            fprintf(stdout, "Output is logged in %s\n", redirect_out_to.c_str());
+        }
         childProcessIoHandler.setupMasterProcessState();
 
         do {
@@ -560,16 +565,16 @@ bool Configuration::getAbsPath(const std::string &path, bool create, std::string
         }
     }
     while ((first_slash = path.find('/', current_pos)) != std::string::npos) {
-        if (current_pos != first_slash) {
+        if (first_slash > current_pos) {
             std::string dir = path.substr(current_pos, first_slash - current_pos);
             if (!change_to_dir(dir,create))
                 return false;
         }
         current_pos = first_slash + 1;
     }
-    if (current_pos != path.size() -1) {
+    if (current_pos < path.size() -1) {
         std::string dir = path.substr(current_pos, first_slash - current_pos);
-        if (!change_to_dir(dir,create))
+        if (dir.size() && !change_to_dir(dir,create))
             return false;
     }
 
