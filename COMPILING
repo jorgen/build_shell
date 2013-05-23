@@ -1,8 +1,13 @@
 Be sure to update the submodule first
 
-JsonTools has a C++11 configure check. On OS X use
-./autogen.sh CXX=clang++
-Infact on OS X it should be exported so that it is allways used from cli.
+autoconf doesnt come bundled with OS X, so you need to install them separatly. I don't want to maintain a separate xcode project :( Using Homebrew its easy though:
+
+Install Homebrew with:
+# ruby -e "$(curl -fsSL https://raw.github.com/mxcl/homebrew/go)"
+
+Then automake with friends:
+# brew install automake
+Its funny how a compile script needs another compile script :)
 
 if you want to pick up the system scripts from the $topsrcdir/data/ use --enable-developer-build
 

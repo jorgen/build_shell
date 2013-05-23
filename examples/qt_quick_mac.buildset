@@ -1,0 +1,42 @@
+{
+    "qtbase" : {
+        "scm" : {
+            "type" : "git",
+            "url" : "ssh://codereview.qt-project.org:29418/qt/qtbase.git",
+            "branch" : "stable",
+            "remote" : "origin",
+            "remote_branch" : "stable",
+            "current_head" : "1d22f20887d370fed21356ae063e5556be210c63",
+            "common_ancestor" : "1d22f20887d370fed21356ae063e5556be210c63"
+        },
+        "configure_args" : "-developer-build -debug -no-framework -opensource -nomake tests",
+        "no_install" : true,
+        "env" : {
+            "PATH" : "{$project_build_path}/bin"
+        }
+    },
+    "qtjsbackend" : {
+        "scm" : {
+            "type" : "git",
+            "url" : "ssh://codereview.qt-project.org:29418/qt/qtjsbackend.git",
+            "branch" : "stable",
+            "remote" : "origin",
+            "remote_branch" : "stable",
+            "current_head" : "1dd094a4da1b472dbeae79fe9d6962e817a47b45",
+            "common_ancestor" : "1dd094a4da1b472dbeae79fe9d6962e817a47b45"
+        },
+        "no_install" : true
+    },
+    "qtdeclarative" : {
+        "scm" : {
+            "type" : "git",
+            "url" : "ssh://codereview.qt-project.org:29418/qt/qtdeclarative.git",
+            "branch" : "stable",
+            "remote" : "origin",
+            "remote_branch" : "stable",
+            "current_head" : "cec16f1e67aeec0e8a82a06cda6aaca5d95f4d94",
+            "common_ancestor" : "cec16f1e67aeec0e8a82a06cda6aaca5d95f4d94"
+        }
+        "no_install" : true
+    }
+}
