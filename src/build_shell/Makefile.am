@@ -31,7 +31,9 @@ build_shell_SOURCES =	         	        			\
 	temp_file.cpp							\
 	temp_file.h   							\
 	child_process_io_handler.cpp					\
-	child_process_io_handler.h
+	child_process_io_handler.h					\
+	process.cpp							\
+	process.h
 
 
 

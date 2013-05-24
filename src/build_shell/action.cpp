@@ -46,52 +46,6 @@ bool Action::error() const
     return m_error;
 }
 
-bool Action::flushProjectNodeToTemporaryFile(const std::string &project_name, JT::ObjectNode *node, std::string &file_flushed_to)
-{
-    int temp_file = Configuration::createTempFile(project_name, file_flushed_to);
-    if (temp_file < 0) {
-        fprintf(stderr, "Could not create temp file for project %s\n", project_name.c_str());
-        return false;
-    }
-    TreeWriter writer(temp_file, node);
-    if (writer.error()) {
-        fprintf(stderr, "Failed to write project node to temporary file %s\n", file_flushed_to.c_str());
-        return false;
-    }
-    return true;
-}
-
-bool Action::executeScript(const std::string &step,
-                           const std::string &projectName,
-                           const std::string &fallback,
-                           JT::ObjectNode *projectNode,
-                           JT::ObjectNode **returnedObjectNode)
-{
-    return executeScript("",step, projectName,fallback, projectNode, returnedObjectNode);
-}
-bool Action::executeScript(const std::string &env_script,
-                           const std::string &step,
-                           const std::string &projectName,
-                           const std::string &fallback,
-                           JT::ObjectNode *projectNode,
-                           JT::ObjectNode **returnedObjectNode)
-{
-    std::string log_file_str = m_configuration.scriptExecutionLogPath() +  "/" + projectName + "_" + step + ".log";
-    mode_t mode = S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH;
-    int log_file = open(log_file_str.c_str(), O_WRONLY|O_APPEND|O_CREAT|O_TRUNC|O_CLOEXEC, mode);
-    if (log_file < 0) {
-        fprintf(stderr, "Failed to open file %s for stderr redirection %s\n", log_file_str.c_str(),
-                strerror(errno));
-        return false;
-    }
-
-    bool returnVal = executeScript(env_script, step, projectName, fallback, log_file, projectNode, returnedObjectNode);
-
-    close(log_file);
-
-    return returnVal;
-}
-
 bool Action::executeScript(const std::string &env_script,
                            const std::string &step,
                            const std::string &projectName,
@@ -101,7 +55,6 @@ bool Action::executeScript(const std::string &env_script,
                            JT::ObjectNode **returnedObjectNode)
 {
     bool return_val = true;
-    *returnedObjectNode = 0;
     std::string temp_file;
     if (!flushProjectNodeToTemporaryFile(projectName, projectNode, temp_file))
         return false;
