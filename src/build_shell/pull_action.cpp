@@ -23,6 +23,7 @@
 
 #include "json_tree.h"
 #include "tree_writer.h"
+#include "process.h"
 
 #include <unistd.h>
 #include <limits.h>
@@ -112,8 +113,15 @@ bool PullAction::execute()
             fallback_script.append("regular_dir");
         }
 
-        JT::ObjectNode *returned_project_node;
-        bool success = executeScript("",mode,project_name, fallback_script, project_node,&returned_project_node);
+        bool success;
+        {
+            Process process(m_configuration);
+            process.setPhase(mode);
+            process.setProjectName(project_name);
+            process.setFallback(fallback_script);
+            process.setProjectNode(project_node);
+            success = process.run(nullptr);
+        }
 
         //have to remove the project node, so it will not be deleted multiple times
         JT::Node *removed_argnode = project_node->take("arguments");

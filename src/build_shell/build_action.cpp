@@ -26,6 +26,7 @@
 #include "available_builds.h"
 #include "temp_file.h"
 #include "pull_action.h"
+#include "process.h"
 
 #include <unistd.h>
 #include <sys/stat.h>
@@ -233,15 +234,86 @@ bool BuildAction::execute()
     if (!m_buildset_tree || m_error)
         return false;
 
-    long num_cpu = sysconf( _SC_NPROCESSORS_ONLN );
-    char cpu_buf[4];
-    snprintf(cpu_buf, sizeof cpu_buf, "%ld", num_cpu);
-
     ArgumentsCleanup argCleanup(m_buildset_tree);
 
-    bool found = !m_configuration.hasBuildFromProject();
-    const std::string &build_from_project = m_configuration.buildFromProject();
-    for (auto it = m_buildset_tree->begin(); it != m_buildset_tree->end(); ++it) {
+    if (!handlePrebuild())
+        return false;
+
+    m_env_script_builder.addProjectsUpTo(m_buildset_tree, m_configuration.buildFromProject());
+
+    for (auto it = startIterator(m_buildset_tree); it != m_buildset_tree->end(); ++it) {
+        JT::ObjectNode *project_node = it->second->asObjectNode();
+        if (!project_node)
+            continue;
+
+        const std::string project_name = it->first.string();
+        const std::string &project_build_path = project_node->stringAt("arguments.build_path");
+        const std::string &project_build_system = project_node->stringAt("arguments.build_system");
+
+        if (chdir(project_build_path.c_str())) {
+            fprintf(stderr, "Failed to move into directory %s to build\n", project_build_path.c_str());
+            m_error = true;
+            return false;
+        }
+        JT::ObjectNode *updated_project_node;
+        if (!handleBuildForProject(project_name, project_build_system, project_node, &updated_project_node)) {
+            delete updated_project_node;
+            return false;
+        }
+        if (updated_project_node) {
+            m_buildset_tree->insertNode(it->first, updated_project_node,true);
+            project_node = updated_project_node;
+        }
+        m_env_script_builder.addProjectNode(it->first.string(),project_node);
+
+        if (m_configuration.onlyOne())
+            break;
+    }
+
+    for (auto it = startIterator(m_buildset_tree); it != m_buildset_tree->end(); ++it) {
+        JT::ObjectNode *project_node = it->second->asObjectNode();
+        if (!project_node)
+            continue;
+
+        const std::string project_name = it->first.string();
+        const std::string &project_build_path = project_node->stringAt("arguments.build_path");
+        const std::string &project_build_system = project_node->stringAt("arguments.build_system");
+
+        if (chdir(project_build_path.c_str())) {
+            fprintf(stderr, "Failed to move into directory %s to do post build scripts\n", project_build_path.c_str());
+            m_error = true;
+            return false;
+        }
+        JT::ObjectNode *updated_project_node;
+
+        {
+            Process process(m_configuration);
+            process.setEnvironmentScript(m_set_build_env_file);
+            process.setPhase("post_build");
+            process.setProjectName(project_name);
+            process.setFallback(project_build_system);
+            process.setProjectNode(project_node);
+            if (!process.run(&updated_project_node)) {
+                delete updated_project_node;
+                return false;
+            }
+        }
+        if (updated_project_node) {
+            m_buildset_tree->insertNode(it->first,updated_project_node, true);
+        }
+
+        if (m_configuration.onlyOne())
+            break;
+    }
+
+    return true;
+}
+
+bool BuildAction::handlePrebuild()
+{
+    Process pre_build(m_configuration);
+
+    for (auto it = startIterator(m_buildset_tree); it != m_buildset_tree->end(); ++it) {
         JT::ObjectNode *project_node = it->second->asObjectNode();
         if (!project_node)
             continue;
@@ -286,95 +358,36 @@ bool BuildAction::execute()
         arguments->addValueToObject("build_path", project_build_path, JT::Token::String);
         arguments->addValueToObject("install_path", m_configuration.installDir(), JT::Token::String);
         arguments->addValueToObject("build_system", build_system, JT::Token::String);
+
+        long num_cpu = sysconf( _SC_NPROCESSORS_ONLN );
+        char cpu_buf[4];
+        snprintf(cpu_buf, sizeof cpu_buf, "%ld", num_cpu);
         arguments->addValueToObject("cpu_count", cpu_buf, JT::Token::Number);
         JT::ObjectNode *env_variables = new JT::ObjectNode();
         arguments->insertNode(std::string("environment"), env_variables);
 
-        if (!found && build_from_project != it->first.string())
-            continue;
-        found = true;
-
         chdir(project_build_path.c_str());
 
-        JT::ObjectNode *updated_project_node;
-        if (!executeScript("", "pre_build", project_name, build_system, project_node, &updated_project_node)) {
-            delete updated_project_node;
-            return false;
-        }
-        if (updated_project_node) {
-            m_buildset_tree->insertNode(it->first,updated_project_node, true);
-        }
-
-        if (m_configuration.onlyOne())
-            break;
-    }
-
-    found = !m_configuration.hasBuildFromProject();
-    for (auto it = m_buildset_tree->begin(); it != m_buildset_tree->end(); ++it) {
-        JT::ObjectNode *project_node = it->second->asObjectNode();
-        if (!project_node)
-            continue;
-        if (!found && build_from_project != it->first.string()) {
-            m_env_script_builder.addProjectNode(it->first.string(), project_node);
-            continue;
-        }
-        found = true;
-
-        const std::string project_name = it->first.string();
-        const std::string &project_build_path = project_node->stringAt("arguments.build_path");
-        const std::string &project_build_system = project_node->stringAt("arguments.build_system");
-
-        if (chdir(project_build_path.c_str())) {
-            fprintf(stderr, "Failed to move into directory %s to build\n", project_build_path.c_str());
-            m_error = true;
-            return false;
-        }
-        JT::ObjectNode *updated_project_node;
-        if (!handleBuildForProject(project_name, project_build_system, project_node, &updated_project_node)) {
-            delete updated_project_node;
-            return false;
-        }
-        if (updated_project_node) {
-            m_buildset_tree->insertNode(it->first, updated_project_node,true);
-            project_node = updated_project_node;
-        }
-        m_env_script_builder.addProjectNode(it->first.string(),project_node);
-
-        if (m_configuration.onlyOne())
-            break;
-    }
-
-    found = !m_configuration.hasBuildFromProject();
-    for (auto it = m_buildset_tree->begin(); it != m_buildset_tree->end(); ++it) {
-        JT::ObjectNode *project_node = it->second->asObjectNode();
-        if (!project_node)
-            continue;
-        if (!found && build_from_project != it->first.string())
-            continue;
-        found = true;
-
-        const std::string project_name = it->first.string();
-        const std::string &project_build_path = project_node->stringAt("arguments.build_path");
-        const std::string &project_build_system = project_node->stringAt("arguments.build_system");
-
-        if (chdir(project_build_path.c_str())) {
-            fprintf(stderr, "Failed to move into directory %s to do post build scripts\n", project_build_path.c_str());
-            m_error = true;
-            return false;
-        }
-        JT::ObjectNode *updated_project_node;
-        if (!executeScript(m_set_build_env_file,"post_build", project_name, project_build_system, project_node, &updated_project_node)) {
-            delete updated_project_node;
-            return false;
-        }
-        if (updated_project_node) {
-            m_buildset_tree->insertNode(it->first,updated_project_node, true);
+        {
+            JT::ObjectNode *updated_project_node;
+            Process process(m_configuration);
+            process.setPhase("pre_build");
+            process.setProjectName(project_name);
+            process.setProjectNode(project_node);
+            if (!process.run(&updated_project_node)) {
+                fprintf(stderr, "Failed to run process\n");
+                delete updated_project_node;
+                return false;
+            }
+            if (updated_project_node) {
+                m_buildset_tree->insertNode(it->first,updated_project_node, true);
+            }
         }
 
         if (m_configuration.onlyOne())
             break;
     }
-
+    fprintf(stderr, "finished\n");
     return true;
 }
 
@@ -385,13 +398,21 @@ bool BuildAction::handleBuildForProject(const std::string &projectName, const st
     m_env_script_builder.writeSetScript(temp_file, projectName);
     temp_file.close();
 
+    Process process(m_configuration);
+    process.setEnvironmentScript(temp_file.name());
+    process.setProjectName(projectName);
+    process.setFallback(buildSystem);
+    process.setLogFile(projectName + "_build.log", false);
+
     std::unique_ptr<JT::ObjectNode> temp_pointer(nullptr);
     JT::ObjectNode *project_node = projectNode;
     JT::ObjectNode *updated_project_node = 0;
     *updatedProjectNode = 0;
 
     if (m_configuration.clean()) {
-        if (!executeScript(temp_file.name(), "clean", projectName, buildSystem, project_node,&updated_project_node))
+        process.setPhase("clean");
+        process.setProjectNode(project_node);
+        if (!process.run(&updated_project_node))
             return false;
     } else if (updated_project_node) {
         project_node = updated_project_node;
@@ -425,7 +446,9 @@ bool BuildAction::handleBuildForProject(const std::string &projectName, const st
                 m_error = true;
                 return false;
             } else {
-                if (!executeScript(temp_file.name(), "deep_clean", projectName, scm_type, project_node, &updated_project_node)) {
+                process.setPhase("deep_clean");
+                process.setProjectNode(project_node);
+                if (!process.run(&updated_project_node)) {
                     return false;
                 } else if (updated_project_node) {
                     project_node = updated_project_node;
@@ -438,7 +461,9 @@ bool BuildAction::handleBuildForProject(const std::string &projectName, const st
     }
 
     if (m_configuration.configure()) {
-        if (!executeScript(temp_file.name(), "configure", projectName, buildSystem, project_node, &updated_project_node)) {
+        process.setPhase("configure");
+        process.setProjectNode(project_node);
+        if (!process.run(&updated_project_node)) {
             return false;
         } else  if (updated_project_node) {
             project_node = updated_project_node;
@@ -447,7 +472,9 @@ bool BuildAction::handleBuildForProject(const std::string &projectName, const st
     }
 
     if (m_configuration.build()) {
-        if (!executeScript(temp_file.name(), "build", projectName, buildSystem, project_node, &updated_project_node)) {
+        process.setPhase("build");
+        process.setProjectNode(project_node);
+        if (!process.run(&updated_project_node)) {
             return false;
         } else if (updated_project_node) {
             project_node = updated_project_node;
@@ -455,7 +482,9 @@ bool BuildAction::handleBuildForProject(const std::string &projectName, const st
         }
 
         if (m_configuration.install() && project_node->nodeAt("no_install") == nullptr) {
-            if (!executeScript(temp_file.name(), "install", projectName, buildSystem, project_node,&updated_project_node)) {
+            process.setPhase("install");
+            process.setProjectNode(project_node);
+            if (!process.run(&updated_project_node)) {
                 return false;
             } else if (updated_project_node){
                 temp_pointer.reset(updated_project_node);
@@ -465,11 +494,11 @@ bool BuildAction::handleBuildForProject(const std::string &projectName, const st
 
    *updatedProjectNode = temp_pointer.release();
 
-   std::string print_success = std::string() +
+   std::string print_success = std::string("\n") +
        "************************************************************************\n"
        "\t\t BUILD SUCCESS: " + projectName + "\n"
        "************************************************************************\n"
        "\n";
-   write(STDOUT_FILENO, print_success.c_str(), print_success.size());
+   fprintf(stdout, "%s", print_success.c_str());
    return true;
 }

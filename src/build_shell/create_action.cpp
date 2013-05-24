@@ -34,6 +34,7 @@
 
 #include "json_tree.h"
 #include "tree_writer.h"
+#include "process.h"
 
 CreateAction::CreateAction(const Configuration &configuration,
         const std::string &outfile)
@@ -174,11 +175,7 @@ bool CreateAction::handleCurrentSrcDir(int log_file)
         root_for_dir->insertNode(prop, new JT::ObjectNode(), true);
     }
 
-    std::string primary = "state_";
-    primary.append(base_name);
-    std::string fallback = "state_";
     std::string postfix;
-
     if (access(".git", F_OK) == 0) {
         postfix = "git";
     } else if (access(".svn", F_OK) == 0) {
@@ -186,10 +183,18 @@ bool CreateAction::handleCurrentSrcDir(int log_file)
     } else {
         postfix = "regular_dir";
     }
-    fallback.append(postfix);
 
     JT::ObjectNode *updated_node;
-    bool script_success = executeScript("", "state", primary, postfix, log_file,  root_for_dir, &updated_node);
+    bool script_success;
+    {
+        Process process(m_configuration);
+        process.setPhase("state");
+        process.setProjectName(base_name);
+        process.setFallback(postfix);
+        process.setLogFile(log_file, false);
+        process.setProjectNode(root_for_dir);
+        script_success = process.run(&updated_node);
+    }
 
     if (!updated_node) {
         updated_node = new JT::ObjectNode();

@@ -35,6 +35,7 @@ public:
 
     bool execute();
 private:
+    bool handlePrebuild();
     bool handleBuildForProject(const std::string &projectName, const std::string &buildSystem, JT::ObjectNode *projectNode, JT::ObjectNode **updatedProjectNode);
     TreeBuilder m_buildset_tree_builder;
     JT::ObjectNode *m_buildset_tree;

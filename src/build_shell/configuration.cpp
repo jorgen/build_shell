@@ -347,6 +347,7 @@ const std::list<std::string> &Configuration::scriptSearchPaths() const
 
 static int exec_script(const std::string &command, int redirect_out_to)
 {
+    fprintf(stderr, "executing command %s\n", command.c_str());
     ChildProcessIoHandler childProcessIoHandler(redirect_out_to);
 
     pid_t process = fork();

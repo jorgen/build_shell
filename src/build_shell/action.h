@@ -24,9 +24,8 @@
 
 #include "configuration.h"
 
-namespace JT {
-    class ObjectNode;
-}
+#include "json_tree.h"
+
 
 class Action
 {
@@ -38,27 +37,8 @@ public:
 
     bool error() const;
 
+    JT::ObjectNode::Iterator startIterator(JT::ObjectNode *project_tree);
 protected:
-    static bool flushProjectNodeToTemporaryFile(const std::string &project_name, JT::ObjectNode *node, std::string &file_flushed_to);
-
-    bool executeScript(const std::string &step,
-                       const std::string &projectName,
-                       const std::string &fallback,
-                       JT::ObjectNode *projectNode,
-                       JT::ObjectNode **returnedObjectNode);
-    bool executeScript(const std::string &env_script,
-                       const std::string &step,
-                       const std::string &projectName,
-                       const std::string &fallback,
-                       JT::ObjectNode *projectNode,
-                       JT::ObjectNode **returnedObjectNode);
-    bool executeScript(const std::string &env_script,
-                       const std::string &step,
-                       const std::string &projectName,
-                       const std::string &fallback,
-                       int log_file,
-                       JT::ObjectNode *projectNode,
-                       JT::ObjectNode **returnedObjectNode);
     const Configuration &m_configuration;
     bool m_error;
 };

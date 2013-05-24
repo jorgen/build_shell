@@ -19,42 +19,48 @@
  * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE
  * OF THIS SOFTWARE.
 */
-#include "action.h"
 
-#include "json_tree.h"
-#include "tree_writer.h"
-#include "tree_builder.h"
+#ifndef PROCESS_H
+#define PROCESS_H
 
-#include <unistd.h>
-#include <stdio.h>
-#include <fcntl.h>
-#include <string.h>
-#include <errno.h>
+#include "configuration.h"
 
-Action::Action(const Configuration &configuration)
-    : m_configuration(configuration)
-    , m_error(false)
-{
+#include <string>
+
+namespace JT {
+    class ObjectNode;
 }
 
-Action::~Action()
+class Process
 {
-}
+public:
+    Process(const Configuration &configuration);
+    ~Process();
 
-bool Action::error() const
-{
-    return m_error;
-}
+    bool run(JT::ObjectNode **returnedObjectNode);
 
-JT::ObjectNode::Iterator Action::startIterator(JT::ObjectNode *project_tree)
-{
-    if (!m_configuration.buildFromProject().size())
-        return project_tree->begin();
+    void setEnvironmentScript(const std::string &environment_script);
+    void setPhase(const std::string &phase);
+    void setProjectName(const std::string &projectName);
+    void setFallback(const std::string &fallback);
 
-    for (auto it = project_tree->begin(); it != project_tree->end(); ++it) {
-        if (it->first.compareString(m_configuration.buildFromProject()))
-            return it;
-    }
-    return project_tree->end();
-}
+    void setLogFile(int logFile, bool closeFileOnDelete);
+    void setLogFile(const std::string &logFile, bool append = false, bool closeFileOnDelete = true);
 
+    void setProjectNode(JT::ObjectNode *projectNode);
+private:
+    static bool flushProjectNodeToTemporaryFile(const std::string &project_name, JT::ObjectNode *node, std::string &file_flushed_to);
+    const Configuration &m_configuration;
+    std::string m_environement_script;
+    std::string m_phase;
+    std::string m_project_name;
+    std::string m_fallback;
+
+    int m_log_file;
+    std::string m_log_file_str;
+    bool m_close_log_file;
+
+    JT::ObjectNode *m_project_node;
+};
+
+#endif
