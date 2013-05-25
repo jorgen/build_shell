@@ -19,8 +19,8 @@
  * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE
  * OF THIS SOFTWARE.
 */
-#ifndef CREATE_ACTION_H
-#define CREATE_ACTION_H
+#ifndef GENERATE_ACTION_H
+#define GENERATE_ACTION_H
 
 #include "action.h"
 #include "tree_builder.h"
@@ -29,12 +29,12 @@ namespace JT {
     class ObjectNode;
 }
 
-class CreateAction : public Action
+class GenerateAction : public Action
 {
 public:
-    CreateAction(const Configuration &configuration,
+    GenerateAction(const Configuration &configuration,
             const std::string &outfile = std::string());
-    ~CreateAction();
+    ~GenerateAction();
 
     bool execute();
 
@@ -47,4 +47,4 @@ private:
     int m_out_file;
 };
 
-#endif //CREATE_ACTION_H
+#endif //GENERATE_ACTION_H

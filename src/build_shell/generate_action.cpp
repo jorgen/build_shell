@@ -19,7 +19,7 @@
  * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE
  * OF THIS SOFTWARE.
 */
-#include "create_action.h"
+#include "generate_action.h"
 
 #include <sys/types.h>
 #include <sys/dir.h>
@@ -36,7 +36,7 @@
 #include "tree_writer.h"
 #include "process.h"
 
-CreateAction::CreateAction(const Configuration &configuration,
+GenerateAction::GenerateAction(const Configuration &configuration,
         const std::string &outfile)
     : Action(configuration)
     , m_tree_builder(configuration.buildsetFile())
@@ -64,7 +64,7 @@ CreateAction::CreateAction(const Configuration &configuration,
     }
 }
 
-CreateAction::~CreateAction()
+GenerateAction::~GenerateAction()
 {
     if (m_out_file_name.size())
         close(m_out_file);
@@ -96,7 +96,7 @@ public:
     bool error;
 };
 
-bool CreateAction::execute()
+bool GenerateAction::execute()
 {
     if (m_error)
         return false;
@@ -152,7 +152,7 @@ bool CreateAction::execute()
 }
 
 
-bool CreateAction::handleCurrentSrcDir(int log_file)
+bool GenerateAction::handleCurrentSrcDir(int log_file)
 {
     char cwd[PATH_MAX];
     getcwd(cwd, sizeof(cwd));

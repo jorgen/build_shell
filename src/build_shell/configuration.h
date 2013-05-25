@@ -35,7 +35,7 @@ public:
     enum Mode {
         Invalid,
         Pull,
-        Create,
+        Generate,
         Build,
         Rebuild
     };

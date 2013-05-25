@@ -22,7 +22,7 @@
 #include "build_action.h"
 
 #include "tree_writer.h"
-#include "create_action.h"
+#include "generate_action.h"
 #include "available_builds.h"
 #include "temp_file.h"
 #include "pull_action.h"
@@ -185,8 +185,8 @@ BuildAction::BuildAction(const Configuration &configuration)
              1900 + local_tm->tm_year, local_tm->tm_mon+1, local_tm->tm_mday,
              local_tm->tm_hour, local_tm->tm_min, local_tm->tm_sec);
     m_stored_buildset = build_shell_build_sets_dir + "/" + dateInFormat.c_str() + std::string(".buildset");
-    CreateAction create_action(m_configuration, m_stored_buildset);
-    m_error = !create_action.execute();
+    GenerateAction generate_action(m_configuration, m_stored_buildset);
+    m_error = !generate_action.execute();
 }
 
 
@@ -196,8 +196,8 @@ BuildAction::~BuildAction()
         return;
     m_env_script_builder.writeScripts(m_set_build_env_file, m_unset_build_env_file,"");
     std::string stored_buildset_finished = m_stored_buildset + "_finished";
-    CreateAction create_action(m_configuration,stored_buildset_finished);
-    create_action.execute();
+    GenerateAction generate_action(m_configuration,stored_buildset_finished);
+    generate_action.execute();
     std::string current_buildset_name = m_configuration.buildDir() + "/build_shell/current_buildset";
     TreeWriter current_tree_writer(current_buildset_name, m_buildset_tree);
     if (current_tree_writer.error()) {

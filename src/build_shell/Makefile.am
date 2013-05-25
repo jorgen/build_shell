@@ -10,8 +10,8 @@ build_shell_SOURCES =	         	        			\
 	writer.cpp							\
 	action.h							\
 	action.cpp							\
-	create_action.h							\
-	create_action.cpp						\
+	generate_action.h							\
+	generate_action.cpp						\
 	$(top_srcdir)/src/3rdparty/json_tools/src/json_tokenizer.cpp 	\
 	$(top_srcdir)/src/3rdparty/json_tools/src/json_tree.cpp		\
 	mmapped_file.cpp						\

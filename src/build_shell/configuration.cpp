@@ -279,7 +279,7 @@ void Configuration::validate()
             m_buildset_file = buildset_realpath;
         }
     }
-    if (m_mode != Create && !m_buildset_file.size()) {
+    if (m_mode != Generate && !m_buildset_file.size()) {
         fprintf(stderr, "All modes except for create expects a buildset file\n");
         return;
     }

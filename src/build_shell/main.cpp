@@ -22,7 +22,7 @@
 
 #include "arg.h"
 #include "configuration.h"
-#include "create_action.h"
+#include "generate_action.h"
 #include "pull_action.h"
 #include "build_action.h"
 #include "available_builds.h"
@@ -57,7 +57,7 @@ const option::Descriptor usage[] =
   {UNKNOWN,       0,  "", "",                 Arg::unknown,                 "USAGE: build_shell [options] mode\n\n"
                                                                             "Modes\n"
                                                                             "  pull\t pulls sources specified in buildsetfile\n"
-                                                                            "  create\t creates a new buildset file\n"
+                                                                            "  generate\t generate a new buildset file\n"
                                                                             "  build\t builds a buildset file\n\n"
                                                                             "Options:" },
   {HELP,          0, "h" , "help",            option::Arg::None,            "  --help, -h\tPrint usage and exit." },
@@ -111,8 +111,8 @@ int main(int argc, char **argv)
         std::string mode = parser.nonOption(0);
         if (mode == "pull") {
             configuration.setMode(Configuration::Pull, mode);
-        } else if (mode == "create") {
-            configuration.setMode(Configuration::Create, mode);
+        } else if (mode == "generate") {
+            configuration.setMode(Configuration::Generate, mode);
         } else if (mode == "build") {
             configuration.setMode(Configuration::Build, mode);
         } else if (mode == "rebuild") {
@@ -213,8 +213,8 @@ int main(int argc, char **argv)
         return 1;
     } else {
         switch (configuration.mode()) {
-            case Configuration::Create:
-                action = new CreateAction(configuration);
+            case Configuration::Generate:
+                action = new GenerateAction(configuration);
                 break;
             case Configuration::Pull:
                 action = new PullAction(configuration);
@@ -223,7 +223,7 @@ int main(int argc, char **argv)
                 action = new BuildAction(configuration);
                 break;
             default:
-                action = new CreateAction(configuration);
+                action = new GenerateAction(configuration);
                 break;
         }
     }
