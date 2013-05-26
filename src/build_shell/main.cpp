@@ -26,6 +26,7 @@
 #include "pull_action.h"
 #include "build_action.h"
 #include "available_builds.h"
+#include "create_action.h"
 
 #include <vector>
 #include <iostream>
@@ -56,8 +57,9 @@ const option::Descriptor usage[] =
  {
   {UNKNOWN,       0,  "", "",                 Arg::unknown,                 "USAGE: build_shell [options] mode\n\n"
                                                                             "Modes\n"
-                                                                            "  pull\t pulls sources specified in buildsetfile\n"
                                                                             "  generate\t generate a new buildset file\n"
+                                                                            "  create\t create a buildset environment\n\n"
+                                                                            "  pull\t pulls sources specified in buildsetfile\n"
                                                                             "  build\t builds a buildset file\n\n"
                                                                             "Options:" },
   {HELP,          0, "h" , "help",            option::Arg::None,            "  --help, -h\tPrint usage and exit." },
@@ -126,8 +128,9 @@ int main(int argc, char **argv)
             return 0;
 #endif
             return 1;
+        } else if (mode == "create") {
+            configuration.setMode(Configuration::Create, mode);
         }
-
     } else if (parser.nonOptionsCount() == 2) {
         std::string mode = parser.nonOption(0);
         if ( mode == "get_env_file") {
@@ -220,7 +223,11 @@ int main(int argc, char **argv)
                 action = new PullAction(configuration);
                 break;
             case Configuration::Build:
+            case Configuration::Rebuild:
                 action = new BuildAction(configuration);
+                break;
+            case Configuration::Create:
+                action = new CreateAction(configuration);
                 break;
             default:
                 action = new GenerateAction(configuration);
@@ -233,6 +240,10 @@ int main(int argc, char **argv)
         fprintf(stderr, "Failure to initialize action object. Not executing\n");
     } else {
         error = !action->execute();
+    }
+
+    if (error) {
+        fprintf(stderr, "Execution of mode %s failed\n", configuration.modeString().c_str());
     }
 
     delete action;

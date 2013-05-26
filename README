@@ -11,6 +11,45 @@ managing the different development environments a developer has. And the
 solution should not be bounded to the build system nor the source control
 management system.
 
+Build Shell use flow is:
+Create build_shell environment
+eks:
+
+# Create a build shell from an existing build set file
+$ build_shell create -f somebuildset.file -b build_dir -s src_dir
+#from this point the somebuildset.file is not used anymore
+
+# Select the newly created build shell with:
+$ bss build_dir
+
+# Optionally rename the build shell with so its easier to keep them appart
+$ bs_name some_new_name
+
+# build buildset
+$ bs build --pull-first
+
+# when the build breaks because of the buildset fix it
+$ bcd build_shell
+$ vim current_buildset
+
+# then build again from where it stopped
+$ bs build project_with_broken_configuration_in_buildset --continue
+# this bs command is also very usefull when you have made a bic incompatible
+# change to an library, and need to recompile the stack from the library and up
+# Additional flags to the bs function can be:
+# --skip-configure --skip-build --clean --deep-clean
+
+Build Shell consists of 4 components:
+- build_shell is the main binary which loads buildsets files and avaluates what needs to be done.
+- jsonmod is a tool that can be utilized from shellscripts to modify json files
+- build_shell_completion.bash this file is intended to be loaded in the users bashrc file.
+    It provides usefull bash functions like bss and bs which makes build_shell easy to use
+- scripts build shell uses a naming scheme to find scripts that should be run when certain tasks
+    should be performed. The scripts are found by itterating over a search path. The naming scheme is
+    phase_[project_name|fallback_name]. The fallback_name will vary, dependent on the situation.
+    Forinstance build_shell will try and detect the build system in the use that as a fallback. So if
+    you don't have a special script to build_qt_declarative, then it will fallback to build_qmake
+
 Build Shell uses a json like format to describe a build, from now called a
 buildset. A buildset is fed into the build_shell application together with some
 parameters. Most importantly:
@@ -30,10 +69,15 @@ sources down from and how to build them
 Also the build_shell executable takes an additional parameter called mode. Mode
 can be either:
 
-create: in Creation mode the build_shell application expects the -s parameter
-to be present. It will use this directory to create a buildset file. It can be
-used in conjunction with the -f parameter. Then build_set will use try and take
-the input build_set file and update it before it prints it to stdout.
+generate: in the generate mode the build_shell application expects the -s parameter
+to be present. It will use this directory to generate a vanilla buildset file.
+It can be used in conjunction with the -f parameter. Then build_set will
+try and take the input build_set file and update it before it prints it to
+stdout.
+
+create: the create mode takes a buildset file and src/build/install parameters
+and creates the build shell environment similar to the build mode but without
+building any projects
 
 pull: in Pull mode build_shell will try and update the projects specified by in
 buildset file for the matching sub-directories given by the -s parameter
@@ -42,42 +86,6 @@ build: in Build mode build_shell will try and build all the projects defined in
 the build_set file. It will build them in subdirectories of -b mathching the
 directories in -s. It will ignore directories not mentioned in the buildset
 file.
-
-The build mode till also generate a snapshot buildset file inside a special
-directory call $BUILD_DIR/build_shell/build_sets This is so that it is fairly
-easy to to backtrack to an older build (since the git shas etc are stored in
-the build_set file).
-
-The build mode will also generate two shell scripts. One for setting the
-environment suitable for this build, and on for unsetting the environment.
-Their located inside $BUILD_DIR/build_shell.
-
-Pne last thing the build mode does is that it register the build in a config
-file in $HOME/.config/build_shell/available_builds.json This file is used in by
-the build_shell completion script.
-
-The build_shell completion script is a script which is meant to be sourced in
-your .profile/.bashrc/.bash_profile file.
-
-It defines 3 handy functions:
-
-bs (tung in cheek)
-
-bss
-
-bcd
-
-Lets start with bss bss stands for build_shell select and allows you to easily
-select one of the builds registered in the available_builds.json. sources the
-set_build_env.sh file for the appropriate build.
-
-bs works as a wrapper around the build_shell command. The environment knows
-about the src-dir build-dir, install-dir and a copy of the current buildset
-file, once the set_build_env.sh of a build is sourced. So bs allows you to
-execute the build_shell commands for the current environment.
-
-bcd is a function which allows you to navigate between your build-dir and
-src-dir. Its quite handy.
 
 To play around with build_shell try configuring it with
 --enable-developer-build. This will setup defines while building so that there

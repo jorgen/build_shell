@@ -37,7 +37,8 @@ public:
         Pull,
         Generate,
         Build,
-        Rebuild
+        Rebuild,
+        Create
     };
 
     void setMode(Mode mode, std::string mode_string);
