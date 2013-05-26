@@ -62,7 +62,8 @@ Process::~Process()
 
 bool Process::run(JT::ObjectNode **returnedObjectNode)
 {
-    *returnedObjectNode = 0;
+    if (returnedObjectNode)
+        *returnedObjectNode = 0;
 
     if (!m_project_name.size() || !m_phase.size()) {
         fprintf(stderr, "project name  or phase is empty when executing command: %s : %s\n",
@@ -100,15 +101,17 @@ bool Process::run(JT::ObjectNode **returnedObjectNode)
             return_val = false;
             break;
         }
-        TreeBuilder tree_builder(temp_file);
-        JT::ObjectNode *root = tree_builder.rootNode();
-        if (root) {
-            if (root->booleanAt("arguments.propogate_to_next_script"))
-                continue;
-            *returnedObjectNode = tree_builder.takeRootNode();
-        } else  {
-            fprintf(stderr, "Failed to demarshal the temporary file returned from the script %s\n", (*it).c_str());
-            return_val = false;
+        if (returnedObjectNode) {
+            TreeBuilder tree_builder(temp_file);
+            JT::ObjectNode *root = tree_builder.rootNode();
+            if (root) {
+                if (root->booleanAt("arguments.propogate_to_next_script"))
+                    continue;
+                *returnedObjectNode = tree_builder.takeRootNode();
+            } else  {
+                fprintf(stderr, "Failed to demarshal the temporary file returned from the script %s\n", (*it).c_str());
+                return_val = false;
+            }
         }
         break;
     }

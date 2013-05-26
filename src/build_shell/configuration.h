@@ -89,6 +89,9 @@ public:
     void setRegisterBuild(bool dontRegister);
     bool registerBuild() const;
 
+    void setPrint(bool print);
+    bool print() const;
+
     void validate();
     bool sane() const;
 
@@ -112,6 +115,8 @@ private:
 
     std::string findBuildEnvFile() const;
     void initializeScriptSearchPaths();
+
+    int exec_script(const std::string &command, int redirect_out_to) const;
 
     Mode m_mode;
     std::string m_mode_string;
@@ -139,6 +144,7 @@ private:
     bool m_only_one;
     bool m_pull_first;
     bool m_register;
+    bool m_print;
 
     std::list<std::string> m_script_search_paths;
 

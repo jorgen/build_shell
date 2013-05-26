@@ -82,6 +82,11 @@ void ChildProcessIoHandler::setupChildProcessState()
     dup2(m_stderr_pipe[1], STDERR_FILENO);
 }
 
+void ChildProcessIoHandler::printStdOut(bool print)
+{
+    m_print_stdout = print;
+}
+
 static bool flushToFile(int file, char *buffer, ssize_t size)
 {
     if (file < 0)

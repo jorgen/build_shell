@@ -1,10 +1,28 @@
 #!/bin/bash
 
+bs_create()
+{
+    if [ ! -z $BUILD_SHELL_UNSET_ENV_FILE ]; then
+        source $BUILD_SHELL_UNSET_ENV_FILE
+    fi
+
+    build_shell $@
+}
+
 bs()
 {
     if [ -z $1 ]; then
         bs_name
         return 0
+    fi
+
+    local mode=$1
+    local component=$2
+    local flags="${*:3}"
+
+    if [[ $mode == "create" ]]; then
+        bs_create $@
+        return $?
     fi
 
     if [ ! -n $BUILD_SHELL_BUILD_DIR ]; then
@@ -18,10 +36,6 @@ bs()
         return 0
     fi
 
-    local mode=$1
-    local component=$2
-    local flags="${*:3}"
-
     if [[ $mode == "rebuild" ]]; then
         mode="build"
         flags="$flags --skip-configure"
@@ -29,15 +43,16 @@ bs()
 
     if [[ $mode != "pull" ]] && [[ $mode != "build" ]]; then
         echo "unknown build shell mode $mode"
-        exit 1
+        return 1
     fi
 
     if [[ $component == -* ]]; then
         flags="$component $flags"
-        $component=""
+        component=""
     fi
 
-    if [ -n $component ]; then
+    if [ ! -z $component ]; then
+        echo "COMPONENT:$component"
         local current_buildset_file="$BUILD_SHELL_BUILD_DIR/build_shell/current_buildset"
         local opts=$(jsonmod $current_buildset_file -p "%{*}" -n)
         local found=false
@@ -55,11 +70,11 @@ bs()
         fi
     fi
 
-    if [ -n $component ]; then
+    if [ ! -z $component ]; then
         flags="--from $component $flags"
     fi
 
-    if [ -n $BUILD_SHELL_SHOW_CMD ]; then
+    if [ ! -z $BUILD_SHELL_SHOW_CMD ]; then
         echo "build_shell --no-register -s $BUILD_SHELL_SRC_DIR -b $BUILD_SHELL_BUILD_DIR -i $BUILD_SHELL_INSTALL_DIR -f $BUILD_SHELL_CURRENT_BUILDSET $mode $flags"
     fi
 
@@ -97,6 +112,27 @@ bs_name()
     fi
 
     return 0
+}
+
+bs_edit()
+{
+    if [ -z $BUILD_SHELL_BUILD_DIR ]; then
+        echo "No build selected"
+        return 1
+    fi
+
+    local BUILD_SHELL_CURRENT_BUILDSET="$BUILD_SHELL_BUILD_DIR/build_shell/current_buildset"
+    if [ ! -e $BUILD_SHELL_CURRENT_BUILDSET ]; then
+        echo "Missing current buildset file $BUILD_SHELL_CURRENT_BUILDSET"
+        return 0
+    fi
+
+    if [ -z $EDITOR ]; then
+        EDITOR="vi"
+    fi
+
+    $EDITOR $BUILD_SHELL_CURRENT_BUILDSET
+    return $?
 }
 
 bss()

@@ -58,6 +58,7 @@ Configuration::Configuration()
     , m_only_one(false)
     , m_pull_first(false)
     , m_register(true)
+    , m_print(false)
     , m_sane(false)
 {
 #ifdef JSONMOD_PATH
@@ -262,6 +263,16 @@ bool Configuration::registerBuild() const
     return m_register;
 }
 
+void Configuration::setPrint(bool print)
+{
+    m_print = print;
+}
+
+bool Configuration::print() const
+{
+    return m_print;
+}
+
 void Configuration::validate()
 {
     m_sane = false;
@@ -296,7 +307,7 @@ void Configuration::validate()
     }
 
     std::string new_src_dir;
-    bool should_create = m_mode == Pull || (m_mode == Build && m_pull_first);
+    bool should_create = m_mode == Pull || m_mode == Create || (m_mode == Build && m_pull_first);
     if (!Configuration::getAbsPath(m_src_dir, should_create, new_src_dir)) {
         fprintf(stderr, "Failed to set src dir to %s. Is it a valid directory?\n",
                 m_src_dir.c_str());
@@ -345,10 +356,11 @@ const std::list<std::string> &Configuration::scriptSearchPaths() const
     return m_script_search_paths;
 }
 
-static int exec_script(const std::string &command, int redirect_out_to)
+int Configuration::exec_script(const std::string &command, int redirect_out_to) const
 {
     fprintf(stderr, "executing command %s\n", command.c_str());
     ChildProcessIoHandler childProcessIoHandler(redirect_out_to);
+    childProcessIoHandler.printStdOut(m_print);
 
     pid_t process = fork();
 
@@ -398,7 +410,9 @@ int Configuration::runScript(const std::string &env_script,
 
     std::string script_command = pre_script_command + script + post_script_command;
 
-    return exec_script(script_command, redirect_out_to);
+    int exit_code = exec_script(script_command, redirect_out_to);
+    fprintf(stdout, "Executed command %s with exit code %d\n", script_command.c_str(), exit_code);
+    return exit_code;
 }
 
 const std::string &Configuration::buildShellConfigPath() const
@@ -541,8 +555,9 @@ static bool change_to_dir(const std::string &dir, bool create)
 
 bool Configuration::getAbsPath(const std::string &path, bool create, std::string &abs_path)
 {
-    if (!path.size())
-        return false;
+    if (!path.size()) {
+        return true;
+    }
 
     ResetPath resetPath;
     (void) resetPath;

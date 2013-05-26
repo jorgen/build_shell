@@ -50,7 +50,8 @@ enum optionIndex {
     DEEP_CLEAN,
     SKIP_CONFIGURE,
     SKIP_BUILD,
-    NO_REGISTER
+    NO_REGISTER,
+    PRINT
 };
 
 const option::Descriptor usage[] =
@@ -84,6 +85,7 @@ const option::Descriptor usage[] =
   {SKIP_CONFIGURE,0, "" , "skip-configure",   option::Arg::None,            "  --skip-configure \tSkipping the configure step when running in build mode"},
   {SKIP_BUILD,    0, "" , "skip-build",       option::Arg::None,            "  --skip-build     \tSkipping the build step when running in build mode"},
   {NO_REGISTER,   0, "" , "no-register",      option::Arg::None,            "  --no-register    \tDon't register the build"},
+  {PRINT,         0, "" , "print",            option::Arg::None,            "  --print          \tPrint all output"},
 
   {UNKNOWN, 0,"" ,  ""   ,                    option::Arg::None,            "\nExamples:\n"
                                                                             "  build_shell --src-dir /some/file -f ../some/buildset_file pull\n"},
@@ -199,6 +201,9 @@ int main(int argc, char **argv)
                 break;
             case NO_REGISTER:
                 configuration.setRegisterBuild(false);
+                break;
+            case PRINT:
+                configuration.setPrint(true);
                 break;
             case UNKNOWN:
                 fprintf(stderr, "UNKNOWN!");

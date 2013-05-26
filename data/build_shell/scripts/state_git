@@ -10,7 +10,7 @@ fi
 
 ref=$(git symbolic-ref HEAD)
 if [ $? -eq 0 ]; then
-    branch=$(git symbolic-ref HEAD)
+    branch=$(basename $(git symbolic-ref HEAD))
 else
     branch="(no branch)"
 fi

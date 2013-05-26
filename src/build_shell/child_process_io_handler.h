@@ -34,9 +34,9 @@ public:
     void setupMasterProcessState();
     void setupChildProcessState();
 
-    void processPipe();
-
     bool error() const { return m_error; }
+
+    void printStdOut(bool print);
 private:
     void run();
     int m_out_file;
