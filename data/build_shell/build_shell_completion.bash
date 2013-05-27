@@ -271,21 +271,25 @@ _build_shell_bcd()
     COMPREPLY=()
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
+    local oldpwd=$PWD
     if [ "$COMP_CWORD" -eq 1 ] && [[ $cur != -* ]]; then
-        opts=$(ls -d $BUILD_SHELL_BUILD_DIR/*/ | sed s%$BUILD_SHELL_BUILD_DIR%% | sed s%/%%g)
-        COMPREPLY=( $(compgen -W "${opts}" ${cur}) )
-        return 0
+        cd  $BUILD_SHELL_BUILD_DIR
     elif [ "$COMP_CWORD" -eq 2 ] && [[ $prev == "-" ]]; then
-        opts=$(ls -d $BUILD_SHELL_SRC_DIR/*/ | sed s%$BUILD_SHELL_SRC_DIR%% | sed s%/%%g)
-        COMPREPLY=( $(compgen -W "${opts}" ${cur}) )
-        return 0
+        cd $BUILD_SHELL_SRC_DIR
+    fi
+    if [ ! -z $oldpwd ]; then
+        local relevant_dirs=$( compgen -d -- $cur )
+        for dir in $relevant_dirs; do
+            COMPREPLY+=( "$dir/" )
+        done
+        cd $oldpwd
     fi
     return 0
 }
 
 complete -F _build_shell bs
 complete -F _build_shell_select bss
-complete -F _build_shell_bcd bcd
+complete -o nospace -F _build_shell_bcd bcd
 
 BUILD_SHELL_REAL_SCRIPT_FILE=${BASH_SOURCE[0]}
 if [ -L ${BASH_SOURCE[0]} ]; then
