@@ -188,7 +188,7 @@ bool GenerateAction::handleCurrentSrcDir(int log_file)
     bool script_success;
     {
         Process process(m_configuration);
-        process.setPhase("state");
+        process.setPhase("generate");
         process.setProjectName(base_name);
         process.setFallback(postfix);
         process.setLogFile(log_file, false);
