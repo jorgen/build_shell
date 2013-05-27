@@ -184,9 +184,13 @@ _build_shell()
         return 0
     fi
 
-    if [ "$COMP_CWORD" -eq 2 ]; then
+    if [ "$COMP_CWORD" -eq 2 ] && [[ $cur != -* ]]; then
         local current_buildset_file="$BUILD_SHELL_BUILD_DIR/build_shell/current_buildset"
         opts=$(jsonmod $current_buildset_file -p "%{*}" -n)
+        COMPREPLY=( $(compgen -W "${opts}" ${cur}) )
+        return 0
+    else
+        opts="--skip-configure --skip-build --deep-clean --clean --continue --pull-first --print"
         COMPREPLY=( $(compgen -W "${opts}" ${cur}) )
         return 0
     fi
