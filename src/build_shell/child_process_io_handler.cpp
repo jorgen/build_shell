@@ -122,7 +122,7 @@ static void handle_events(const pollfd &poll_data, int out_file, bool print, int
         }
         if (!flushToFile(out_file, in_buffer, r))
             fprintf(stderr, "Failed to write to out_file %s\n", strerror(errno));
-        if (print) {
+        if (print || out_file < 0) {
             if (!flushToFile(STDOUT_FILENO, in_buffer, r))
                 fprintf(stderr, "Failed to write to stderr %s\n", strerror(errno));
         }

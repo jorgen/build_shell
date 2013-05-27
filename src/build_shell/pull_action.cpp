@@ -61,16 +61,10 @@ bool PullAction::execute()
     char cwd[PATH_MAX];
     getcwd(cwd, sizeof(cwd));
 
-    bool found = !m_configuration.hasBuildFromProject();
-    const std::string &build_from_project = m_configuration.buildFromProject();
-    for (auto it = m_buildset_tree->begin(); it != m_buildset_tree->end(); ++it) {
+    for (auto it = startIterator(m_buildset_tree); it != m_buildset_tree->end(); ++it) {
         JT::ObjectNode *project_node = it->second->asObjectNode();
         if (!project_node)
             continue;
-
-        if (!found && build_from_project != it->first.string())
-            continue;
-        found = true;
 
         if (chdir(m_configuration.srcDir().c_str())) {
             fprintf(stderr, "Could not move into src dir:%s\n%s\n",
@@ -79,7 +73,7 @@ bool PullAction::execute()
         }
 
         project_node->insertNode(std::string("arguments"), arguments.get(), true);
-        const std::string project_name = it->first.string();
+        const std::string &project_name = it->first.string();
 
         bool should_clone = false;
         bool should_pull = false;
@@ -92,7 +86,12 @@ bool PullAction::execute()
 
         if (S_ISDIR(stat_buffer.st_mode)) {
             should_pull = true;
-            chdir(project_name.c_str());
+            if (chdir(project_name.c_str())) {
+                fprintf(stderr, "Failed to move into directory %s : %s\n",
+                        project_name.c_str(), strerror(errno));
+                m_error = true;
+                return false;
+            }
         }
 
         if (!should_clone && !should_pull) {

@@ -38,8 +38,27 @@ public:
         Generate,
         Build,
         Rebuild,
-        Create
+        Create,
+        Status
     };
+
+    enum BuildSystem {
+        AutoTools,
+        AutoReconf,
+        CMake,
+        QMake,
+        NotRecognizedBuildSystem,
+        BuildSystemSize
+    };
+    static const char *BuildSystemStringMap[BuildSystemSize];
+
+    enum ScmType {
+        Git,
+        Svn,
+        NotRecognizedScmType,
+        ScmTypeSize
+    };
+    static const char *ScmTypeStringMap[ScmTypeSize];
 
     void setMode(Mode mode, std::string mode_string);
     Mode mode() const;
@@ -101,7 +120,8 @@ public:
     int runScript(const std::string &env_script,
                   const std::string &script,
                   const std::string &arg,
-                  int redirect_out_to) const;
+                  int redirect_out_to,
+                  bool print = false) const;
 
     const std::string &buildShellConfigPath() const;
     const std::string &buildSetConfigPath() const;
@@ -111,12 +131,18 @@ public:
 
     static bool getAbsPath(const std::string &path, bool create, std::string &abs_path);
     static bool removeRecursive(const std::string &path);
+
+    static ScmType findScm(const std::string &path);
+    static ScmType findScmForCurrentDirectory();
+
+    static BuildSystem findBuildSystem(const std::string &path);
+    static BuildSystem findBuildSystemForCurrentDirectory();
 private:
 
     std::string findBuildEnvFile() const;
     void initializeScriptSearchPaths();
 
-    int exec_script(const std::string &command, int redirect_out_to) const;
+    int exec_script(const std::string &command, int redirect_out_to, bool print) const;
 
     Mode m_mode;
     std::string m_mode_string;

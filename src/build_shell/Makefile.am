@@ -35,7 +35,9 @@ build_shell_SOURCES =	         	        			\
 	process.cpp							\
 	process.h							\
 	create_action.cpp						\
-	create_action.h
+	create_action.h							\
+	status_action.cpp						\
+	status_action.h
 
 
 

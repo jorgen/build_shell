@@ -41,6 +41,16 @@
 
 static bool DEBUG_FIND_SCRIPT = getenv("BUILD_SHELL_DEBUG_FIND_SCRIPT") != 0;
 
+const char *Configuration::BuildSystemStringMap[BuildSystemSize] =
+                                           { "autotools",
+                                             "autoreconf",
+                                             "cmake",
+                                             "qmake",
+                                             "not_recognized" };
+const char *Configuration::ScmTypeStringMap[ScmTypeSize] =
+                                      { "git",
+                                        "svn",
+                                        "not_recognized"};
 Configuration::Configuration()
     : m_mode(Invalid)
     , m_reset_to_sha(false)
@@ -295,6 +305,10 @@ void Configuration::validate()
         return;
     }
 
+    if (!m_src_dir.size() && m_mode == Status) {
+        fprintf(stderr, "Status mode expects a source directory to be specified\n");
+    }
+
     if (!m_src_dir.size() && m_buildset_file.size()) {
         std::string dirname_of_buildset = m_buildset_file;
         m_src_dir = dirname(&dirname_of_buildset[0]);
@@ -313,6 +327,7 @@ void Configuration::validate()
                 m_src_dir.c_str());
         return;
     }
+
     m_src_dir = std::move(new_src_dir);
 
     if (m_build_dir.length()) {
@@ -356,11 +371,11 @@ const std::list<std::string> &Configuration::scriptSearchPaths() const
     return m_script_search_paths;
 }
 
-int Configuration::exec_script(const std::string &command, int redirect_out_to) const
+int Configuration::exec_script(const std::string &command, int redirect_out_to, bool print) const
 {
     fprintf(stderr, "executing command %s\n", command.c_str());
     ChildProcessIoHandler childProcessIoHandler(redirect_out_to);
-    childProcessIoHandler.printStdOut(m_print);
+    childProcessIoHandler.printStdOut(m_print || print);
 
     pid_t process = fork();
 
@@ -389,7 +404,8 @@ int Configuration::exec_script(const std::string &command, int redirect_out_to) 
 int Configuration::runScript(const std::string &env_script,
                              const std::string &script,
                              const std::string &args,
-                             int redirect_out_to) const
+                             int redirect_out_to,
+                             bool print) const
 {
     if (!script.size())
         return -1;
@@ -410,7 +426,7 @@ int Configuration::runScript(const std::string &env_script,
 
     std::string script_command = pre_script_command + script + post_script_command;
 
-    int exit_code = exec_script(script_command, redirect_out_to);
+    int exit_code = exec_script(script_command, redirect_out_to, print);
     fprintf(stdout, "Executed command %s with exit code %d\n", script_command.c_str(), exit_code);
     return exit_code;
 }
@@ -641,3 +657,82 @@ bool Configuration::removeRecursive(const std::string &path)
     return success;
 }
 
+Configuration::ScmType Configuration::findScm(const std::string &path)
+{
+    if (access((path + "/.git").c_str(), F_OK) == 0) {
+        return Git;
+    } else if (access((path + "/.svn").c_str(), F_OK) == 0) {
+        return Svn;
+    }
+
+    return NotRecognizedScmType;
+}
+
+Configuration::ScmType Configuration::findScmForCurrentDirectory()
+{
+    char current_wd[PATH_MAX];
+    getcwd(current_wd, sizeof current_wd);
+    return findScm(current_wd);
+}
+
+static bool reversComp(const char *file_name,const std::string &extension)
+{
+    size_t file_name_len= strlen(file_name);
+    if (file_name_len < extension.size())
+        return false;
+    const char *start_from = file_name + (file_name_len - extension.size());
+    return strcmp(start_from, extension.c_str()) == 0;
+
+}
+
+Configuration::BuildSystem Configuration::findBuildSystem(const std::string &path)
+{
+    Configuration::BuildSystem build_system = Configuration::NotRecognizedBuildSystem;
+    DIR *source_dir = opendir(path.c_str());
+    if (!source_dir) {
+        fprintf(stderr, "Failed to determin build_system, since its not possible to open source dir %s\n",
+                path.c_str());
+        return build_system;
+    }
+    while (struct dirent *ent = readdir(source_dir)) {
+        if (strncmp(".",ent->d_name, sizeof(".")) == 0 ||
+                strncmp("..", ent->d_name, sizeof("..")) == 0)
+            continue;
+        std::string filename_with_path = path + "/" + ent->d_name;
+        struct stat buf;
+        if (stat(filename_with_path.c_str(), &buf) != 0) {
+            fprintf(stderr, "Something whent wrong when stating file %s: %s\n",
+                    ent->d_name, strerror(errno));
+            continue;
+        }
+        if (S_ISREG(buf.st_mode)) {
+            std::string d_name = ent->d_name;
+            if (reversComp(ent->d_name, ".pro")) {
+                build_system = Configuration::QMake;
+                break;
+            } else if (d_name == "CMakeLists.txt") {
+                build_system = CMake;
+                break;
+            } else if (d_name == "configure.ac") {
+                build_system = AutoTools;
+                break;
+            }
+        }
+    }
+    if (build_system == AutoTools) {
+        std::string autogen = path + "/" + "autogen.sh";
+        if (access(autogen.c_str(), F_OK)) {
+            build_system = AutoReconf;
+        }
+    }
+    closedir(source_dir);
+
+    return build_system;
+}
+
+Configuration::BuildSystem Configuration::findBuildSystemForCurrentDirectory()
+{
+    char current_wd[PATH_MAX];
+    getcwd(current_wd, sizeof current_wd);
+    return findBuildSystem(current_wd);
+}

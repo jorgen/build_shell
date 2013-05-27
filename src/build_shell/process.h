@@ -48,6 +48,8 @@ public:
     void setLogFile(const std::string &logFile, bool append = false, bool closeFileOnDelete = true);
 
     void setProjectNode(JT::ObjectNode *projectNode);
+
+    void setPrint(bool print);
 private:
     static bool flushProjectNodeToTemporaryFile(const std::string &project_name, JT::ObjectNode *node, std::string &file_flushed_to);
     const Configuration &m_configuration;
@@ -59,6 +61,7 @@ private:
     int m_log_file;
     std::string m_log_file_str;
     bool m_close_log_file;
+    bool m_print;
 
     JT::ObjectNode *m_project_node;
 };

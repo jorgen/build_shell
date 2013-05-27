@@ -27,6 +27,7 @@
 #include "build_action.h"
 #include "available_builds.h"
 #include "create_action.h"
+#include "status_action.h"
 
 #include <vector>
 #include <iostream>
@@ -132,6 +133,8 @@ int main(int argc, char **argv)
             return 1;
         } else if (mode == "create") {
             configuration.setMode(Configuration::Create, mode);
+        } else if (mode == "status") {
+            configuration.setMode(Configuration::Status, mode);
         }
     } else if (parser.nonOptionsCount() == 2) {
         std::string mode = parser.nonOption(0);
@@ -233,6 +236,9 @@ int main(int argc, char **argv)
                 break;
             case Configuration::Create:
                 action = new CreateAction(configuration);
+                break;
+            case Configuration::Status:
+                action = new StatusAction(configuration);
                 break;
             default:
                 action = new GenerateAction(configuration);

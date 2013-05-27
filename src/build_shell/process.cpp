@@ -49,6 +49,7 @@ Process::Process(const Configuration &configuration)
     : m_configuration(configuration)
     , m_log_file(-1)
     , m_close_log_file(false)
+    , m_print(false)
     , m_project_node(0)
 {
 }
@@ -73,7 +74,7 @@ bool Process::run(JT::ObjectNode **returnedObjectNode)
 
     bool return_val = true;
 
-    if (m_log_file < 0) {
+    if (m_log_file < 0 && !m_print) {
         std::string log_file_str = m_configuration.scriptExecutionLogPath() +  "/" + m_project_name + "_" + m_phase + ".log";
         setLogFile(log_file_str, false);
     }
@@ -89,7 +90,7 @@ bool Process::run(JT::ObjectNode **returnedObjectNode)
     bool temp_file_removed = false;
 
     for (auto it = scripts.begin(); it != scripts.end(); ++it) {
-        int exit_code = m_configuration.runScript(m_environement_script, (*it), temp_file, m_log_file);
+        int exit_code = m_configuration.runScript(m_environement_script, (*it), temp_file, m_log_file, m_print);
         if (exit_code) {
             fprintf(stderr, "Script %s for project %s failed in execution\n", it->c_str(), m_project_name.c_str());
             return_val = false;
@@ -186,3 +187,7 @@ void Process::setProjectNode(JT::ObjectNode *projectNode)
     m_project_node = projectNode;
 }
 
+void Process::setPrint(bool print)
+{
+    m_print = print;
+}

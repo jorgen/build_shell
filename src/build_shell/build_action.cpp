@@ -39,63 +39,6 @@
 
 #include <memory>
 
-static bool reversComp(const char *file_name,const std::string &extension)
-{
-    size_t file_name_len= strlen(file_name);
-    if (file_name_len < extension.size())
-        return false;
-    const char *start_from = file_name + (file_name_len - extension.size());
-    return strcmp(start_from, extension.c_str()) == 0;
-
-}
-
-static std::string autodetect_build_system(const std::string &source_path)
-{
-    std::string build_system;
-    DIR *source_dir = opendir(source_path.c_str());
-    if (!source_dir) {
-        fprintf(stderr, "Failed to determin build_system, since its not possible to open source dir %s\n",
-                source_path.c_str());
-        return build_system;
-    }
-    while (struct dirent *ent = readdir(source_dir)) {
-        if (strncmp(".",ent->d_name, sizeof(".")) == 0 ||
-            strncmp("..", ent->d_name, sizeof("..")) == 0)
-            continue;
-        std::string filename_with_path = source_path + "/" + ent->d_name;
-        struct stat buf;
-        if (stat(filename_with_path.c_str(), &buf) != 0) {
-            fprintf(stderr, "Something whent wrong when stating file %s: %s\n",
-                    ent->d_name, strerror(errno));
-            continue;
-        }
-        if (S_ISREG(buf.st_mode)) {
-            std::string d_name = ent->d_name;
-            if (reversComp(ent->d_name, ".pro")) {
-                build_system = "qmake";
-                break;
-            } else if (d_name == "CMakeLists.txt") {
-                build_system = "cmake";
-                break;
-            } else if (d_name == "configure.ac") {
-                build_system = "autotools";
-                break;
-            }
-        }
-    }
-    if (build_system == "autotools") {
-        std::string autogen = source_path + "/" + "autogen.sh";
-        if (access(autogen.c_str(), F_OK)) {
-            build_system = "autoreconf";
-        }
-    }
-    closedir(source_dir);
-    if (!build_system.size()) {
-        build_system = "not_determind";
-    }
-    return build_system;
-}
-
 BuildAction::BuildAction(const Configuration &configuration)
     : CreateAction(configuration)
 {
@@ -267,7 +210,8 @@ bool BuildAction::handlePrebuild()
             return false;
         }
 
-        std::string build_system = autodetect_build_system(project_src_path.c_str());
+        Configuration::BuildSystem build_system = Configuration::findBuildSystem(project_src_path.c_str());
+        std::string build_system_string = Configuration::BuildSystemStringMap[build_system];
         if (access(project_build_path.c_str(), X_OK|R_OK)) {
             bool failed_mkdir = true;
             if (errno == ENOENT) {
@@ -288,7 +232,7 @@ bool BuildAction::handlePrebuild()
         arguments->addValueToObject("src_path", project_src_path, JT::Token::String);
         arguments->addValueToObject("build_path", project_build_path, JT::Token::String);
         arguments->addValueToObject("install_path", m_configuration.installDir(), JT::Token::String);
-        arguments->addValueToObject("build_system", build_system, JT::Token::String);
+        arguments->addValueToObject("build_system", build_system_string, JT::Token::String);
 
         long num_cpu = sysconf( _SC_NPROCESSORS_ONLN );
         char cpu_buf[4];

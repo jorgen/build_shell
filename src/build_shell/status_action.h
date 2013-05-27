@@ -19,32 +19,26 @@
  * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE
  * OF THIS SOFTWARE.
 */
-#ifndef GENERATE_ACTION_H
-#define GENERATE_ACTION_H
+
+#ifndef STATUS_ACTION_H
+#define STATUS_ACTION_H
 
 #include "action.h"
 #include "tree_builder.h"
-#include <memory>
+
 namespace JT {
     class ObjectNode;
 }
-
-class GenerateAction : public Action
+class StatusAction : public Action
 {
 public:
-    GenerateAction(const Configuration &configuration,
-            const std::string &outfile = std::string());
-    ~GenerateAction();
+    StatusAction(const Configuration &configuration);
 
     bool execute() override;
 
 private:
-    bool handleCurrentSrcDir(int log_file);
-
     TreeBuilder m_tree_builder;
-    std::unique_ptr<JT::ObjectNode> m_out_tree;
-    std::string m_out_file_name;
-    int m_out_file;
+    JT::ObjectNode *m_buildset_tree;
 };
 
-#endif //GENERATE_ACTION_H
+#endif

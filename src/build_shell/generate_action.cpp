@@ -176,13 +176,11 @@ bool GenerateAction::handleCurrentSrcDir(int log_file)
     }
 
     std::string postfix;
-    if (access(".git", F_OK) == 0) {
-        postfix = "git";
-    } else if (access(".svn", F_OK) == 0) {
+    Configuration::ScmType scm_type = Configuration::findScmForCurrentDirectory();
+    if (scm_type == Configuration::NotRecognizedScmType)
         postfix = "regular_dir";
-    } else {
-        postfix = "regular_dir";
-    }
+    else
+        postfix = Configuration::ScmTypeStringMap[scm_type];
 
     JT::ObjectNode *updated_node;
     bool script_success;
