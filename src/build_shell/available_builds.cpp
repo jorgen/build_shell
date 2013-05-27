@@ -60,6 +60,7 @@ void AvailableBuilds::printAvailable()
         if (!setenv_file.size() || access(setenv_file.c_str(), F_OK)) {
             altered = true;
             delete root->take(it->first.string());
+            --it;
             continue;
         }
 
@@ -92,6 +93,7 @@ void AvailableBuilds::printGetEnv(const std::string &identifier)
         if (!setenv_file.size() || access(setenv_file.c_str(), F_OK)) {
             altered = true;
             delete root->take(it->first.string());
+            --it;
             continue;
         }
 
