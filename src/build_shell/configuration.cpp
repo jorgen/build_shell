@@ -39,6 +39,7 @@
 
 #include <sstream>
 
+static bool DEBUG_EXEC_SCRIPT = getenv("BUILD_SHELL_DEBUG_EXEC_SCRIPT") != 0;
 static bool DEBUG_FIND_SCRIPT = getenv("BUILD_SHELL_DEBUG_FIND_SCRIPT") != 0;
 
 const char *Configuration::BuildSystemStringMap[BuildSystemSize] =
@@ -373,7 +374,8 @@ const std::list<std::string> &Configuration::scriptSearchPaths() const
 
 int Configuration::exec_script(const std::string &command, int redirect_out_to, bool print) const
 {
-    fprintf(stderr, "executing command %s\n", command.c_str());
+    if (DEBUG_EXEC_SCRIPT)
+        fprintf(stderr, "executing command %s\n", command.c_str());
     ChildProcessIoHandler childProcessIoHandler(redirect_out_to);
     childProcessIoHandler.printStdOut(m_print || print);
 
@@ -427,7 +429,6 @@ int Configuration::runScript(const std::string &env_script,
     std::string script_command = pre_script_command + script + post_script_command;
 
     int exit_code = exec_script(script_command, redirect_out_to, print);
-    fprintf(stdout, "Executed command %s with exit code %d\n", script_command.c_str(), exit_code);
     return exit_code;
 }
 
