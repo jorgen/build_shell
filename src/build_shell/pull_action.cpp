@@ -119,6 +119,7 @@ bool PullAction::execute()
             process.setProjectName(project_name);
             process.setFallback(fallback_script);
             process.setProjectNode(project_node);
+            process.setPrint(true);
             success = process.run(nullptr);
         }
 

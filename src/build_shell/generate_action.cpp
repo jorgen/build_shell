@@ -191,6 +191,7 @@ bool GenerateAction::handleCurrentSrcDir(int log_file)
         process.setFallback(postfix);
         process.setLogFile(log_file, false);
         process.setProjectNode(root_for_dir);
+        process.setPrint(true);
         script_success = process.run(&updated_node);
     }
 

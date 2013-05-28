@@ -25,7 +25,6 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <string.h>
-#include <poll.h>
 
 #include <vector>
 
@@ -36,6 +35,8 @@ ChildProcessIoHandler::ChildProcessIoHandler(int out_file)
     , m_error(true)
     , m_print_stdout(false)
     , m_print_stderr(true)
+    , m_roller_state(0)
+    , m_rooler_active(false)
 {
 
     if (::pipe(m_stderr_pipe)) {
@@ -61,6 +62,10 @@ ChildProcessIoHandler::~ChildProcessIoHandler()
     }
 
     m_thread.join();
+    if (m_rooler_active) {
+        m_rooler_active = false;
+        write(STDOUT_FILENO, "\r   ",4);
+    }
 }
 
 void ChildProcessIoHandler::setupMasterProcessState()
@@ -103,39 +108,44 @@ static bool flushToFile(int file, char *buffer, ssize_t size)
     return true;
 }
 
-static void handle_events(const pollfd &poll_data, int out_file, bool print, int *active_connections)
+const char roller[] = { '|', '/', '-', '\\' };
+
+bool ChildProcessIoHandler::handle_events(const pollfd &poll_data, int out_file, bool print, int *active_connections) const
 {
     if (!poll_data.revents) {
-        return;
+        return false;
     }
     if (poll_data.revents & POLLHUP) {
         (*active_connections)--;
     }
 
+    bool return_val = false;
     if (poll_data.revents & POLLIN) {
         char in_buffer[1024];
         ssize_t r = read(poll_data.fd, in_buffer, sizeof in_buffer);
 
         if (r == 0) {
             (*active_connections)--;
-
-        }
-        if (!flushToFile(out_file, in_buffer, r))
-            fprintf(stderr, "Failed to write to out_file %s\n", strerror(errno));
-        if (print || out_file < 0) {
-            if (!flushToFile(STDOUT_FILENO, in_buffer, r))
-                fprintf(stderr, "Failed to write to stderr %s\n", strerror(errno));
+        } else {
+            if (!flushToFile(out_file, in_buffer, r))
+                fprintf(stderr, "Failed to write to out_file %s\n", strerror(errno));
+            if (print || out_file < 0) {
+                if (!flushToFile(STDOUT_FILENO, in_buffer, r))
+                    fprintf(stderr, "Failed to write to stderr %s\n", strerror(errno));
+                return_val = true;
+            }
         }
     }
+    return return_val;
 }
 
 void ChildProcessIoHandler::run()
 {
     pollfd poll_data[2];
     poll_data[0].fd = m_stdout_pipe[0];
-    poll_data[0].events = POLLHUP | POLLIN | POLLRDNORM;
+    poll_data[0].events = POLLHUP | POLLIN;
     poll_data[1].fd = m_stderr_pipe[0];
-    poll_data[1].events = POLLHUP | POLLIN | POLLRDNORM;
+    poll_data[1].events = POLLHUP | POLLIN;
 
     int active_connections = 2;
 
@@ -145,8 +155,19 @@ void ChildProcessIoHandler::run()
             fprintf(stderr, "ChildProcessIoHandler poll failed %s\n", strerror(errno));
             continue;
         } else {
-            handle_events(poll_data[0], m_out_file, m_print_stdout, &active_connections);
-            handle_events(poll_data[1], m_out_file, m_print_stderr, &active_connections);
+            if (m_rooler_active) {
+                m_rooler_active = false;
+                write(STDOUT_FILENO, "\r",1);
+            }
+            bool stderr_wrote_out = handle_events(poll_data[1], m_out_file, m_print_stderr, &active_connections);
+            bool stdout_wrote_out = handle_events(poll_data[0], m_out_file, m_print_stdout, &active_connections);
+            if (!stderr_wrote_out && !stdout_wrote_out) {
+                m_rooler_active = true;
+                m_roller_state = (m_roller_state + 1) % (sizeof roller / sizeof roller[0]);
+                const char data[] = { '\r', roller[m_roller_state] };
+                write(STDOUT_FILENO, data, (sizeof data / sizeof data[0]));
+            }
         }
     }
+
 }

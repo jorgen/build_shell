@@ -167,6 +167,7 @@ bool BuildAction::execute()
             process.setProjectName(project_name);
             process.setFallback(project_build_system);
             process.setProjectNode(project_node);
+            process.setPrint(true);
             if (!process.run(&updated_project_node)) {
                 delete updated_project_node;
                 return false;
@@ -249,6 +250,7 @@ bool BuildAction::handlePrebuild()
             process.setPhase("pre_build");
             process.setProjectName(project_name);
             process.setProjectNode(project_node);
+            process.setPrint(true);
             if (!process.run(&updated_project_node)) {
                 fprintf(stderr, "Failed to run process\n");
                 delete updated_project_node;
@@ -287,6 +289,7 @@ bool BuildAction::handleBuildForProject(const std::string &projectName, const st
     if (m_configuration.clean()) {
         process.setPhase("clean");
         process.setProjectNode(project_node);
+        process.setPrint(false);
         if (!process.run(&updated_project_node))
             return false;
     } else if (updated_project_node) {
@@ -323,6 +326,7 @@ bool BuildAction::handleBuildForProject(const std::string &projectName, const st
             } else {
                 process.setPhase("deep_clean");
                 process.setProjectNode(project_node);
+                process.setPrint(false);
                 if (!process.run(&updated_project_node)) {
                     return false;
                 } else if (updated_project_node) {
@@ -338,6 +342,7 @@ bool BuildAction::handleBuildForProject(const std::string &projectName, const st
     if (m_configuration.configure()) {
         process.setPhase("configure");
         process.setProjectNode(project_node);
+        process.setPrint(true);
         if (!process.run(&updated_project_node)) {
             return false;
         } else  if (updated_project_node) {
@@ -349,6 +354,7 @@ bool BuildAction::handleBuildForProject(const std::string &projectName, const st
     if (m_configuration.build()) {
         process.setPhase("build");
         process.setProjectNode(project_node);
+        process.setPrint(false);
         if (!process.run(&updated_project_node)) {
             return false;
         } else if (updated_project_node) {
@@ -359,6 +365,7 @@ bool BuildAction::handleBuildForProject(const std::string &projectName, const st
         if (m_configuration.install() && project_node->nodeAt("no_install") == nullptr) {
             process.setPhase("install");
             process.setProjectNode(project_node);
+            process.setPrint(false);
             if (!process.run(&updated_project_node)) {
                 return false;
             } else if (updated_project_node){

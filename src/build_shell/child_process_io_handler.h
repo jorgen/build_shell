@@ -25,6 +25,8 @@
 #include <string>
 #include <thread>
 
+#include <poll.h>
+
 class ChildProcessIoHandler
 {
 public:
@@ -38,6 +40,10 @@ public:
 
     void printStdOut(bool print);
 private:
+    bool handle_events(const pollfd &poll_data,
+                       int out_file,
+                       bool print,
+                       int *active_connections) const;
     void run();
     int m_out_file;
     int m_stdout_pipe[2];
@@ -46,6 +52,8 @@ private:
     bool m_print_stdout;
     bool m_print_stderr;
     std::thread m_thread;
+    int m_roller_state;
+    int m_rooler_active;
 };
 
 #endif
