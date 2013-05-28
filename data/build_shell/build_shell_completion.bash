@@ -23,6 +23,8 @@ bs()
     if [[ $mode == "create" ]]; then
         bs_create $@
         return $?
+    elif [[ $mode == "status" ]]; then
+	bs_name
     fi
 
     if [ ! -n $BUILD_SHELL_BUILD_DIR ]; then
@@ -161,7 +163,7 @@ _build_shell_select()
     cur="${COMP_WORDS[COMP_CWORD]}"
     if [ "$COMP_CWORD" -eq 1 ]; then
         opts=$(build_shell available)
-        COMPREPLY=( $(compgen -W "${opts}" ${cur}) )
+        COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
         return 0
     fi
 }
@@ -180,18 +182,18 @@ _build_shell()
 
     if [ "$COMP_CWORD" -eq 1 ]; then
         opts="pull build rebuild status"
-        COMPREPLY=( $(compgen -W "${opts}" ${cur}) )
+        COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
         return 0
     fi
 
     if [ "$COMP_CWORD" -eq 2 ] && [[ $cur != -* ]]; then
         local current_buildset_file="$BUILD_SHELL_BUILD_DIR/build_shell/current_buildset"
         opts=$(jsonmod $current_buildset_file -p "%{*}" -n)
-        COMPREPLY=( $(compgen -W "${opts}" ${cur}) )
+        COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
         return 0
     else
         opts="--skip-configure --skip-build --deep-clean --clean --continue --pull-first --print"
-        COMPREPLY=( $(compgen -W "${opts}" ${cur}) )
+        COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
         return 0
     fi
 }
