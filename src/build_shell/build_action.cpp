@@ -113,8 +113,6 @@ bool BuildAction::execute()
     if (!handlePrebuild())
         return false;
 
-    m_env_script_builder.addProjectsUpTo(m_buildset_tree, m_configuration.buildFromProject());
-
     for (auto it = startIterator(m_buildset_tree); it != m_buildset_tree->end(); ++it) {
         JT::ObjectNode *project_node = it->second->asObjectNode();
         if (!project_node)

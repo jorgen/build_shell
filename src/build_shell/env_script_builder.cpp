@@ -113,19 +113,6 @@ void EnvScriptBuilder::addProjectNode(const std::string &project_name, JT::Objec
     }
 }
 
-void EnvScriptBuilder::addProjectsUpTo(JT::ObjectNode *projectsNode, const std::string &untill)
-{
-    if (!untill.size())
-        return;
-    for (auto it = projectsNode->begin(); it != projectsNode->end(); ++it) {
-        if (it->first.compareString(untill))
-            return;
-        JT::ObjectNode *object_node = it->second->asObjectNode();
-        if (!object_node)
-            continue;
-        addProjectNode(it->first.string(), object_node);
-    }
-}
 void EnvScriptBuilder::writeSetScript(TempFile &tempFile, const std::string &toProject)
 {
     if (tempFile.closed()) {

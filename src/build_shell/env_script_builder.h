@@ -57,7 +57,6 @@ public:
     ~EnvScriptBuilder();
 
     void addProjectNode(const std::string &project_name, JT::ObjectNode *project_root);
-    void addProjectsUpTo(JT::ObjectNode *projectsNode, const std::string &untill);
 
     void writeSetScript(TempFile &tempFile, const std::string &toProject);
     void writeScripts(const std::string &setFileName, const std::string &unsetFileName, const std::string &toProject);
