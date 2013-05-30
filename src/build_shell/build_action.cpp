@@ -235,7 +235,7 @@ bool BuildAction::handlePrebuild()
         arguments->addValueToObject("install_path", m_configuration.installDir(), JT::Token::String);
         arguments->addValueToObject("build_system", build_system_string, JT::Token::String);
 
-        long num_cpu = sysconf( _SC_NPROCESSORS_ONLN );
+        static const long num_cpu = sysconf( _SC_NPROCESSORS_ONLN );
         char cpu_buf[4];
         snprintf(cpu_buf, sizeof cpu_buf, "%ld", num_cpu);
         arguments->addValueToObject("cpu_count", cpu_buf, JT::Token::Number);
