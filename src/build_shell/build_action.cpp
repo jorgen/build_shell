@@ -113,7 +113,8 @@ bool BuildAction::execute()
     if (!handlePrebuild())
         return false;
 
-    for (auto it = startIterator(m_buildset_tree); it != m_buildset_tree->end(); ++it) {
+    auto end_it = endIterator(m_buildset_tree);
+    for (auto it = startIterator(m_buildset_tree); it != end_it; ++it) {
         JT::ObjectNode *project_node = it->second->asObjectNode();
         if (!project_node)
             continue;
@@ -142,7 +143,8 @@ bool BuildAction::execute()
             break;
     }
 
-    for (auto it = startIterator(m_buildset_tree); it != m_buildset_tree->end(); ++it) {
+    end_it = endIterator(m_buildset_tree);
+    for (auto it = startIterator(m_buildset_tree); it != end_it; ++it) {
         JT::ObjectNode *project_node = it->second->asObjectNode();
         if (!project_node)
             continue;
@@ -186,7 +188,8 @@ bool BuildAction::handlePrebuild()
 {
     Process pre_build(m_configuration);
 
-    for (auto it = startIterator(m_buildset_tree); it != m_buildset_tree->end(); ++it) {
+    auto end_it = endIterator(m_buildset_tree);
+    for (auto it = startIterator(m_buildset_tree); it != end_it; ++it) {
         JT::ObjectNode *project_node = it->second->asObjectNode();
         if (!project_node)
             continue;
@@ -206,14 +209,17 @@ bool BuildAction::handlePrebuild()
             fprintf(stderr, "Problem accessing source path: %s for project %s. Running pull action\n",
                     project_src_path.c_str(), project_name.c_str());
             {
-                PullAction pull_action(m_configuration);
+                Configuration clone_conf = m_configuration;
+                clone_conf.setBuildFromProject(project_name);
+                clone_conf.setOnlyOne(true);
+                PullAction pull_action(clone_conf);
                 if (pull_action.error()) {
                     m_error = true;
                     return false;
                 }
                 m_error = !pull_action.execute();
                 if (m_error)
-                    fprintf(stderr, "PULL FAILED\n");
+                    return false;
             }
             if (access(project_src_path.c_str(), X_OK|R_OK)) {
                 fprintf(stderr, "Problem accessing source path: %s for project %s. Can not complete build\n",

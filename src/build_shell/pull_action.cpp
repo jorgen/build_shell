@@ -61,7 +61,8 @@ bool PullAction::execute()
     char cwd[PATH_MAX];
     getcwd(cwd, sizeof(cwd));
 
-    for (auto it = startIterator(m_buildset_tree); it != m_buildset_tree->end(); ++it) {
+    auto end_it = endIterator(m_buildset_tree);
+    for (auto it = startIterator(m_buildset_tree); it != end_it; ++it) {
         JT::ObjectNode *project_node = it->second->asObjectNode();
         if (!project_node)
             continue;

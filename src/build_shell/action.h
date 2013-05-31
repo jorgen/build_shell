@@ -38,6 +38,7 @@ public:
     bool error() const;
 
     JT::ObjectNode::Iterator startIterator(JT::ObjectNode *project_tree);
+    JT::ObjectNode::Iterator endIterator(JT::ObjectNode *project_tree);
 protected:
     const Configuration &m_configuration;
     bool m_error;

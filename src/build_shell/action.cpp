@@ -58,3 +58,10 @@ JT::ObjectNode::Iterator Action::startIterator(JT::ObjectNode *project_tree)
     return project_tree->end();
 }
 
+JT::ObjectNode::Iterator Action::endIterator(JT::ObjectNode *project_tree)
+{
+    if (m_configuration.onlyOne()) {
+        return ++startIterator(project_tree);
+    }
+    return project_tree->end();
+}
