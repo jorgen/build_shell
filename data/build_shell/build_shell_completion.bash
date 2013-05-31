@@ -54,7 +54,6 @@ bs()
     fi
 
     if [ ! -z $component ]; then
-        echo "COMPONENT:$component"
         local current_buildset_file="$BUILD_SHELL_BUILD_DIR/build_shell/current_buildset"
         local opts=$(jsonmod $current_buildset_file -p "%{*}" -n)
         local found=false

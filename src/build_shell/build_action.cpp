@@ -262,7 +262,6 @@ bool BuildAction::handlePrebuild()
         if (m_configuration.onlyOne())
             break;
     }
-    fprintf(stderr, "finished\n");
     return true;
 }
 
