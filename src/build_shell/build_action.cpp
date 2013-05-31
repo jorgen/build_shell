@@ -203,10 +203,24 @@ bool BuildAction::handlePrebuild()
         std::string project_src_path = m_configuration.srcDir() + "/" + project_name;
 
         if (access(project_src_path.c_str(), X_OK|R_OK)) {
-            fprintf(stderr, "Problem accessing source path: %s for project %s. Can not complete build\n",
+            fprintf(stderr, "Problem accessing source path: %s for project %s. Running pull action\n",
                     project_src_path.c_str(), project_name.c_str());
-            m_error = true;
-            return false;
+            {
+                PullAction pull_action(m_configuration);
+                if (pull_action.error()) {
+                    m_error = true;
+                    return false;
+                }
+                m_error = !pull_action.execute();
+                if (m_error)
+                    fprintf(stderr, "PULL FAILED\n");
+            }
+            if (access(project_src_path.c_str(), X_OK|R_OK)) {
+                fprintf(stderr, "Problem accessing source path: %s for project %s. Can not complete build\n",
+                        project_src_path.c_str(), project_name.c_str());
+                m_error = true;
+                return false;
+            }
         }
 
         Configuration::BuildSystem build_system = Configuration::findBuildSystem(project_src_path.c_str());
