@@ -33,8 +33,9 @@ StatusAction::StatusAction(const Configuration &configuration)
     : Action(configuration)
     , m_tree_builder(configuration.buildsetFile())
 {
-   m_buildset_tree = m_tree_builder.rootNode();
-   m_error = !m_buildset_tree;
+    m_tree_builder.load();
+    m_buildset_tree = m_tree_builder.rootNode();
+    m_error = !m_buildset_tree;
 }
 
 bool StatusAction::execute()

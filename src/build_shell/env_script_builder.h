@@ -24,12 +24,13 @@
 
 #include "configuration.h"
 #include "temp_file.h"
+#include "build_environment.h"
 
 #include <string>
 #include <memory>
 #include <map>
 #include <list>
-#include <vector>
+#include <set>
 
 namespace JT {
     class ObjectNode;
@@ -53,29 +54,25 @@ public:
 class EnvScriptBuilder
 {
 public:
-    EnvScriptBuilder(const Configuration &configuration);
+    EnvScriptBuilder(const Configuration &configuration, JT::ObjectNode *buildset_node);
     ~EnvScriptBuilder();
-
-    void addProjectNode(const std::string &project_name, JT::ObjectNode *project_root);
 
     void writeSetScript(TempFile &tempFile, const std::string &toProject);
     void writeScripts(const std::string &setFileName, const std::string &unsetFileName, const std::string &toProject);
 
 private:
-    bool substitue_variable_value(const std::map<std::string, std::string> jsonVariableMap, std::string &value_string) const;
-
     std::map<std::string, std::list<EnvVariable>> make_variable_map_up_until(const std::string &project_name) const;
 
     void writeSetScript(const std::string &unsetFileName, const std::map<std::string, std::list<EnvVariable>> &variables, FILE *file, bool close);
     void writeUnsetScript(const std::string &file, const std::map<std::string, std::list<EnvVariable>> &variables);
     void writeUnsetScript(FILE *file, bool close, const std::map<std::string, std::list<EnvVariable>> &variables);
 
-    void populateMapFromEnvironmentNode(JT::ObjectNode *environmentNode, const std::map<std::string, std::string> &jsonVariableMap, std::map<std::string, std::list<EnvVariable>> &map) const;
-    void populateMapFromProjectNode(JT::ObjectNode *projectNode, std::map<std::string, std::list<EnvVariable>> &map) const;
+    void populateMapFromEnvironmentNode(const std::string &projectName, JT::ObjectNode *environmentNode, std::map<std::string, std::list<EnvVariable>> &map) const;
+    void populateMapFromProjectNode(const std::string &projectName, JT::ObjectNode *projectNode, std::map<std::string, std::list<EnvVariable>> &map) const;
 
-    JT::ObjectNode *m_environment_node;
     const Configuration &m_configuration;
-    std::string m_out_file;
+    JT::ObjectNode *m_buildset_node;
+    BuildEnvironment m_build_environment;
 };
 
 #endif

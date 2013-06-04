@@ -19,37 +19,28 @@
  * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE
  * OF THIS SOFTWARE.
 */
-#ifndef TREE_BUILDER_H
-#define TREE_BUILDER_H
 
-#include <string>
-#include <functional>
+#ifndef BUILDSETTREEBUILDER_H
+#define BUILDSETTREEBUILDER_H
 
-#include "mmapped_file.h"
+#include "tree_builder.h"
 
-namespace JT {
-    class ObjectNode;
-    struct Token;
-    class Tokenizer;
-}
+#include <set>
 
-class TreeBuilder
+#include "build_environment.h"
+
+class BuildsetTreeBuilder
 {
 public:
-    TreeBuilder(const std::string &file,
-            std::function<void(JT::Token *next_token)> token_transformer = nullptr);
-    ~TreeBuilder();
+    BuildsetTreeBuilder(const Configuration &configuration, const std::string &file);
 
-    void load();
-    JT::ObjectNode *rootNode() const;
-    JT::ObjectNode *takeRootNode();
+    TreeBuilder treeBuilder;
 
+    const std::set<std::string> required_variables() const;
 private:
-    JT::ObjectNode *m_node;
-    const std::string &m_file_name;
-    MmappedReadFile m_mapped_file;
-    std::function<void(JT::Token *next_token)> m_token_transformer;
-
+    void filterTokens(JT::Token *next_token);
+    std::set<std::string> m_required_variables;
+    BuildEnvironment m_build_environment;
 };
 
-#endif //TREE_BUILDER_H
+#endif

@@ -37,7 +37,11 @@ build_shell_SOURCES =	         	        			\
 	create_action.cpp						\
 	create_action.h							\
 	status_action.cpp						\
-	status_action.h
+	status_action.h							\
+	buildset_tree_builder.cpp					\
+	buildset_tree_builder.h						\
+	build_environment.cpp						\
+	build_environment.h
 
 
 

@@ -41,6 +41,7 @@ GenerateAction::GenerateAction(const Configuration &configuration,
     : Action(configuration)
     , m_tree_builder(configuration.buildsetFile())
 {
+    m_tree_builder.load();
     m_out_tree.reset(m_tree_builder.takeRootNode());
 
     if (!m_out_tree.get())

@@ -27,15 +27,18 @@
 class TreeWriter
 {
 public:
-    TreeWriter(const std::string &file, JT::ObjectNode *root);
-    TreeWriter(int file, JT::ObjectNode *root, bool closeFileOnDestruct = false);
+    TreeWriter(const std::string &file);
+    TreeWriter(int file, bool closeFileOnDestruct = false);
+
+    void write(JT::ObjectNode *root);
+
+    void setSerializeTransformer(std::function<const JT::Token&(const JT::Token &)> transformer);
 
     ~TreeWriter();
 
     bool error() const;
 
 private:
-    void write(JT::ObjectNode *root);
     void writeBufferToFile(const JT::SerializerBuffer &buffer);
     void requestFlush(JT::Serializer *serializer);
 
@@ -43,6 +46,8 @@ private:
     char m_buffer[4096];
     bool m_error;
     bool m_close_file;
+
+    std::function<const JT::Token &(const JT::Token &)> m_transformer;
 };
 
 #endif

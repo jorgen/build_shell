@@ -37,7 +37,7 @@ public:
     Process(const Configuration &configuration);
     ~Process();
 
-    bool run(JT::ObjectNode **returnedObjectNode);
+    bool run(JT::ObjectNode **returnedObjectNode = 0);
 
     void setEnvironmentScript(const std::string &environment_script);
     void setPhase(const std::string &phase);

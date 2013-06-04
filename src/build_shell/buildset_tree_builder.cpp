@@ -19,37 +19,36 @@
  * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE
  * OF THIS SOFTWARE.
 */
-#ifndef TREE_BUILDER_H
-#define TREE_BUILDER_H
 
-#include <string>
-#include <functional>
+#include "buildset_tree_builder.h"
 
-#include "mmapped_file.h"
+#include <string.h>
 
-namespace JT {
-    class ObjectNode;
-    struct Token;
-    class Tokenizer;
+#include "json_tree.h"
+#include "build_environment.h"
+
+BuildsetTreeBuilder::BuildsetTreeBuilder(const Configuration &configuration, const std::string &file)
+    : treeBuilder(file,
+        std::bind(&BuildsetTreeBuilder::filterTokens, this, std::placeholders::_1))
+    , m_build_environment(configuration)
+{
+    treeBuilder.load();
 }
 
-class TreeBuilder
+const std::set<std::string> BuildsetTreeBuilder::required_variables() const
 {
-public:
-    TreeBuilder(const std::string &file,
-            std::function<void(JT::Token *next_token)> token_transformer = nullptr);
-    ~TreeBuilder();
+    return m_required_variables;
+}
+void BuildsetTreeBuilder::filterTokens(JT::Token *next_token)
+{
+    JT::Token::Type value_type = next_token->value_type;
+    if (value_type == JT::Token::String || value_type == JT::Token::Ascii) {
+        auto variable_list = BuildEnvironment::findVariables(next_token->value.data, next_token->value.size);
+        for (auto it = variable_list.begin(); it != variable_list.end(); ++it) {
+            std::string variable(it->start,it->size);
+            if (m_build_environment.staticVariables().find(variable) == m_build_environment.staticVariables().end())
+                m_required_variables.insert(variable);
+        }
 
-    void load();
-    JT::ObjectNode *rootNode() const;
-    JT::ObjectNode *takeRootNode();
-
-private:
-    JT::ObjectNode *m_node;
-    const std::string &m_file_name;
-    MmappedReadFile m_mapped_file;
-    std::function<void(JT::Token *next_token)> m_token_transformer;
-
-};
-
-#endif //TREE_BUILDER_H
+    }
+}

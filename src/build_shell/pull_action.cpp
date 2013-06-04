@@ -38,6 +38,7 @@ PullAction::PullAction(const Configuration &configuration)
     : Action(configuration)
     , m_buildset_tree_builder(configuration.buildsetFile())
 {
+    m_buildset_tree_builder.load();
     m_buildset_tree = m_buildset_tree_builder.rootNode();
     if (!m_buildset_tree) {
         fprintf(stderr, "Error loading buildset %s\n",

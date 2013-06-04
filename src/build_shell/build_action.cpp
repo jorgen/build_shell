@@ -78,7 +78,8 @@ BuildAction::~BuildAction()
     if (m_error)
         return;
     std::string stored_buildset_finished = m_stored_buildset + "_finished";
-    TreeWriter finished(stored_buildset_finished, m_buildset_tree);
+    TreeWriter finished(stored_buildset_finished);
+    finished.write(m_buildset_tree);
 }
 
 class ArgumentsCleanup
@@ -137,7 +138,6 @@ bool BuildAction::execute()
             m_buildset_tree->insertNode(it->first, updated_project_node,true);
             project_node = updated_project_node;
         }
-        m_env_script_builder.addProjectNode(it->first.string(),project_node);
 
         if (m_configuration.onlyOne())
             break;

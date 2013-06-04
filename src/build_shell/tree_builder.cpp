@@ -23,15 +23,26 @@
 
 #include "json_tree.h"
 
-TreeBuilder::TreeBuilder(const std::string &file)
+TreeBuilder::TreeBuilder(const std::string &file,
+            std::function<void(JT::Token *next_token)> token_transformer)
     : m_node(0)
     , m_file_name(file)
     , m_mapped_file(m_file_name)
+    , m_token_transformer(token_transformer)
 {
     if (!m_file_name.size()) {
         return;
     }
 
+}
+
+TreeBuilder::~TreeBuilder()
+{
+    delete m_node;
+}
+
+void TreeBuilder::load()
+{
     const char *data = static_cast<const char *>(m_mapped_file.map());
     if (!data)
         return;
@@ -41,6 +52,7 @@ TreeBuilder::TreeBuilder(const std::string &file)
     tokenizer.allowNewLineAsTokenDelimiter(true);
     tokenizer.allowSuperfluousComma(true);
     tokenizer.addData(data, m_mapped_file.size());
+    tokenizer.registerTokenTransformer(m_token_transformer);
     auto tree_build = tree_builder.build(&tokenizer);
     if (tree_build.second == JT::Error::NoError) {
         m_node = tree_build.first->asObjectNode();
@@ -48,11 +60,6 @@ TreeBuilder::TreeBuilder(const std::string &file)
 
     if (!m_node)
         delete tree_build.first;
-}
-
-TreeBuilder::~TreeBuilder()
-{
-    delete m_node;
 }
 
 JT::ObjectNode *TreeBuilder::rootNode() const
@@ -66,3 +73,4 @@ JT::ObjectNode *TreeBuilder::takeRootNode()
     m_node = 0;
     return retNode;
 }
+

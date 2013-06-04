@@ -19,37 +19,49 @@
  * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE
  * OF THIS SOFTWARE.
 */
-#ifndef TREE_BUILDER_H
-#define TREE_BUILDER_H
 
+#ifndef BUILD_ENVIRONMENT_H
+#define BUILD_ENVIRONMENT_H
+
+#include <set>
 #include <string>
-#include <functional>
+#include <list>
 
-#include "mmapped_file.h"
+#include "configuration.h"
 
 namespace JT {
     class ObjectNode;
-    struct Token;
-    class Tokenizer;
 }
 
-class TreeBuilder
+struct Variable
 {
-public:
-    TreeBuilder(const std::string &file,
-            std::function<void(JT::Token *next_token)> token_transformer = nullptr);
-    ~TreeBuilder();
-
-    void load();
-    JT::ObjectNode *rootNode() const;
-    JT::ObjectNode *takeRootNode();
-
-private:
-    JT::ObjectNode *m_node;
-    const std::string &m_file_name;
-    MmappedReadFile m_mapped_file;
-    std::function<void(JT::Token *next_token)> m_token_transformer;
-
+    Variable()
+        : start(0)
+        , size(0)
+    { }
+    const char *start;
+    size_t size;
 };
 
-#endif //TREE_BUILDER_H
+class BuildEnvironment
+{
+public:
+    BuildEnvironment(const Configuration &configuration);
+    ~BuildEnvironment();
+
+    std::string getVariable(const std::string &variable, const std::string &project) const;
+    void setVariable(const std::string &variable, const std::string &value, const std::string &project = "");
+    const std::set<std::string> staticVariables();
+
+    const std::string expandVariablesInString(const std::string &str, const std::string &project = "") const;
+
+    static const std::list<Variable> findVariables(const char *str, const size_t size);
+private:
+    const Configuration &m_configuration;
+    const std::string m_environment_file;
+
+    JT::ObjectNode *m_environment_node;
+    std::set<std::string> m_static_variables;
+};
+
+#endif //BUILD_ENVIRONMENT_H

@@ -32,85 +32,15 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-EnvScriptBuilder::EnvScriptBuilder(const Configuration &configuration)
+EnvScriptBuilder::EnvScriptBuilder(const Configuration &configuration, JT::ObjectNode *buildset_node)
     : m_configuration(configuration)
-    , m_out_file(configuration.buildDir() + "/build_shell/build_environment.json")
+    , m_buildset_node(buildset_node)
+    , m_build_environment(configuration)
 {
-    if (access(m_out_file.c_str(), R_OK) == 0) {
-        TreeBuilder tree_builder(m_out_file);
-        m_environment_node = tree_builder.takeRootNode();
-    } else {
-        m_environment_node = new JT::ObjectNode();
-    }
 }
 
 EnvScriptBuilder::~EnvScriptBuilder()
 {
-    mode_t mode = S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH;
-    int out_file = open(m_out_file.c_str(), O_WRONLY|O_CREAT|O_TRUNC|O_CLOEXEC, mode);
-
-    if (out_file >= 0) {
-        TreeWriter writer(out_file,m_environment_node,true);
-        if (writer.error()) {
-        }
-    } else {
-        fprintf(stderr, "Could not open %s : %s\n", m_out_file.c_str(), strerror(errno));
-
-    }
-
-    delete m_environment_node;
-}
-
-static void addOrRemoveIfEmpty(JT::ObjectNode *node, const std::string &property, const std::string &value)
-{
-    if (value.size()) {
-        node->insertNode(property, new JT::StringNode(value), true);
-    } else {
-        delete node->take(property);
-    }
-}
-
-void EnvScriptBuilder::addProjectNode(const std::string &project_name, JT::ObjectNode *project_root)
-{
-    if (!project_root)
-        return;
-
-    JT::ObjectNode *project_environment = 0;
-    for (auto it = m_environment_node->begin(); it != m_environment_node->end(); ++it) {
-        if (it->first.compareString(project_name)) {
-            project_environment = it->second->asObjectNode();
-        }
-    }
-    if (!project_environment) {
-        project_environment = new JT::ObjectNode();
-        m_environment_node->insertNode(project_name, project_environment);
-    }
-
-    addOrRemoveIfEmpty(project_environment, "project_src_path", project_root->stringAt("arguments.src_path"));
-    addOrRemoveIfEmpty(project_environment, "project_build_path", project_root->stringAt("arguments.build_path"));
-    for (auto it = project_root->begin(); it != project_root->end(); ++it) {
-        if (it->first.string() != "env" && it->first.string() != "buildsystem_env")
-            continue;
-        JT::ObjectNode *env_object = it->second->asObjectNode();
-        if (!env_object)
-            continue;
-
-        env_object = env_object->copy();
-        project_environment->insertNode(it->first.string(), env_object, true);
-
-        for (auto env_it = env_object->begin(); env_it != env_object->end(); ++env_it) {
-            JT::StringNode *value = env_it->second->asStringNode();
-            if (!value) {
-                JT::ObjectNode *value_object = env_it->second->asObjectNode();
-                if (value_object) {
-                    value = value_object->stringNodeAt("value");
-                }
-                if (!value) {
-                    continue;
-                }
-            }
-        }
-    }
 }
 
 void EnvScriptBuilder::writeSetScript(TempFile &tempFile, const std::string &toProject)
@@ -149,26 +79,6 @@ void EnvScriptBuilder::writeScripts(const std::string &setFileName, const std::s
     }
 }
 
-bool EnvScriptBuilder::substitue_variable_value(const std::map<std::string, std::string> jsonVariableMap, std::string &value_string) const
-{
-    size_t start_pos = value_string.find("{$") + 2;
-    if (start_pos < value_string.size()) {
-        size_t end_pos = value_string.find("}", start_pos);
-        if (end_pos < value_string.size()) {
-            const std::string variable = value_string.substr(start_pos, end_pos - start_pos);
-
-            if (jsonVariableMap.count(variable) && jsonVariableMap.at(variable).size()) {
-                value_string.replace(start_pos -2, end_pos - start_pos + 3, jsonVariableMap.at(variable));
-                return true;
-            } else {
-                fprintf(stderr, "Failed to find variable substitute for %s\n", value_string.c_str());
-                return false;
-            }
-        }
-    }
-    return true;
-}
-
 static bool containsValue(const std::string &value, const std::list<EnvVariable> &list) {
     for (auto it = list.begin(); it != list.end(); it++) {
         if (it->value == value)
@@ -177,7 +87,7 @@ static bool containsValue(const std::string &value, const std::list<EnvVariable>
     return false;
 }
 
-void EnvScriptBuilder::populateMapFromEnvironmentNode(JT::ObjectNode *environmentNode, const std::map<std::string, std::string> &jsonVariableMap, std::map<std::string, std::list<EnvVariable>> &map) const
+void EnvScriptBuilder::populateMapFromEnvironmentNode(const std::string &projectName, JT::ObjectNode *environmentNode, std::map<std::string, std::list<EnvVariable>> &map) const
 {
     for (auto it = environmentNode->begin(); it != environmentNode->end(); ++it) {
         EnvVariable variable;
@@ -192,53 +102,41 @@ void EnvScriptBuilder::populateMapFromEnvironmentNode(JT::ObjectNode *environmen
             found = true;
         }
         if (found) {
-            if (substitue_variable_value(jsonVariableMap, variable.value)) {
-                if (variable.overwrite) {
-                    map[it->first.string()].clear();
-                }
-
-                const std::string &variable_name = it->first.string();
-                std::list<EnvVariable> &variable_list = map[variable_name];
-                if (!containsValue(variable.value, variable_list))
-                    variable_list.push_back(variable);
+            variable.value = m_build_environment.expandVariablesInString(variable.value, projectName);
+            if (variable.overwrite) {
+                map[it->first.string()].clear();
             }
+
+            const std::string &variable_name = it->first.string();
+            std::list<EnvVariable> &variable_list = map[variable_name];
+            if (!containsValue(variable.value, variable_list))
+                variable_list.push_back(variable);
         }
     }
 }
 
-void EnvScriptBuilder::populateMapFromProjectNode(JT::ObjectNode *projectNode, std::map<std::string, std::list<EnvVariable>> &map) const
+void EnvScriptBuilder::populateMapFromProjectNode(const std::string &projectName, JT::ObjectNode *projectNode, std::map<std::string, std::list<EnvVariable>> &map) const
 {
-    std::map<std::string, std::string> json_variable_map;
-
-    const std::string &project_src_path = projectNode->stringAt("project_src_path");
-    const std::string &project_build_path = projectNode->stringAt("project_build_path");
-
-    json_variable_map["project_src_path"] = project_src_path;
-    json_variable_map["project_build_path"] = project_build_path;
-    json_variable_map["install_path"] = m_configuration.installDir();
-    json_variable_map["build_path"] = m_configuration.buildDir();
-    json_variable_map["src_dir"] = m_configuration.srcDir();
-
     for (auto it = projectNode->begin(); it != projectNode->end(); ++it) {
         if (it->first.string() != "env" && it->first.string() != "buildsystem_env")
             continue;
         JT::ObjectNode *env_node = it->second->asObjectNode();
         if (!env_node)
             continue;
-        populateMapFromEnvironmentNode(env_node, json_variable_map, map);
+        populateMapFromEnvironmentNode(projectName, env_node, map);
     }
 }
 
 std::map<std::string, std::list<EnvVariable>> EnvScriptBuilder::make_variable_map_up_until(const std::string &project_name) const
 {
     std::map<std::string, std::list<EnvVariable>> return_map;
-    for (auto it = m_environment_node->begin(); it != m_environment_node->end(); ++it) {
+    for (auto it = m_buildset_node->begin(); it != m_buildset_node->end(); ++it) {
         if (project_name.size() && it->first.compareString(project_name))
                 break;
         if (!it->second->asObjectNode())
             continue;
         JT::ObjectNode *project_node = it->second->asObjectNode();
-        populateMapFromProjectNode(project_node, return_map);
+        populateMapFromProjectNode(it->first.string(), project_node, return_map);
     }
     return return_map;
 }
@@ -275,15 +173,15 @@ static std::string make_env_variable(const std::list<EnvVariable> &variables)
 static void writeAddDirToVariable(FILE *file, const std::string &dir, const std::string &variable)
 {
     fprintf(file, "if [ -d \"%s\" ]; then\n", dir.c_str());
-    fprintf(file, "    if [ -n \"$%s\" ]; then\n", variable.c_str());
+    fprintf(file, "    if [ ! -z \"$%s\" ]; then\n", variable.c_str());
     fprintf(file, "        %s_VARIABLE_FOUND=""\n",variable.c_str());
     fprintf(file, "        IFS=':' read -ra %s_VARIABLE_SPLIT<<< \"$%s\"\n", variable.c_str(), variable.c_str());
     fprintf(file, "        for i in \"${%s_VARIABLE_SPLIT[@]}\"; do\n", variable.c_str());
     fprintf(file, "            [ \"$i\" == \"%s\" ] && %s_VARIABLE_FOUND=\"yes\"\n", dir.c_str(), variable.c_str());
     fprintf(file, "        done\n");
     fprintf(file, "        unset %s_VARIABLE_SPLIT\n", variable.c_str());
-    fprintf(file, "        if [ ! -n \"$%s_VARIABLE_FOUND\" ]; then\n", variable.c_str());
-    fprintf(file, "            if [ ! -n \"$BUILD_SHELL_OLD_%s\" ]; then\n", variable.c_str());
+    fprintf(file, "        if [ -z \"$%s_VARIABLE_FOUND\" ]; then\n", variable.c_str());
+    fprintf(file, "            if [ -z \"$BUILD_SHELL_OLD_%s\" ]; then\n", variable.c_str());
     fprintf(file, "                export BUILD_SHELL_OLD_%s=$%s\n", variable.c_str(), variable.c_str());
     fprintf(file, "            fi\n");
     fprintf(file, "            export %s=\"%s:$%s\"\n", variable.c_str(), dir.c_str(), variable.c_str());
@@ -301,7 +199,7 @@ void EnvScriptBuilder::writeSetScript(const std::string &unsetFileName, const st
 {
     fprintf(file, "#!/bin/bash\n");
     fprintf(file, "\n");
-    fprintf(file, "if [ -n \"$BUILD_SHELL_BUILD_DIR\" ] && [ -e \"$BUILD_SHELL_BUILD_DIR/build_shell/unset_build_env.sh\" ]; then\n");
+    fprintf(file, "if [ ! -z \"$BUILD_SHELL_BUILD_DIR\" ] && [ -e \"$BUILD_SHELL_BUILD_DIR/build_shell/unset_build_env.sh\" ]; then\n");
     fprintf(file, "    source \"$BUILD_SHELL_BUILD_DIR/build_shell/unset_build_env.sh\"\n");
     fprintf(file, "fi\n");
     fprintf(file, "\n");
@@ -346,7 +244,7 @@ void EnvScriptBuilder::writeUnsetScript(const std::string &file, const std::map<
 
 void write_unset_for_variable(FILE *file, const std::string &variable)
 {
-    fprintf(file, "if [ -n \"$BUILD_SHELL_OLD_%s\" ]; then\n", variable.c_str());
+    fprintf(file, "if [ ! -z \"$BUILD_SHELL_OLD_%s\" ]; then\n", variable.c_str());
     fprintf(file, "    export %s=\"$BUILD_SHELL_OLD_%s\"\n", variable.c_str(), variable.c_str());
     fprintf(file, "    unset BUILD_SHELL_OLD_%s\n", variable.c_str());
     fprintf(file, "else\n");
@@ -357,7 +255,7 @@ void write_unset_for_variable(FILE *file, const std::string &variable)
 
 void write_strict_unset_for_variable(FILE *file, const std::string &variable)
 {
-    fprintf(file, "if [ -n \"$BUILD_SHELL_DEFINED_%s\" ]; then\n", variable.c_str());
+    fprintf(file, "if [ ! -z \"$BUILD_SHELL_DEFINED_%s\" ]; then\n", variable.c_str());
     fprintf(file, "    unset %s\n", variable.c_str());
     fprintf(file, "    unset BUILD_SHELL_DEFINED_%s\n", variable.c_str());
     fprintf(file, "elif [ -n \"$BUILD_SHELL_OLD_%s\" ]; then\n", variable.c_str());

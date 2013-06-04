@@ -104,6 +104,7 @@ bool Process::run(JT::ObjectNode **returnedObjectNode)
         }
         if (returnedObjectNode) {
             TreeBuilder tree_builder(temp_file);
+            tree_builder.load();
             JT::ObjectNode *root = tree_builder.rootNode();
             if (root) {
                 if (root->booleanAt("arguments.propogate_to_next_script"))

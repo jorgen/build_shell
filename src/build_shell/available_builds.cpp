@@ -144,7 +144,8 @@ void AvailableBuilds::flushTreeToFile(JT::ObjectNode *root) const
         fprintf(stderr, "Failed to open available builds file %s, %s\n",
                 m_available_builds_file.c_str(), strerror(errno));
     }
-    TreeWriter writer(out_file, root, true);
+    TreeWriter writer(out_file, true);
+    writer.write(root);
     if (writer.error())
         fprintf(stderr, "Something whent wrong when writing to available builds file %s\n",
                 m_available_builds_file.c_str());
@@ -153,5 +154,6 @@ void AvailableBuilds::flushTreeToFile(JT::ObjectNode *root) const
 JT::ObjectNode *AvailableBuilds::rootNode() const
 {
     TreeBuilder tree(m_available_builds_file);
+    tree.load();
     return tree.takeRootNode();
 }

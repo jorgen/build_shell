@@ -45,10 +45,10 @@ static bool ensureFileExist(const std::string &file)
 
 CreateAction::CreateAction(const Configuration &configuration)
     : Action(configuration)
-    , m_buildset_tree_builder(configuration.buildsetFile())
-    , m_env_script_builder(configuration)
+    , m_buildset_tree_builder(configuration, configuration.buildsetFile())
+    , m_env_script_builder(configuration, m_buildset_tree_builder.treeBuilder.rootNode())
 {
-    m_buildset_tree = m_buildset_tree_builder.rootNode();
+    m_buildset_tree = m_buildset_tree_builder.treeBuilder.rootNode();
     if (!m_buildset_tree) {
         fprintf(stderr, "Error loading buildset %s\n",
                 configuration.buildsetFile().c_str());
@@ -94,7 +94,8 @@ CreateAction::~CreateAction()
     m_env_script_builder.writeScripts(m_set_build_env_file, m_unset_build_env_file,"");
 
     std::string current_buildset_name = m_configuration.buildDir() + "/build_shell/current_buildset";
-    TreeWriter current_tree_writer(current_buildset_name, m_buildset_tree);
+    TreeWriter current_tree_writer(current_buildset_name);
+    current_tree_writer.write(m_buildset_tree);
     if (current_tree_writer.error()) {
         fprintf(stderr, "Failed to write current buildset to file %s\n", current_buildset_name.c_str());
         return;

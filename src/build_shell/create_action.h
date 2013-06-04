@@ -24,7 +24,7 @@
 #define CREATE_ACTION_H
 
 #include "action.h"
-#include "tree_builder.h"
+#include "buildset_tree_builder.h"
 #include "json_tree.h"
 #include "env_script_builder.h"
 
@@ -36,7 +36,7 @@ public:
 
     bool execute();
 protected:
-    TreeBuilder m_buildset_tree_builder;
+    BuildsetTreeBuilder m_buildset_tree_builder;
     JT::ObjectNode *m_buildset_tree;
     std::string m_stored_buildset;
     std::string m_set_build_env_file;

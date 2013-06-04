@@ -26,7 +26,7 @@
 #include <errno.h>
 #include <fcntl.h>
 
-TreeWriter::TreeWriter(const std::string &file, JT::ObjectNode *root)
+TreeWriter::TreeWriter(const std::string &file)
     : m_error(false)
     , m_close_file(true)
 {
@@ -37,14 +37,12 @@ TreeWriter::TreeWriter(const std::string &file, JT::ObjectNode *root)
         fprintf(stderr, "Failed to open file %s : %s\n", file.c_str(), strerror(errno));
         return;
     }
-    write(root);
 }
-TreeWriter::TreeWriter(int file, JT::ObjectNode *root, bool closeFileOnDestruct)
+TreeWriter::TreeWriter(int file, bool closeFileOnDestruct)
     : m_file(file)
     , m_error(false)
     , m_close_file(closeFileOnDestruct)
 {
-    write(root);
 }
 
 TreeWriter::~TreeWriter()
@@ -61,6 +59,7 @@ void TreeWriter::write(JT::ObjectNode *root)
         std::bind(&TreeWriter::requestFlush, this, std::placeholders::_1);
 
     JT::TreeSerializer serializer;
+    serializer.registerTokenTransformer(m_transformer);
     JT::SerializerOptions options = serializer.options();
     options.setPretty(true);
     serializer.setOptions(options);
@@ -83,6 +82,12 @@ void TreeWriter::write(JT::ObjectNode *root)
         m_error = true;
     }
 }
+
+void TreeWriter::setSerializeTransformer(std::function<const JT::Token&(const JT::Token &)> transformer)
+{
+    m_transformer = transformer;
+}
+
 void TreeWriter::writeBufferToFile(const JT::SerializerBuffer &buffer)
 {
     if (m_error)
