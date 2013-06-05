@@ -55,6 +55,11 @@ bool TreeWriter::error() const { return m_error; }
 
 void TreeWriter::write(JT::ObjectNode *root)
 {
+    if (m_error) {
+        fprintf(stderr, "Error when writing node to file\n");
+        return;
+    }
+
     std::function<void(JT::Serializer *)> callback =
         std::bind(&TreeWriter::requestFlush, this, std::placeholders::_1);
 
@@ -66,16 +71,20 @@ void TreeWriter::write(JT::ObjectNode *root)
     serializer.addRequestBufferCallback(callback);
     m_error = !serializer.serialize(root);
 
-    if (m_error)
+    if (m_error) {
+        fprintf(stderr, "Failed to serialize token\n");
         return;
+    }
 
     if (serializer.buffers().size()) {
         JT::SerializerBuffer serializer_buffer = serializer.buffers().front();
         writeBufferToFile(serializer_buffer);
     }
 
-    if (m_error)
+    if (m_error) {
+        fprintf(stderr, "Failed to serialize token\n");
         return;
+    }
 
     if (::write(m_file,"\n",1) != 1) {
         fprintf(stderr, "Failed to write newline to file\n");
