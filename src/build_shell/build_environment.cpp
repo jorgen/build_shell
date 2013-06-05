@@ -133,7 +133,6 @@ void BuildEnvironment::setVariable(const std::string &variable, const std::strin
 const std::set<std::string> BuildEnvironment::staticVariables()
 {
     if (m_static_variables.size() == 0) {
-        fprintf(stderr, "initi\n");
         m_static_variables.insert(std::string("src_path"));
         m_static_variables.insert("build_path");
         m_static_variables.insert("install_path");
