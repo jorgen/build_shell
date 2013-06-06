@@ -70,6 +70,8 @@ BuildAction::BuildAction(const Configuration &configuration)
     m_stored_buildset = build_shell_build_sets_dir + "/" + dateInFormat.c_str() + std::string(".buildset");
     GenerateAction generate_action(m_configuration, m_stored_buildset);
     m_error = !generate_action.execute();
+
+    m_token_transformer = std::bind(&BuildAction::token_transformer, this, std::placeholders::_1);
 }
 
 
@@ -168,6 +170,7 @@ bool BuildAction::execute()
             process.setFallback(project_build_system);
             process.setProjectNode(project_node);
             process.setPrint(true);
+            process.registerTokenTransformer(m_token_transformer);
             if (!process.run(&updated_project_node)) {
                 delete updated_project_node;
                 return false;
@@ -187,6 +190,7 @@ bool BuildAction::execute()
 bool BuildAction::handlePrebuild()
 {
     Process pre_build(m_configuration);
+    pre_build.registerTokenTransformer(m_token_transformer);
 
     auto end_it = endIterator(m_buildset_tree);
     for (auto it = startIterator(m_buildset_tree); it != end_it; ++it) {
@@ -269,6 +273,7 @@ bool BuildAction::handlePrebuild()
             process.setProjectName(project_name);
             process.setProjectNode(project_node);
             process.setPrint(true);
+            process.registerTokenTransformer(m_token_transformer);
             if (!process.run(&updated_project_node)) {
                 fprintf(stderr, "Failed to run process\n");
                 delete updated_project_node;
@@ -297,6 +302,7 @@ bool BuildAction::handleBuildForProject(const std::string &projectName, const st
     process.setProjectName(projectName);
     process.setFallback(buildSystem);
     process.setLogFile(projectName + "_build.log", false);
+    process.registerTokenTransformer(m_token_transformer);
 
     std::unique_ptr<JT::ObjectNode> temp_pointer(nullptr);
     JT::ObjectNode *project_node = projectNode;
@@ -401,3 +407,9 @@ bool BuildAction::handleBuildForProject(const std::string &projectName, const st
    fprintf(stdout, "%s", print_success.c_str());
    return true;
 }
+
+const JT::Token &BuildAction::token_transformer(const JT::Token &next_token)
+{
+    return next_token;
+}
+

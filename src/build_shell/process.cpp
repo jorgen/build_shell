@@ -30,14 +30,16 @@
 #include <string.h>
 #include <errno.h>
 
-bool Process::flushProjectNodeToTemporaryFile(const std::string &project_name, JT::ObjectNode *node, std::string &file_flushed_to)
+bool Process::flushProjectNodeToTemporaryFile(const std::string &project_name, JT::ObjectNode *node, std::string &file_flushed_to) const
 {
     int temp_file = Configuration::createTempFile(project_name, file_flushed_to);
     if (temp_file < 0) {
         fprintf(stderr, "Could not create temp file for project %s\n", project_name.c_str());
         return false;
     }
-    TreeWriter writer(temp_file, node);
+    TreeWriter writer(temp_file);
+    writer.registerTokenTransformer(m_token_transformer);
+    writer.write(node);
     if (writer.error()) {
         fprintf(stderr, "Failed to write project node to temporary file %s\n", file_flushed_to.c_str());
         return false;
@@ -186,6 +188,11 @@ void Process::setLogFile(const std::string &logFile, bool append, bool closeFile
 void Process::setProjectNode(JT::ObjectNode *projectNode)
 {
     m_project_node = projectNode;
+}
+
+void Process::registerTokenTransformer(std::function<const JT::Token&(const JT::Token &)> token_transformer)
+{
+    m_token_transformer = token_transformer;
 }
 
 void Process::setPrint(bool print)

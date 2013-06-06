@@ -32,6 +32,27 @@
 #include "tree_writer.h"
 
 
+static const char *strnstr(const char *data, const char *pattern, size_t datasize)
+{
+    size_t pattern_size = strlen(pattern);
+    size_t pattern_match = 0;
+
+    const char *return_pos;
+    for (size_t current_index = 0; current_index < datasize; current_index++) {
+        if (*(data + current_index) == *(pattern + pattern_match)) {
+            if (!pattern_match)
+                return_pos = data + current_index;
+
+            pattern_match++;
+            if (pattern_match == pattern_size)
+                return return_pos;
+        } else {
+            pattern_match = 0;
+        }
+    }
+    return nullptr;
+}
+
 BuildEnvironment::BuildEnvironment(const Configuration &configuration)
     : m_configuration(configuration)
     , m_environment_file(configuration.buildDir() + "/build_shell/build_environment.json")
@@ -54,6 +75,7 @@ BuildEnvironment::~BuildEnvironment()
         TreeWriter writer(out_file,true);
         writer.write(m_environment_node);
         if (writer.error()) {
+            fprintf(stderr, "Failed to write BuildEnvironment\n");
         }
     } else {
         fprintf(stderr, "Could not open %s : %s\n", m_environment_file.c_str(), strerror(errno));
@@ -86,7 +108,6 @@ std::string BuildEnvironment::getVariable(const std::string &variable, const std
     if (variable == "project_src_path") {
         return m_configuration.srcDir() + "/" + project;
     } else if (variable == "project_build_path") {
-        fprintf(stderr, "PATH %s\n", project.c_str());
         return m_configuration.buildDir() + "/" + project;
     } else if (variable == "build_path") {
         return m_configuration.buildDir();
@@ -130,14 +151,15 @@ void BuildEnvironment::setVariable(const std::string &variable, const std::strin
     insert_object->insertNode(variable, value_node, true);
 }
 
-const std::set<std::string> BuildEnvironment::staticVariables()
+const std::set<std::string> BuildEnvironment::staticVariables() const
 {
     if (m_static_variables.size() == 0) {
-        m_static_variables.insert(std::string("src_path"));
-        m_static_variables.insert("build_path");
-        m_static_variables.insert("install_path");
-        m_static_variables.insert("project_src_path");
-        m_static_variables.insert("project_build_path");
+        BuildEnvironment *self = const_cast<BuildEnvironment *>(this);
+        self->m_static_variables.insert(std::string("src_path"));
+        self->m_static_variables.insert("build_path");
+        self->m_static_variables.insert("install_path");
+        self->m_static_variables.insert("project_src_path");
+        self->m_static_variables.insert("project_build_path");
     }
     return m_static_variables;
 }
@@ -172,7 +194,7 @@ static Variable next_variable(const char *data, size_t length)
         }
     }
 
-    char *end = strnstr(returnVariable.start + 2, "}", rest - 2);
+    const char *end = strnstr(returnVariable.start + 2, "}", rest - 2);
 
     if (!end)
         return Variable();
@@ -225,3 +247,4 @@ const std::list<Variable> BuildEnvironment::findVariables(const char *str, const
     }
     return return_list;
 }
+

@@ -24,12 +24,9 @@
 #define PROCESS_H
 
 #include "configuration.h"
+#include "json_tree.h"
 
 #include <string>
-
-namespace JT {
-    class ObjectNode;
-}
 
 class Process
 {
@@ -49,9 +46,11 @@ public:
 
     void setProjectNode(JT::ObjectNode *projectNode);
 
+    void registerTokenTransformer(std::function<const JT::Token&(const JT::Token &)> token_transformer);
+
     void setPrint(bool print);
 private:
-    static bool flushProjectNodeToTemporaryFile(const std::string &project_name, JT::ObjectNode *node, std::string &file_flushed_to);
+    bool flushProjectNodeToTemporaryFile(const std::string &project_name, JT::ObjectNode *node, std::string &file_flushed_to) const;
     const Configuration &m_configuration;
     std::string m_environement_script;
     std::string m_phase;
@@ -64,6 +63,7 @@ private:
     bool m_print;
 
     JT::ObjectNode *m_project_node;
+    std::function<const JT::Token&(const JT::Token &)> m_token_transformer;
 };
 
 #endif

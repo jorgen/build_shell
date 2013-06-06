@@ -38,6 +38,7 @@ public:
 
     bool error() const;
 
+    void registerTokenTransformer(std::function<const JT::Token&(const JT::Token &)> token_transformer);
 private:
     void writeBufferToFile(const JT::SerializerBuffer &buffer);
     void requestFlush(JT::Serializer *serializer);
@@ -47,7 +48,7 @@ private:
     bool m_error;
     bool m_close_file;
 
-    std::function<const JT::Token &(const JT::Token &)> m_transformer;
+    std::function<const JT::Token &(const JT::Token &)> m_token_transformer;
 };
 
 #endif

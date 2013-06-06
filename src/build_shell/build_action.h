@@ -24,6 +24,8 @@
 
 #include "create_action.h"
 
+#include "json_tokenizer.h"
+
 class BuildAction : public CreateAction
 {
 public:
@@ -34,6 +36,12 @@ public:
 private:
     bool handlePrebuild();
     bool handleBuildForProject(const std::string &projectName, const std::string &buildSystem, JT::ObjectNode *projectNode, JT::ObjectNode **updatedProjectNode);
+
+    const JT::Token &token_transformer(const JT::Token &next_token);
+
+    std::function<const JT::Token&(const JT::Token &)> m_token_transformer;
+    JT::Token token;
+    std::string token_value;
 };
 
 #endif

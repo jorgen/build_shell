@@ -148,7 +148,8 @@ bool GenerateAction::execute()
     //this should not fail ;)
     chdir(cwd);
 
-    TreeWriter tree_writer(m_out_file, m_out_tree.get());
+    TreeWriter tree_writer(m_out_file);
+    tree_writer.write(m_out_tree.get());
     return !tree_writer.error();
 }
 

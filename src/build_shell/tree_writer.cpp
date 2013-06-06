@@ -53,6 +53,10 @@ TreeWriter::~TreeWriter()
 
 bool TreeWriter::error() const { return m_error; }
 
+void TreeWriter:: registerTokenTransformer(std::function<const JT::Token&(const JT::Token &)> token_transformer)
+{
+    m_token_transformer = token_transformer;
+}
 void TreeWriter::write(JT::ObjectNode *root)
 {
     if (m_error) {
@@ -64,7 +68,7 @@ void TreeWriter::write(JT::ObjectNode *root)
         std::bind(&TreeWriter::requestFlush, this, std::placeholders::_1);
 
     JT::TreeSerializer serializer;
-    serializer.registerTokenTransformer(m_transformer);
+    serializer.registerTokenTransformer(m_token_transformer);
     JT::SerializerOptions options = serializer.options();
     options.setPretty(true);
     serializer.setOptions(options);
@@ -94,7 +98,7 @@ void TreeWriter::write(JT::ObjectNode *root)
 
 void TreeWriter::setSerializeTransformer(std::function<const JT::Token&(const JT::Token &)> transformer)
 {
-    m_transformer = transformer;
+    m_token_transformer = transformer;
 }
 
 void TreeWriter::writeBufferToFile(const JT::SerializerBuffer &buffer)

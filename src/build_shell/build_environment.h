@@ -51,7 +51,7 @@ public:
 
     std::string getVariable(const std::string &variable, const std::string &project) const;
     void setVariable(const std::string &variable, const std::string &value, const std::string &project = "");
-    const std::set<std::string> staticVariables();
+    const std::set<std::string> staticVariables() const;
 
     const std::string expandVariablesInString(const std::string &str, const std::string &project = "") const;
 
