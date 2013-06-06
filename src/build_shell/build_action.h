@@ -35,13 +35,13 @@ public:
     bool execute();
 private:
     bool handlePrebuild();
-    bool handleBuildForProject(const std::string &projectName, const std::string &buildSystem, JT::ObjectNode *projectNode, JT::ObjectNode **updatedProjectNode);
+    bool handleBuildForProject(const std::string &projectName, const std::string &buildSystem, JT::ObjectNode *projectNode);
 
     const JT::Token &token_transformer(const JT::Token &next_token);
 
     std::function<const JT::Token&(const JT::Token &)> m_token_transformer;
-    JT::Token token;
-    std::string token_value;
+
+    TransformerState m_transformer_state;
 };
 
 #endif

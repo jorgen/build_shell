@@ -40,7 +40,8 @@
 #include <memory>
 
 BuildAction::BuildAction(const Configuration &configuration)
-    : CreateAction(configuration)
+    : CreateAction(configuration, false)
+    , m_transformer_state(m_build_environment)
 {
     if (m_configuration.pullFirst()) {
         PullAction pull_action(configuration);
@@ -131,14 +132,8 @@ bool BuildAction::execute()
             m_error = true;
             return false;
         }
-        JT::ObjectNode *updated_project_node;
-        if (!handleBuildForProject(project_name, project_build_system, project_node, &updated_project_node)) {
-            delete updated_project_node;
+        if (!handleBuildForProject(project_name, project_build_system, project_node)) {
             return false;
-        }
-        if (updated_project_node) {
-            m_buildset_tree->insertNode(it->first, updated_project_node,true);
-            project_node = updated_project_node;
         }
 
         if (m_configuration.onlyOne())
@@ -160,8 +155,6 @@ bool BuildAction::execute()
             m_error = true;
             return false;
         }
-        JT::ObjectNode *updated_project_node;
-
         {
             Process process(m_configuration);
             process.setEnvironmentScript(m_set_build_env_file);
@@ -171,13 +164,10 @@ bool BuildAction::execute()
             process.setProjectNode(project_node);
             process.setPrint(true);
             process.registerTokenTransformer(m_token_transformer);
-            if (!process.run(&updated_project_node)) {
-                delete updated_project_node;
+            m_transformer_state.current_project = project_name;
+            if (!process.run()) {
                 return false;
             }
-        }
-        if (updated_project_node) {
-            m_buildset_tree->insertNode(it->first,updated_project_node, true);
         }
 
         if (m_configuration.onlyOne())
@@ -208,6 +198,7 @@ bool BuildAction::handlePrebuild()
         const std::string project_name = it->first.string();
         std::string project_build_path = m_configuration.buildDir() + "/" + project_name;
         std::string project_src_path = m_configuration.srcDir() + "/" + project_name;
+        m_transformer_state.current_project = project_name;
 
         if (access(project_src_path.c_str(), X_OK|R_OK)) {
             fprintf(stderr, "Problem accessing source path: %s for project %s. Running pull action\n",
@@ -267,20 +258,15 @@ bool BuildAction::handlePrebuild()
         chdir(project_build_path.c_str());
 
         {
-            JT::ObjectNode *updated_project_node;
             Process process(m_configuration);
             process.setPhase("pre_build");
             process.setProjectName(project_name);
             process.setProjectNode(project_node);
             process.setPrint(true);
             process.registerTokenTransformer(m_token_transformer);
-            if (!process.run(&updated_project_node)) {
+            if (!process.run()) {
                 fprintf(stderr, "Failed to run process\n");
-                delete updated_project_node;
                 return false;
-            }
-            if (updated_project_node) {
-                m_buildset_tree->insertNode(it->first,updated_project_node, true);
             }
         }
 
@@ -290,7 +276,7 @@ bool BuildAction::handlePrebuild()
     return true;
 }
 
-bool BuildAction::handleBuildForProject(const std::string &projectName, const std::string &buildSystem, JT::ObjectNode *projectNode, JT::ObjectNode **updatedProjectNode)
+bool BuildAction::handleBuildForProject(const std::string &projectName, const std::string &buildSystem, JT::ObjectNode *projectNode)
 {
     fprintf(stderr, "Processing buildstep for %s\n", projectName.c_str());
     TempFile temp_file(projectName + "_env");
@@ -304,22 +290,18 @@ bool BuildAction::handleBuildForProject(const std::string &projectName, const st
     process.setLogFile(projectName + "_build.log", false);
     process.registerTokenTransformer(m_token_transformer);
 
+    m_transformer_state.current_project = projectName;
+
     std::unique_ptr<JT::ObjectNode> temp_pointer(nullptr);
     JT::ObjectNode *project_node = projectNode;
-    JT::ObjectNode *updated_project_node = 0;
-    *updatedProjectNode = 0;
 
     if (m_configuration.clean()) {
         process.setPhase("clean");
         process.setProjectNode(project_node);
         process.setPrint(false);
-        if (!process.run(&updated_project_node))
+        if (!process.run())
             return false;
-    } else if (updated_project_node) {
-        project_node = updated_project_node;
-        temp_pointer.reset(project_node);
     }
-
     if (m_configuration.deepClean()) {
         std::string scm_type = projectNode->stringAt("scm.type");
         if (scm_type.size() == 0) {
@@ -350,11 +332,8 @@ bool BuildAction::handleBuildForProject(const std::string &projectName, const st
                 process.setPhase("deep_clean");
                 process.setProjectNode(project_node);
                 process.setPrint(false);
-                if (!process.run(&updated_project_node)) {
+                if (!process.run()) {
                     return false;
-                } else if (updated_project_node) {
-                    project_node = updated_project_node;
-                    temp_pointer.reset(project_node);
                 }
             }
         }
@@ -366,11 +345,8 @@ bool BuildAction::handleBuildForProject(const std::string &projectName, const st
         process.setPhase("configure");
         process.setProjectNode(project_node);
         process.setPrint(true);
-        if (!process.run(&updated_project_node)) {
+        if (!process.run()) {
             return false;
-        } else  if (updated_project_node) {
-            project_node = updated_project_node;
-            temp_pointer.reset(project_node);
         }
     }
 
@@ -378,26 +354,19 @@ bool BuildAction::handleBuildForProject(const std::string &projectName, const st
         process.setPhase("build");
         process.setProjectNode(project_node);
         process.setPrint(false);
-        if (!process.run(&updated_project_node)) {
+        if (!process.run()) {
             return false;
-        } else if (updated_project_node) {
-            project_node = updated_project_node;
-            temp_pointer.reset(project_node);
         }
 
         if (m_configuration.install() && project_node->nodeAt("no_install") == nullptr) {
             process.setPhase("install");
             process.setProjectNode(project_node);
             process.setPrint(false);
-            if (!process.run(&updated_project_node)) {
+            if (!process.run()) {
                 return false;
-            } else if (updated_project_node){
-                temp_pointer.reset(updated_project_node);
             }
         }
     }
-
-   *updatedProjectNode = temp_pointer.release();
 
    std::string print_success = std::string("\n") +
        "************************************************************************\n"
@@ -410,6 +379,11 @@ bool BuildAction::handleBuildForProject(const std::string &projectName, const st
 
 const JT::Token &BuildAction::token_transformer(const JT::Token &next_token)
 {
+    if (BuildEnvironment::findVariables(next_token.value.data, next_token.value.size).size()) {
+        m_transformer_state.cacheAndExpandToken(next_token);
+        return m_transformer_state.temp_token;
+    }
+
     return next_token;
 }
 

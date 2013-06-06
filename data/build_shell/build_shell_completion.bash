@@ -136,6 +136,42 @@ bs_edit()
     return $?
 }
 
+bs_variable()
+{
+    if [ -z $BUILD_SHELL_BUILD_DIR ]; then
+        echo "No build selected"
+        return 1
+    fi
+
+    if [ -z $2 ]; then
+        echo "bs_variable takes 2 or 3 arguments"
+        echo "$ bs_variable \"variable_name\" \"variable_value\""
+        echo "$ bs_variable \"project_name\" \"variable_name\" \"variable_value\""
+        return 1
+    fi
+
+    local project_name
+    local variable_name
+    local variable_value
+    local build_env_file="$BUILD_SHELL_BUILD_DIR/build_shell/build_environment.json"
+
+    if [ -z $3 ]; then
+        project_name="default"
+        variable_name=$1
+        variable_value=$2
+    else
+        project_name="projects%.%$1"
+        variable_name=$2
+        variable_value=$3
+    fi
+
+    variable_name="$project_name%.%$variable_name"
+
+    jsonmod -i -d %.% -o "$project_name" "$build_env_file"
+    jsonmod -i -d %.% -p "$variable_name" -v "$variable_value" "$BUILD_SHELL_BUILD_DIR/build_shell/build_environment.json"
+
+    return $?
+}
 bss()
 {
     if [ -z $1 ]; then

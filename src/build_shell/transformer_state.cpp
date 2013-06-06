@@ -20,31 +20,31 @@
  * OF THIS SOFTWARE.
 */
 
-#ifndef BUILDSETTREEBUILDER_H
-#define BUILDSETTREEBUILDER_H
-
-#include "tree_builder.h"
-
-#include <set>
-
-#include "build_environment.h"
 #include "transformer_state.h"
 
-class BuildsetTreeBuilder
+
+void TransformerState::updateState(const JT::Token &token)
 {
-public:
-    BuildsetTreeBuilder(const BuildEnvironment &buildEnv, const std::string &file);
+    if (token.value_type == JT::Token::ObjectStart) {
+        depth++;
+        if (depth == 2) {
+            if (token.name_type == JT::Token::String) {
+                current_project = std::string(token.name.data + 1, token.name.size - 2);
+            } else {
+                current_project = std::string(token.name.data, token.name.size);
+            }
+        }
+    } else if (token.value_type == JT::Token::ObjectEnd) {
+        depth--;
+    }
+}
 
-    TreeBuilder treeBuilder;
+void TransformerState::cacheAndExpandToken(const JT::Token &token)
+{
+    token_value = std::string(token.value.data, token.value.size);
+    token_value = build_environment.expandVariablesInString(token_value, current_project);
+    temp_token = token;
+    temp_token.value.data = token_value.c_str();
+    temp_token.value.size = token_value.size();
+}
 
-    const std::set<std::string> &required_variables() const;
-    const std::list<std::string> &missingVariables() const;
-private:
-    void filterTokens(JT::Token *next_token);
-    std::set<std::string> m_required_variables;
-    std::list<std::string> m_missing_variables;
-    const BuildEnvironment &m_build_environment;
-    TransformerState m_transformer_state;
-};
-
-#endif

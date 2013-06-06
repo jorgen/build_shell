@@ -27,15 +27,17 @@
 #include "buildset_tree_builder.h"
 #include "json_tree.h"
 #include "env_script_builder.h"
+#include "build_environment.h"
 
 class CreateAction : public Action
 {
 public:
-    CreateAction(const Configuration &configuration);
+    CreateAction(const Configuration &configuration, bool allowMissingVariables = true);
     ~CreateAction();
 
     bool execute();
 protected:
+    BuildEnvironment m_build_environment;
     BuildsetTreeBuilder m_buildset_tree_builder;
     JT::ObjectNode *m_buildset_tree;
     std::string m_stored_buildset;

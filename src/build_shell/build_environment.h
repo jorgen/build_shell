@@ -51,10 +51,12 @@ public:
 
     std::string getVariable(const std::string &variable, const std::string &project) const;
     void setVariable(const std::string &variable, const std::string &value, const std::string &project = "");
-    const std::set<std::string> staticVariables() const;
+    const std::set<std::string> &staticVariables() const;
+    bool isStaticVariable(const std::string &variable) const;
 
     const std::string expandVariablesInString(const std::string &str, const std::string &project = "") const;
 
+    bool canResolveVariable(const std::string &variable, const std::string &project) const;
     static const std::list<Variable> findVariables(const char *str, const size_t size);
 private:
     const Configuration &m_configuration;

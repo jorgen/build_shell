@@ -135,6 +135,9 @@ int main(int argc, char **argv)
             configuration.setMode(Configuration::Create, mode);
         } else if (mode == "status") {
             configuration.setMode(Configuration::Status, mode);
+        } else {
+            fprintf(stderr, "\nFailed to recognize mode: %s\n\n", mode.c_str());
+            return 1;
         }
     } else if (parser.nonOptionsCount() == 2) {
         std::string mode = parser.nonOption(0);
@@ -149,7 +152,6 @@ int main(int argc, char **argv)
         }
     } else {
         fprintf(stderr, "\nFailed to recognize mode\n\n");
-        option::printUsage(std::cerr, usage);
         return 1;
     }
 

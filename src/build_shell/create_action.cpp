@@ -43,11 +43,28 @@ static bool ensureFileExist(const std::string &file)
     return true;
 }
 
-CreateAction::CreateAction(const Configuration &configuration)
+CreateAction::CreateAction(const Configuration &configuration, bool allowMissingVariables)
     : Action(configuration)
-    , m_buildset_tree_builder(configuration, configuration.buildsetFile())
+    , m_build_environment(configuration)
+    , m_buildset_tree_builder(m_build_environment, configuration.buildsetFile())
     , m_env_script_builder(configuration, m_buildset_tree_builder.treeBuilder.rootNode())
 {
+    auto missing_variables = m_buildset_tree_builder.missingVariables();
+    if (missing_variables.size()) {
+        fprintf(stderr, "Buildset is missing variables:\n");
+        for (auto it = missing_variables.begin(); it != missing_variables.end(); ++it) {
+            fprintf(stderr, "\t - %s\n", it->c_str());
+        }
+        fprintf(stderr, "\nPlease use bs_variable to add variables to your buildset environment:\n");
+        fprintf(stderr, "\t bs_variable \"some_variable\" \"some_value\"\n");
+        fprintf(stderr, "or if you need to limit scope of the variable\n");
+        fprintf(stderr, "\t bs_variable \"some_project\" \"some_variable\" \"some_value\"\n\n");
+        if (!allowMissingVariables) {
+            fprintf(stderr, "Build set mode: %s does not allow to proceed with undefined variablees\n\n", m_configuration.modeString().c_str());
+            m_error = true;
+            return;
+        }
+    }
     m_buildset_tree = m_buildset_tree_builder.treeBuilder.rootNode();
     if (!m_buildset_tree) {
         fprintf(stderr, "Error loading buildset %s\n",

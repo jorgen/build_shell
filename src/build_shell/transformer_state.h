@@ -20,31 +20,29 @@
  * OF THIS SOFTWARE.
 */
 
-#ifndef BUILDSETTREEBUILDER_H
-#define BUILDSETTREEBUILDER_H
+#ifndef TRANSFORMER_STATE_H
+#define TRANSFORMER_STATE_H
 
-#include "tree_builder.h"
+#include <string>
 
-#include <set>
-
+#include "json_tokenizer.h"
 #include "build_environment.h"
-#include "transformer_state.h"
 
-class BuildsetTreeBuilder
+struct TransformerState
 {
-public:
-    BuildsetTreeBuilder(const BuildEnvironment &buildEnv, const std::string &file);
+    TransformerState(const BuildEnvironment &build_environment)
+        : build_environment(build_environment)
+        , depth(0)
+    { }
 
-    TreeBuilder treeBuilder;
+    void updateState(const JT::Token &token);
+    void cacheAndExpandToken(const JT::Token &token);
 
-    const std::set<std::string> &required_variables() const;
-    const std::list<std::string> &missingVariables() const;
-private:
-    void filterTokens(JT::Token *next_token);
-    std::set<std::string> m_required_variables;
-    std::list<std::string> m_missing_variables;
-    const BuildEnvironment &m_build_environment;
-    TransformerState m_transformer_state;
+    const BuildEnvironment &build_environment;
+    JT::Token temp_token;
+    int depth;
+    std::string current_project;
+    std::string token_value;
 };
 
 #endif

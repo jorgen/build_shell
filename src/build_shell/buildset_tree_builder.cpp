@@ -27,27 +27,41 @@
 #include "json_tree.h"
 #include "build_environment.h"
 
-BuildsetTreeBuilder::BuildsetTreeBuilder(const Configuration &configuration, const std::string &file)
+BuildsetTreeBuilder::BuildsetTreeBuilder(const BuildEnvironment &buildEnv, const std::string &file)
     : treeBuilder(file,
         std::bind(&BuildsetTreeBuilder::filterTokens, this, std::placeholders::_1))
-    , m_build_environment(configuration)
+    , m_build_environment(buildEnv)
+    , m_transformer_state(m_build_environment)
 {
     treeBuilder.load();
 }
 
-const std::set<std::string> BuildsetTreeBuilder::required_variables() const
+const std::set<std::string> &BuildsetTreeBuilder::required_variables() const
 {
     return m_required_variables;
 }
+
+const std::list<std::string> &BuildsetTreeBuilder::missingVariables() const
+{
+    return m_missing_variables;
+}
+
 void BuildsetTreeBuilder::filterTokens(JT::Token *next_token)
 {
+    m_transformer_state.updateState(*next_token);
+
     JT::Token::Type value_type = next_token->value_type;
     if (value_type == JT::Token::String || value_type == JT::Token::Ascii) {
         auto variable_list = BuildEnvironment::findVariables(next_token->value.data, next_token->value.size);
         for (auto it = variable_list.begin(); it != variable_list.end(); ++it) {
             std::string variable(it->start,it->size);
-            if (m_build_environment.staticVariables().find(variable) == m_build_environment.staticVariables().end())
+            if (!m_build_environment.isStaticVariable(variable)){
+                if (!m_build_environment.canResolveVariable(variable, m_transformer_state.current_project)) {
+                    m_missing_variables.push_back(variable);
+                }
+
                 m_required_variables.insert(variable);
+            }
         }
 
     }

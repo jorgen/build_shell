@@ -32,7 +32,7 @@
 #include "tree_writer.h"
 
 
-static const char *strnstr(const char *data, const char *pattern, size_t datasize)
+static const char *strfind(const char *data, const char *pattern, size_t datasize)
 {
     size_t pattern_size = strlen(pattern);
     size_t pattern_match = 0;
@@ -87,11 +87,11 @@ BuildEnvironment::~BuildEnvironment()
 
 std::string BuildEnvironment::getVariable(const std::string &variable, const std::string &project) const
 {
-    JT::ObjectNode *projets_node = m_environment_node->objectNodeAt("projects");
-    if (projets_node) {
-        JT::ObjectNode *projet_environment = m_environment_node->objectNodeAt(project);
-        if (projet_environment) {
-            JT::StringNode *variable_node = projet_environment->stringNodeAt(variable);
+    JT::ObjectNode *projects_node = m_environment_node->objectNodeAt("projects");
+    if (projects_node) {
+        JT::ObjectNode *project_environment = projects_node->objectNodeAt(project);
+        if (project_environment) {
+            JT::StringNode *variable_node = project_environment->stringNodeAt(variable);
             if (variable_node)
                 return variable_node->string();
 
@@ -151,7 +151,7 @@ void BuildEnvironment::setVariable(const std::string &variable, const std::strin
     insert_object->insertNode(variable, value_node, true);
 }
 
-const std::set<std::string> BuildEnvironment::staticVariables() const
+const std::set<std::string> &BuildEnvironment::staticVariables() const
 {
     if (m_static_variables.size() == 0) {
         BuildEnvironment *self = const_cast<BuildEnvironment *>(this);
@@ -164,13 +164,18 @@ const std::set<std::string> BuildEnvironment::staticVariables() const
     return m_static_variables;
 }
 
+bool BuildEnvironment::isStaticVariable(const std::string &variable) const
+{
+    return staticVariables().find(variable) != staticVariables().end();
+}
+
 static Variable next_variable(const char *data, size_t length)
 {
     Variable returnVariable;
     if (length <= 3)
         return returnVariable;
 
-    returnVariable.start = strnstr(data, "{$", length);
+    returnVariable.start = strfind(data, "{$", length);
 
     if (!returnVariable.start)
         return returnVariable;
@@ -178,7 +183,6 @@ static Variable next_variable(const char *data, size_t length)
     size_t diff = (returnVariable.start - data);
 
     size_t rest = length - diff;
-
     if (rest < 4) {
         returnVariable.start = 0;
         return Variable();
@@ -194,7 +198,7 @@ static Variable next_variable(const char *data, size_t length)
         }
     }
 
-    const char *end = strnstr(returnVariable.start + 2, "}", rest - 2);
+    const char *end = strfind(returnVariable.start + 2, "}", rest - 2);
 
     if (!end)
         return Variable();
@@ -229,6 +233,11 @@ const std::string BuildEnvironment::expandVariablesInString(const std::string &s
     }
 
     return return_str;
+}
+
+bool BuildEnvironment::canResolveVariable(const std::string &variable, const std::string &project) const
+{
+    return getVariable(variable, project).size();
 }
 
 const std::list<Variable> BuildEnvironment::findVariables(const char *str, const size_t size)

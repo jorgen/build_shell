@@ -41,7 +41,9 @@ build_shell_SOURCES =	         	        			\
 	buildset_tree_builder.cpp					\
 	buildset_tree_builder.h						\
 	build_environment.cpp						\
-	build_environment.h
+	build_environment.h						\
+	transformer_state.cpp						\
+	transformer_state.h
 
 
 
