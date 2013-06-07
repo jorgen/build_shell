@@ -24,6 +24,7 @@
 
 #include <string>
 #include <functional>
+#include <memory>
 
 #include "mmapped_file.h"
 
@@ -45,7 +46,7 @@ public:
     JT::ObjectNode *takeRootNode();
 
 private:
-    JT::ObjectNode *m_node;
+    std::unique_ptr<JT::ObjectNode> m_node;
     const std::string &m_file_name;
     MmappedReadFile m_mapped_file;
     std::function<void(JT::Token *next_token)> m_token_transformer;

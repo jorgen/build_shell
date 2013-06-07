@@ -37,24 +37,40 @@
 #include "process.h"
 
 GenerateAction::GenerateAction(const Configuration &configuration,
-        const std::string &outfile)
+                               const std::string &outfile)
     : Action(configuration)
-    , m_tree_builder(configuration.buildsetFile())
+    , m_delete_out_tree(true)
 {
-    m_tree_builder.load();
-    m_out_tree.reset(m_tree_builder.takeRootNode());
+    TreeBuilder tree_builder(configuration.buildsetFile());
+    tree_builder.load();
+    m_out_tree = tree_builder.takeRootNode();
 
-    if (!m_out_tree.get())
-        m_out_tree.reset(new JT::ObjectNode());
+    if (!m_out_tree)
+        m_out_tree = new JT::ObjectNode();
 
+    init(outfile);
+}
+
+GenerateAction::GenerateAction(const Configuration &configuration,
+                               JT::ObjectNode *node,
+                               const std::string &outfile)
+    : Action(configuration)
+    , m_out_tree(node)
+    , m_delete_out_tree(false)
+{
+    init(outfile);
+}
+
+void GenerateAction::init(const std::string &outfile)
+{
     const std::string *actual_outfile = &outfile;
     if (!actual_outfile->size())
-        actual_outfile = &configuration.buildsetOutFile();
+        actual_outfile = &m_configuration.buildsetOutFile();
 
     if (actual_outfile->size()) {
         m_out_file_name = *actual_outfile;
         mode_t create_mode = S_IROTH | S_IRGRP | S_IRUSR | S_IWUSR;
-        m_out_file = open(m_out_file_name.c_str(), O_RDWR | O_CLOEXEC | O_CREAT | O_EXCL, create_mode);
+        m_out_file = open(m_out_file_name.c_str(), O_RDWR | O_CLOEXEC | O_CREAT, create_mode);
         if (m_out_file < 0) {
             fprintf(stderr, "Failed to open buildset Out File %s\n%s\n",
                     m_out_file_name.c_str(), strerror(errno));
@@ -69,6 +85,9 @@ GenerateAction::~GenerateAction()
 {
     if (m_out_file_name.size())
         close(m_out_file);
+
+    if (m_delete_out_tree)
+        delete m_out_tree;
 }
 
 class LogFileHandler
@@ -149,7 +168,7 @@ bool GenerateAction::execute()
     chdir(cwd);
 
     TreeWriter tree_writer(m_out_file);
-    tree_writer.write(m_out_tree.get());
+    tree_writer.write(m_out_tree);
     return !tree_writer.error();
 }
 

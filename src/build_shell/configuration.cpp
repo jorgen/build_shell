@@ -85,6 +85,12 @@ Configuration::Configuration()
     std::string config_path = std::string(homedir) + "/.config/build_shell";
 
     Configuration::getAbsPath(config_path, true, m_build_shell_config_path);
+
+    if (access("/dev/shm", R_OK|W_OK) == 0) {
+        m_tmp_file_path = "/dev/shm";
+    } else {
+        m_tmp_file_path = "/tmp";
+    }
 }
 
 void Configuration::setMode(Mode mode, std::string mode_string)
@@ -458,15 +464,20 @@ const std::string &Configuration::scriptExecutionLogPath() const
     return m_script_log_path;
 }
 
-int Configuration::createTempFile(const std::string &project, std::string &tmp_file)
+int Configuration::createTempFile(const std::string &project, std::string &tmp_file) const
 {
-    const char temp_file_prefix[] = "/tmp/build_shell_";
-    tmp_file.reserve(sizeof temp_file_prefix + project.size() + 8);
+    std::string temp_file_prefix = tempFilePath() + "/build_shell_";
+    tmp_file.reserve(temp_file_prefix.size() + project.size() + 8);
     tmp_file.append(temp_file_prefix);
     tmp_file.append(project);
     tmp_file.append("_XXXXXX");
 
     return mkstemp(&tmp_file[0]);
+}
+
+const std::string &Configuration::tempFilePath() const
+{
+    return m_tmp_file_path;
 }
 
 std::vector<std::string> Configuration::findScript(const std::string &primary, const std::string &fallback) const

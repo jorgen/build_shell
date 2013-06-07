@@ -55,13 +55,21 @@ BuildAction::BuildAction(const Configuration &configuration)
     if (m_error)
         return;
 
+    m_token_transformer = std::bind(&BuildAction::token_transformer, this, std::placeholders::_1);
+}
+
+
+BuildAction::~BuildAction()
+{
+    if (m_error)
+        return;
+
     std::string build_shell_build_sets_dir;
     if (!Configuration::getAbsPath("build_shell/build_sets", true, build_shell_build_sets_dir)) {
         fprintf(stderr, "Failed to get build_sets dir\n");
         m_error = true;
         return;
     }
-
     time_t actual_time = time(0);
     struct tm *local_tm = localtime(&actual_time);
     std::string dateInFormat(20,'\0');
@@ -71,18 +79,6 @@ BuildAction::BuildAction(const Configuration &configuration)
     m_stored_buildset = build_shell_build_sets_dir + "/" + dateInFormat.c_str() + std::string(".buildset");
     GenerateAction generate_action(m_configuration, m_stored_buildset);
     m_error = !generate_action.execute();
-
-    m_token_transformer = std::bind(&BuildAction::token_transformer, this, std::placeholders::_1);
-}
-
-
-BuildAction::~BuildAction()
-{
-    if (m_error)
-        return;
-    std::string stored_buildset_finished = m_stored_buildset + "_finished";
-    TreeWriter finished(stored_buildset_finished);
-    finished.write(m_buildset_tree);
 }
 
 class ArgumentsCleanup

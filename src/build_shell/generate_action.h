@@ -33,7 +33,10 @@ class GenerateAction : public Action
 {
 public:
     GenerateAction(const Configuration &configuration,
-            const std::string &outfile = std::string());
+                   const std::string &outfile = std::string());
+    GenerateAction(const Configuration &configuration,
+                   JT::ObjectNode *node,
+                   const std::string &outfile = std::string());
     ~GenerateAction();
 
     bool execute() override;
@@ -41,8 +44,9 @@ public:
 private:
     bool handleCurrentSrcDir(int log_file);
 
-    TreeBuilder m_tree_builder;
-    std::unique_ptr<JT::ObjectNode> m_out_tree;
+    void init(const std::string &outfile);
+    JT::ObjectNode *m_out_tree;
+    bool m_delete_out_tree;
     std::string m_out_file_name;
     int m_out_file;
 };

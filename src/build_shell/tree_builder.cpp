@@ -25,7 +25,7 @@
 
 TreeBuilder::TreeBuilder(const std::string &file,
             std::function<void(JT::Token *next_token)> token_transformer)
-    : m_node(0)
+    : m_node(nullptr)
     , m_file_name(file)
     , m_mapped_file(m_file_name)
     , m_token_transformer(token_transformer)
@@ -38,7 +38,6 @@ TreeBuilder::TreeBuilder(const std::string &file,
 
 TreeBuilder::~TreeBuilder()
 {
-    delete m_node;
 }
 
 void TreeBuilder::load()
@@ -55,7 +54,7 @@ void TreeBuilder::load()
     tokenizer.registerTokenTransformer(m_token_transformer);
     auto tree_build = tree_builder.build(&tokenizer);
     if (tree_build.second == JT::Error::NoError) {
-        m_node = tree_build.first->asObjectNode();
+        m_node.reset(tree_build.first->asObjectNode());
     }
 
     if (!m_node)
@@ -64,13 +63,11 @@ void TreeBuilder::load()
 
 JT::ObjectNode *TreeBuilder::rootNode() const
 {
-    return m_node;
+    return m_node.get();
 }
 
 JT::ObjectNode *TreeBuilder::takeRootNode()
 {
-    JT::ObjectNode *retNode = m_node;
-    m_node = 0;
-    return retNode;
+    return m_node.release();
 }
 

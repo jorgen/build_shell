@@ -32,7 +32,7 @@
 
 bool Process::flushProjectNodeToTemporaryFile(const std::string &project_name, JT::ObjectNode *node, std::string &file_flushed_to) const
 {
-    int temp_file = Configuration::createTempFile(project_name, file_flushed_to);
+    int temp_file = m_configuration.createTempFile(project_name, file_flushed_to);
     if (temp_file < 0) {
         fprintf(stderr, "Could not create temp file for project %s\n", project_name.c_str());
         return false;

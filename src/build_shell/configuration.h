@@ -127,7 +127,8 @@ public:
     const std::string &buildSetConfigPath() const;
     const std::string &scriptExecutionLogPath() const;
 
-    static int createTempFile(const std::string &project, std::string &tmp_file_name);
+    int createTempFile(const std::string &project, std::string &tmp_file_name) const;
+    const std::string &tempFilePath() const;
 
     static bool getAbsPath(const std::string &path, bool create, std::string &abs_path);
     static bool removeRecursive(const std::string &path);
@@ -155,6 +156,7 @@ private:
     std::string m_build_shell_config_path;
     std::string m_buildset_config_path;
     std::string m_script_log_path;
+    std::string m_tmp_file_path;
     bool m_reset_to_sha;
     bool m_clean_explicitly_set;
     bool m_clean;

@@ -24,6 +24,7 @@
 
 #include "available_builds.h"
 #include "tree_writer.h"
+#include "generate_action.h"
 
 #include <unistd.h>
 #include <errno.h>
@@ -111,9 +112,9 @@ CreateAction::~CreateAction()
     m_env_script_builder.writeScripts(m_set_build_env_file, m_unset_build_env_file,"");
 
     std::string current_buildset_name = m_configuration.buildDir() + "/build_shell/current_buildset";
-    TreeWriter current_tree_writer(current_buildset_name);
-    current_tree_writer.write(m_buildset_tree);
-    if (current_tree_writer.error()) {
+    GenerateAction generate(m_configuration, m_buildset_tree, current_buildset_name);
+    bool success = generate.execute();
+    if (!success || generate.error()) {
         fprintf(stderr, "Failed to write current buildset to file %s\n", current_buildset_name.c_str());
         return;
     }

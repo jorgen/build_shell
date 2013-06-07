@@ -64,7 +64,7 @@ ChildProcessIoHandler::~ChildProcessIoHandler()
     m_thread.join();
     if (m_rooler_active) {
         m_rooler_active = false;
-        write(STDOUT_FILENO, "\r   ",4);
+        write(STDOUT_FILENO, "\r   \r",4);
     }
 }
 

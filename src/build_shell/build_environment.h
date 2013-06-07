@@ -26,6 +26,7 @@
 #include <set>
 #include <string>
 #include <list>
+#include <memory>
 
 #include "configuration.h"
 
@@ -62,7 +63,7 @@ private:
     const Configuration &m_configuration;
     const std::string m_environment_file;
 
-    JT::ObjectNode *m_environment_node;
+    std::unique_ptr<JT::ObjectNode> m_environment_node;
     std::set<std::string> m_static_variables;
 };
 

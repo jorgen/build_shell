@@ -60,9 +60,9 @@ BuildEnvironment::BuildEnvironment(const Configuration &configuration)
     if (access(m_environment_file.c_str(), R_OK) == 0) {
         TreeBuilder tree_builder(m_environment_file);
         tree_builder.load();
-        m_environment_node = tree_builder.takeRootNode();
+        m_environment_node.reset(tree_builder.takeRootNode());
     } else {
-        m_environment_node = new JT::ObjectNode();
+        m_environment_node.reset(new JT::ObjectNode());
     }
 }
 
@@ -73,7 +73,7 @@ BuildEnvironment::~BuildEnvironment()
 
     if (out_file >= 0) {
         TreeWriter writer(out_file,true);
-        writer.write(m_environment_node);
+        writer.write(m_environment_node.get());
         if (writer.error()) {
             fprintf(stderr, "Failed to write BuildEnvironment\n");
         }
@@ -81,8 +81,6 @@ BuildEnvironment::~BuildEnvironment()
         fprintf(stderr, "Could not open %s : %s\n", m_environment_file.c_str(), strerror(errno));
 
     }
-
-    delete m_environment_node;
 }
 
 std::string BuildEnvironment::getVariable(const std::string &variable, const std::string &project) const
