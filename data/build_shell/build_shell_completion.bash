@@ -175,6 +175,7 @@ bs_variable()
 bss()
 {
     if [ -z $1 ]; then
+        bs_name
         return 0
     fi
 
