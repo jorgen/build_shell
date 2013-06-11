@@ -28,7 +28,7 @@
 
 #include <vector>
 
-ChildProcessIoHandler::ChildProcessIoHandler(int out_file)
+ChildProcessIoHandler::ChildProcessIoHandler(const std::string &phase, const std::string &projectName, int out_file)
     : m_out_file(out_file)
     , m_stdout_pipe{-1,-1}
     , m_stderr_pipe{-1,-1}
@@ -37,6 +37,8 @@ ChildProcessIoHandler::ChildProcessIoHandler(int out_file)
     , m_print_stderr(true)
     , m_roller_state(0)
     , m_rooler_active(false)
+    , m_phase(phase)
+    , m_project_name(projectName)
 {
 
     if (::pipe(m_stderr_pipe)) {
@@ -62,10 +64,6 @@ ChildProcessIoHandler::~ChildProcessIoHandler()
     }
 
     m_thread.join();
-    if (m_rooler_active) {
-        m_rooler_active = false;
-        write(STDOUT_FILENO, "\r   \r",4);
-    }
 }
 
 void ChildProcessIoHandler::setupMasterProcessState()
@@ -162,12 +160,19 @@ void ChildProcessIoHandler::run()
             bool stderr_wrote_out = handle_events(poll_data[1], m_out_file, m_print_stderr, &active_connections);
             bool stdout_wrote_out = handle_events(poll_data[0], m_out_file, m_print_stdout, &active_connections);
             if (!stderr_wrote_out && !stdout_wrote_out) {
+                if (!m_roller_string.size()) {
+                    m_roller_string = m_phase + ": " + m_project_name + " /";
+                }
                 m_rooler_active = true;
-                m_roller_state = (m_roller_state + 1) % (sizeof roller / sizeof roller[0]);
-                const char data[] = { '\r', roller[m_roller_state] };
-                write(STDOUT_FILENO, data, (sizeof data / sizeof data[0]));
+                m_roller_string[m_roller_string.size() - 1] = roller[(m_roller_state += 1) % (sizeof roller / sizeof roller[0])];
+                write(STDOUT_FILENO, m_roller_string.c_str(), m_roller_string.size());
             }
         }
+    }
+    if (m_rooler_active) {
+        m_rooler_active = false;
+        std::string clear_string = std::string("\r") + std::string(m_roller_string.size(), ' ') + std::string("\r");
+        write(STDOUT_FILENO, clear_string.c_str(), clear_string.size());
     }
 
 }

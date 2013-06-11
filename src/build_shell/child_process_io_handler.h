@@ -30,7 +30,7 @@
 class ChildProcessIoHandler
 {
 public:
-    ChildProcessIoHandler(int out_file);
+    ChildProcessIoHandler(const std::string &phase, const std::string &projectName, int out_file);
     ~ChildProcessIoHandler();
 
     void setupMasterProcessState();
@@ -54,6 +54,9 @@ private:
     std::thread m_thread;
     int m_roller_state;
     int m_rooler_active;
+    const std::string &m_phase;
+    const std::string &m_project_name;
+    std::string m_roller_string;
 };
 
 #endif

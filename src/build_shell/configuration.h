@@ -117,12 +117,6 @@ public:
     const std::list<std::string> &scriptSearchPaths() const;
 
     std::vector<std::string> findScript(const std::string &script, const std::string &fallback) const;
-    int runScript(const std::string &env_script,
-                  const std::string &script,
-                  const std::string &arg,
-                  int redirect_out_to,
-                  bool print = false) const;
-
     const std::string &buildShellConfigPath() const;
     const std::string &buildSetConfigPath() const;
     const std::string &scriptExecutionLogPath() const;
@@ -138,12 +132,11 @@ public:
 
     static BuildSystem findBuildSystem(const std::string &path);
     static BuildSystem findBuildSystemForCurrentDirectory();
-private:
 
     std::string findBuildEnvFile() const;
-    void initializeScriptSearchPaths();
+private:
 
-    int exec_script(const std::string &command, int redirect_out_to, bool print) const;
+    void initializeScriptSearchPaths();
 
     Mode m_mode;
     std::string m_mode_string;

@@ -21,8 +21,6 @@
 */
 #include "configuration.h"
 
-#include "child_process_io_handler.h"
-
 #include <limits.h>
 #include <stdlib.h>
 #include <string.h>
@@ -39,7 +37,6 @@
 
 #include <sstream>
 
-static bool DEBUG_EXEC_SCRIPT = getenv("BUILD_SHELL_DEBUG_EXEC_SCRIPT") != 0;
 static bool DEBUG_FIND_SCRIPT = getenv("BUILD_SHELL_DEBUG_FIND_SCRIPT") != 0;
 
 const char *Configuration::BuildSystemStringMap[BuildSystemSize] =
@@ -378,65 +375,7 @@ const std::list<std::string> &Configuration::scriptSearchPaths() const
     return m_script_search_paths;
 }
 
-int Configuration::exec_script(const std::string &command, int redirect_out_to, bool print) const
-{
-    if (DEBUG_EXEC_SCRIPT)
-        fprintf(stderr, "executing command %s\n", command.c_str());
-    ChildProcessIoHandler childProcessIoHandler(redirect_out_to);
-    childProcessIoHandler.printStdOut(m_print || print);
 
-    pid_t process = fork();
-
-    if (process) {
-        int child_status;
-        pid_t wpid;
-
-        childProcessIoHandler.setupMasterProcessState();
-
-        do {
-            wpid = wait(&child_status);
-        } while(wpid != process);
-        return WEXITSTATUS(child_status);
-    } else {
-        if (redirect_out_to >= 0) {
-            childProcessIoHandler.setupChildProcessState();
-        }
-        execlp("bash", "bash", "-c", command.c_str(), nullptr);
-        fprintf(stderr, "Failed to execute %s : %s\n", command.c_str(), strerror(errno));
-        exit(1);
-    }
-    assert(false);
-    return 0;
-}
-
-int Configuration::runScript(const std::string &env_script,
-                             const std::string &script,
-                             const std::string &args,
-                             int redirect_out_to,
-                             bool print) const
-{
-    if (!script.size())
-        return -1;
-
-    std::string pre_script_command;
-    if (env_script.size()) {
-        pre_script_command += std::string("source ") + env_script + " && ";
-    }
-    std::string env_file = findBuildEnvFile();
-    if (env_file.size()) {
-        pre_script_command.append("source ");
-        pre_script_command.append(env_file);
-        pre_script_command.append(" && ");
-    }
-
-    std::string post_script_command = " ";
-    post_script_command.append(args);
-
-    std::string script_command = pre_script_command + script + post_script_command;
-
-    int exit_code = exec_script(script_command, redirect_out_to, print);
-    return exit_code;
-}
 
 const std::string &Configuration::buildShellConfigPath() const
 {

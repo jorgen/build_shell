@@ -24,28 +24,17 @@
 
 #include "tree_writer.h"
 #include "tree_builder.h"
+#include "child_process_io_handler.h"
 
 #include <unistd.h>
 #include <fcntl.h>
 #include <string.h>
 #include <errno.h>
+#include <stdlib.h>
 
-bool Process::flushProjectNodeToTemporaryFile(const std::string &project_name, JT::ObjectNode *node, std::string &file_flushed_to) const
-{
-    int temp_file = m_configuration.createTempFile(project_name, file_flushed_to);
-    if (temp_file < 0) {
-        fprintf(stderr, "Could not create temp file for project %s\n", project_name.c_str());
-        return false;
-    }
-    TreeWriter writer(temp_file);
-    writer.registerTokenTransformer(m_token_transformer);
-    writer.write(node);
-    if (writer.error()) {
-        fprintf(stderr, "Failed to write project node to temporary file %s\n", file_flushed_to.c_str());
-        return false;
-    }
-    return true;
-}
+#include <assert.h>
+
+static bool DEBUG_EXEC_SCRIPT = getenv("BUILD_SHELL_DEBUG_EXEC_SCRIPT") != 0;
 
 Process::Process(const Configuration &configuration)
     : m_configuration(configuration)
@@ -92,7 +81,7 @@ bool Process::run(JT::ObjectNode **returnedObjectNode)
     bool temp_file_removed = false;
 
     for (auto it = scripts.begin(); it != scripts.end(); ++it) {
-        int exit_code = m_configuration.runScript(m_environement_script, (*it), temp_file, m_log_file, m_print);
+        int exit_code = runScript(m_environement_script, (*it), temp_file,  m_log_file, m_print);
         if (exit_code) {
             fprintf(stderr, "Script %s for project %s failed in execution\n", it->c_str(), m_project_name.c_str());
             return_val = false;
@@ -199,3 +188,80 @@ void Process::setPrint(bool print)
 {
     m_print = print;
 }
+
+bool Process::flushProjectNodeToTemporaryFile(const std::string &project_name, JT::ObjectNode *node, std::string &file_flushed_to) const
+{
+    int temp_file = m_configuration.createTempFile(project_name, file_flushed_to);
+    if (temp_file < 0) {
+        fprintf(stderr, "Could not create temp file for project %s\n", project_name.c_str());
+        return false;
+    }
+    TreeWriter writer(temp_file);
+    writer.registerTokenTransformer(m_token_transformer);
+    writer.write(node);
+    if (writer.error()) {
+        fprintf(stderr, "Failed to write project node to temporary file %s\n", file_flushed_to.c_str());
+        return false;
+    }
+    return true;
+}
+
+int Process::runScript(const std::string &env_script,
+                       const std::string &script,
+                       const std::string &args,
+                       int redirect_out_to,
+                       bool print) const
+{
+    if (!script.size())
+        return -1;
+
+    std::string pre_script_command;
+    if (env_script.size()) {
+        pre_script_command += std::string("source ") + env_script + " && ";
+    }
+    std::string env_file = m_configuration.findBuildEnvFile();
+    if (env_file.size()) {
+        pre_script_command.append("source ");
+        pre_script_command.append(env_file);
+        pre_script_command.append(" && ");
+    }
+
+    std::string post_script_command = " ";
+    post_script_command.append(args);
+
+    std::string script_command = pre_script_command + script + post_script_command;
+
+    int exit_code = exec_script(script_command, redirect_out_to, print);
+    return exit_code;
+}
+int Process::exec_script(const std::string &command, int redirect_out_to, bool print) const
+{
+    if (DEBUG_EXEC_SCRIPT)
+        fprintf(stderr, "executing command %s\n", command.c_str());
+    ChildProcessIoHandler childProcessIoHandler(m_phase, m_project_name, redirect_out_to);
+    childProcessIoHandler.printStdOut(m_print || print);
+
+    pid_t process = fork();
+
+    if (process) {
+        int child_status;
+        pid_t wpid;
+
+        childProcessIoHandler.setupMasterProcessState();
+
+        do {
+            wpid = wait(&child_status);
+        } while(wpid != process);
+        return WEXITSTATUS(child_status);
+    } else {
+        if (redirect_out_to >= 0) {
+            childProcessIoHandler.setupChildProcessState();
+        }
+        execlp("bash", "bash", "-c", command.c_str(), nullptr);
+        fprintf(stderr, "Failed to execute %s : %s\n", command.c_str(), strerror(errno));
+        exit(1);
+    }
+    assert(false);
+    return 0;
+}
+

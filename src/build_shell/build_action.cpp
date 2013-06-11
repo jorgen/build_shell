@@ -38,6 +38,8 @@
 #include <time.h>
 
 #include <memory>
+#include <algorithm>
+#include <string>
 
 BuildAction::BuildAction(const Configuration &configuration)
     : CreateAction(configuration, false)
@@ -103,6 +105,34 @@ public:
     JT::ObjectNode *m_root_node;
 };
 
+class PhaseReporter
+{
+public:
+    PhaseReporter(const std::string &phase, const std::string &project)
+        : m_project(project)
+        , m_success(false)
+    {
+        m_phase = phase;
+        std::transform(m_phase.begin(), m_phase.end(), m_phase.begin(), ::toupper);
+    }
+    ~PhaseReporter()
+    {
+        std::string status = m_success ? "SUCCESS" : "FAILED";
+        std::string print_success = std::string("\n") +
+            "************************************************************************\n"
+            "\t\t " + m_phase + " " + status + ": " + m_project + "\n"
+            "************************************************************************\n"
+            "\n";
+        fprintf(stdout, "%s", print_success.c_str());
+    }
+
+    void markSuccess() { m_success = true; }
+private:
+    std::string m_phase;
+    const std::string &m_project;
+    bool m_success;
+};
+
 bool BuildAction::execute()
 {
     if (!m_buildset_tree || m_error)
@@ -123,6 +153,7 @@ bool BuildAction::execute()
         const std::string &project_build_path = project_node->stringAt("arguments.build_path");
         const std::string &project_build_system = project_node->stringAt("arguments.build_system");
 
+        PhaseReporter reporter("build", project_name);
         if (chdir(project_build_path.c_str())) {
             fprintf(stderr, "Failed to move into directory %s to build\n", project_build_path.c_str());
             m_error = true;
@@ -132,6 +163,7 @@ bool BuildAction::execute()
             return false;
         }
 
+        reporter.markSuccess();
         if (m_configuration.onlyOne())
             break;
     }
@@ -146,6 +178,7 @@ bool BuildAction::execute()
         const std::string &project_build_path = project_node->stringAt("arguments.build_path");
         const std::string &project_build_system = project_node->stringAt("arguments.build_system");
 
+        PhaseReporter reporter("post_build", project_name);
         if (chdir(project_build_path.c_str())) {
             fprintf(stderr, "Failed to move into directory %s to do post build scripts\n", project_build_path.c_str());
             m_error = true;
@@ -166,6 +199,7 @@ bool BuildAction::execute()
             }
         }
 
+        reporter.markSuccess();
         if (m_configuration.onlyOne())
             break;
     }
@@ -184,6 +218,9 @@ bool BuildAction::handlePrebuild()
         if (!project_node)
             continue;
 
+        const std::string project_name = it->first.string();
+        const std::string phase("pre_build");
+        PhaseReporter reporter(phase, project_name);
         if (chdir(m_configuration.buildDir().c_str())) {
             fprintf(stderr, "Could not move into build dir:%s\n%s\n",
                     m_configuration.buildDir().c_str(), strerror(errno));
@@ -191,7 +228,6 @@ bool BuildAction::handlePrebuild()
             return false;
         }
 
-        const std::string project_name = it->first.string();
         std::string project_build_path = m_configuration.buildDir() + "/" + project_name;
         std::string project_src_path = m_configuration.srcDir() + "/" + project_name;
         m_transformer_state.current_project = project_name;
@@ -255,7 +291,7 @@ bool BuildAction::handlePrebuild()
 
         {
             Process process(m_configuration);
-            process.setPhase("pre_build");
+            process.setPhase(phase);
             process.setProjectName(project_name);
             process.setProjectNode(project_node);
             process.setPrint(true);
@@ -265,6 +301,8 @@ bool BuildAction::handlePrebuild()
                 return false;
             }
         }
+
+        reporter.markSuccess();
 
         if (m_configuration.onlyOne())
             break;
@@ -364,12 +402,6 @@ bool BuildAction::handleBuildForProject(const std::string &projectName, const st
         }
     }
 
-   std::string print_success = std::string("\n") +
-       "************************************************************************\n"
-       "\t\t BUILD SUCCESS: " + projectName + "\n"
-       "************************************************************************\n"
-       "\n";
-   fprintf(stdout, "%s", print_success.c_str());
    return true;
 }
 

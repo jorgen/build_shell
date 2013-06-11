@@ -51,6 +51,13 @@ public:
     void setPrint(bool print);
 private:
     bool flushProjectNodeToTemporaryFile(const std::string &project_name, JT::ObjectNode *node, std::string &file_flushed_to) const;
+    int runScript(const std::string &env_script,
+                  const std::string &script,
+                  const std::string &args,
+                  int redirect_out_to,
+                  bool print) const;
+    int exec_script(const std::string &command, int redirect_out_to, bool print) const;
+
     const Configuration &m_configuration;
     std::string m_environement_script;
     std::string m_phase;
