@@ -1,13 +1,29 @@
 #!/bin/bash
 
+trim() {
+    local var=$@
+    var="${var#"${var%%[![:space:]]*}"}"   # remove leading whitespace characters
+    var="${var%"${var##*[![:space:]]}"}"   # remove trailing whitespace characters
+    echo -n "$var"
+}
+
 FILE=$1
 
 build_set_head=$(jsonmod -p scm.current_head $FILE)
 
 current_dir=$(basename $PWD)
-if [ ! -z $build_set_head ]; then
+dirty=$(git status --porcelain)
+dirty_str=""
+ahead="0"
+if [ -n $build_set_head ]; then
     ahead=$(git rev-list $build_set_head..HEAD|wc -l)
-    echo "Git repository $current_dir is $ahead commits ahead of current_buildsets specified sha"
-else
-    echo "No registered current head"
 fi
+ahead=$(trim $ahead)
+
+
+if [ -n "$dirty" ]; then
+    dirty_str="dirty"
+fi
+
+printf "%-30s %5s %4s %-35s\n" "$current_dir" "$dirty_str" "$ahead" "commits ahead of current_buildset"
+
