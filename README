@@ -3,17 +3,16 @@ Build Shell is intended to help manage development builds
 Often developers end up managing many different environments on their
 development machine. The author has multiple different configuration of Qt
 build on his development machine, and some have dependencies on other projects
-not affiliated with qt-project, and hence not using qmake.
+not affiliated with qt-project, and not using qmake.
 
 It is also often cumbersome to move to a different development machine (say to
-a laptop for when you go travelling). Hence there is a need to automate
+a laptop for when you go travelling). There is a need to automate
 managing the different development environments a developer has. And the
 solution should not be bounded to the build system nor the source control
 management system.
 
 Build Shell use flow is:
-Create build_shell environment
-eks:
+Create build_shell environment:
 
 # Create a build shell from an existing build set file
 $ build_shell create -f somebuildset.file -b build_dir -s src_dir
@@ -33,6 +32,15 @@ $ bs_edit
 
 # then build again from where it stopped
 $ bs build project_with_broken_configuration_in_buildset --continue
+
+# some time has passed and you want to update your entire environment
+# first get an overview over the repositories so that dirty repos can be
+# stashed or changes can be comitted
+$ bs status
+
+# Then build the entire buildset but pull "with rebase" changes first
+$ bs build --pull-first
+
 # this bs command is also very usefull when you have made a bic incompatible
 # change to an library, and need to recompile the stack from the library and up
 # Additional flags to the bs function can be:
