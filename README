@@ -29,8 +29,7 @@ $ bs_name some_new_name
 $ bs build --pull-first
 
 # when the build breaks because of the buildset fix it
-$ bcd build_shell
-$ vim current_buildset
+$ bs_edit
 
 # then build again from where it stopped
 $ bs build project_with_broken_configuration_in_buildset --continue
