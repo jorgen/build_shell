@@ -31,6 +31,7 @@
 #include <string.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <sys/wait.h>
 
 #include <assert.h>
 
