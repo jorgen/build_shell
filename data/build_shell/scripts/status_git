@@ -12,10 +12,10 @@ FILE=$1
 build_set_head=$(jsonmod -p scm.current_head $FILE)
 
 current_dir=$(basename $PWD)
-dirty=$(git status --porcelain)
+dirty=$(git status --porcelain -u no)
 dirty_str=""
 ahead="0"
-if [ -n $build_set_head ]; then
+if [ ! -z "$build_set_head" ]; then
     ahead=$(git rev-list $build_set_head..HEAD|wc -l)
 fi
 ahead=$(trim $ahead)
