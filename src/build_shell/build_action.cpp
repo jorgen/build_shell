@@ -135,6 +135,7 @@ private:
 
 bool BuildAction::execute()
 {
+    PhaseReporter reporter("EXECUTING", "BUILD MODE");
     if (!m_buildset_tree || m_error)
         return false;
 
@@ -153,7 +154,6 @@ bool BuildAction::execute()
         const std::string &project_build_path = project_node->stringAt("arguments.build_path");
         const std::string &project_build_system = project_node->stringAt("arguments.build_system");
 
-        PhaseReporter reporter("build", project_name);
         if (chdir(project_build_path.c_str())) {
             fprintf(stderr, "Failed to move into directory %s to build\n", project_build_path.c_str());
             m_error = true;
@@ -163,7 +163,6 @@ bool BuildAction::execute()
             return false;
         }
 
-        reporter.markSuccess();
         if (m_configuration.onlyOne())
             break;
     }
@@ -178,7 +177,6 @@ bool BuildAction::execute()
         const std::string &project_build_path = project_node->stringAt("arguments.build_path");
         const std::string &project_build_system = project_node->stringAt("arguments.build_system");
 
-        PhaseReporter reporter("post_build", project_name);
         if (chdir(project_build_path.c_str())) {
             fprintf(stderr, "Failed to move into directory %s to do post build scripts\n", project_build_path.c_str());
             m_error = true;
@@ -199,11 +197,10 @@ bool BuildAction::execute()
             }
         }
 
-        reporter.markSuccess();
         if (m_configuration.onlyOne())
             break;
     }
-
+    reporter.markSuccess();
     return true;
 }
 
@@ -220,7 +217,6 @@ bool BuildAction::handlePrebuild()
 
         const std::string project_name = it->first.string();
         const std::string phase("pre_build");
-        PhaseReporter reporter(phase, project_name);
         if (chdir(m_configuration.buildDir().c_str())) {
             fprintf(stderr, "Could not move into build dir:%s\n%s\n",
                     m_configuration.buildDir().c_str(), strerror(errno));
@@ -302,8 +298,6 @@ bool BuildAction::handlePrebuild()
             }
         }
 
-        reporter.markSuccess();
-
         if (m_configuration.onlyOne())
             break;
     }
@@ -376,29 +370,36 @@ bool BuildAction::handleBuildForProject(const std::string &projectName, const st
     }
 
     if (m_configuration.configure()) {
+        PhaseReporter reporter("configure", projectName);
         process.setPhase("configure");
         process.setProjectNode(project_node);
         process.setPrint(true);
         if (!process.run()) {
             return false;
         }
+        reporter.markSuccess();
     }
 
     if (m_configuration.build()) {
-        process.setPhase("build");
-        process.setProjectNode(project_node);
-        process.setPrint(false);
-        if (!process.run()) {
-            return false;
+        {
+            PhaseReporter reporter("build", projectName);
+            process.setPhase("build");
+            process.setProjectNode(project_node);
+            process.setPrint(false);
+            if (!process.run()) {
+                return false;
+            }
+            reporter.markSuccess();
         }
-
         if (m_configuration.install() && project_node->nodeAt("no_install") == nullptr) {
+            PhaseReporter reporter("install", projectName);
             process.setPhase("install");
             process.setProjectNode(project_node);
             process.setPrint(false);
             if (!process.run()) {
                 return false;
             }
+            reporter.markSuccess();
         }
     }
 
