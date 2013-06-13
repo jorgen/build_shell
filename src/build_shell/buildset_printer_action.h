@@ -19,24 +19,22 @@
  * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE
  * OF THIS SOFTWARE.
 */
-#ifndef BUILD_ACTION_H
-#define BUILD_ACTION_H
 
-#include "create_action.h"
+#ifndef BUILDSET_PRINTER_ACTION_H
+#define BUILDSET_PRINTER_ACTION_H
 
-#include "json_tokenizer.h"
+#include "action.h"
+#include "transformer_state.h"
 
-class BuildAction : public CreateAction
+class BuildsetPrinterAction : public Action
 {
 public:
-    BuildAction(const Configuration &configuration);
-    ~BuildAction();
+    BuildsetPrinterAction(const Configuration &configuration);
 
     bool execute();
 
 private:
-    bool handlePrebuild();
-    bool handleBuildForProject(const std::string &projectName, const std::string &buildSystem, JT::ObjectNode *projectNode);
+    BuildEnvironment m_build_environment;
 };
 
 #endif

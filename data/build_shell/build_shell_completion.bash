@@ -43,7 +43,7 @@ bs()
         flags="$flags --skip-configure"
     fi
 
-    if [[ $mode != "pull" ]] && [[ $mode != "build" ]] && [[ $mode != "status" ]]; then
+    if [[ $mode != "pull" ]] && [[ $mode != "build" ]] && [[ $mode != "status" ]] && [[ $mode != "print" ]]; then
         echo "unknown build shell mode $mode"
         return 1
     fi
@@ -172,6 +172,7 @@ bs_variable()
 
     return $?
 }
+
 bss()
 {
     if [ -z $1 ]; then
@@ -206,7 +207,7 @@ _build_shell_select()
 
 _build_shell()
 {
-    if [ ! -n $BUILD_SHELL_BUILD_DIR ]; then
+    if [ ! -n "$BUILD_SHELL_BUILD_DIR" ]; then
         return 0
     fi
 
@@ -217,7 +218,7 @@ _build_shell()
     prev="${COMP_WORDS[COMP_CWORD-1]}"
 
     if [ "$COMP_CWORD" -eq 1 ]; then
-        opts="pull build rebuild status"
+        opts="pull build rebuild status print"
         COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
         return 0
     fi

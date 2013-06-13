@@ -28,6 +28,7 @@
 #include "available_builds.h"
 #include "create_action.h"
 #include "status_action.h"
+#include "buildset_printer_action.h"
 
 #include <vector>
 #include <iostream>
@@ -135,6 +136,8 @@ int main(int argc, char **argv)
             configuration.setMode(Configuration::Create, mode);
         } else if (mode == "status") {
             configuration.setMode(Configuration::Status, mode);
+        } else if (mode == "print") {
+            configuration.setMode(Configuration::Print, mode);
         } else {
             fprintf(stderr, "\nFailed to recognize mode: %s\n\n", mode.c_str());
             return 1;
@@ -242,8 +245,12 @@ int main(int argc, char **argv)
             case Configuration::Status:
                 action = new StatusAction(configuration);
                 break;
+            case Configuration::Print:
+                action = new BuildsetPrinterAction(configuration);
+                break;
             default:
-                action = new GenerateAction(configuration);
+                fprintf(stderr, "Mode is invalid %s. Exiting\n", configuration.modeString().c_str());
+                exit(1);
                 break;
         }
     }

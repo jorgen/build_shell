@@ -28,6 +28,8 @@
 
 #include <string>
 
+class BuildEnvironment;
+
 class Process
 {
 public:
@@ -45,8 +47,7 @@ public:
     void setLogFile(const std::string &logFile, bool append = false, bool closeFileOnDelete = true);
 
     void setProjectNode(JT::ObjectNode *projectNode);
-
-    void registerTokenTransformer(std::function<const JT::Token&(const JT::Token &)> token_transformer);
+    void setProjectNode(JT::ObjectNode *projectNode, BuildEnvironment *buildEnv);
 
     void setPrint(bool print);
 private:
@@ -64,13 +65,13 @@ private:
     std::string m_project_name;
     std::string m_fallback;
 
+    BuildEnvironment *m_build_environment;
     int m_log_file;
     std::string m_log_file_str;
     bool m_close_log_file;
     bool m_print;
 
     JT::ObjectNode *m_project_node;
-    std::function<const JT::Token&(const JT::Token &)> m_token_transformer;
 };
 
 #endif

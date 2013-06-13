@@ -22,7 +22,7 @@
 
 #include "process.h"
 
-#include "tree_writer.h"
+#include "buildset_tree_writer.h"
 #include "tree_builder.h"
 #include "child_process_io_handler.h"
 
@@ -39,6 +39,7 @@ static bool DEBUG_EXEC_SCRIPT = getenv("BUILD_SHELL_DEBUG_EXEC_SCRIPT") != 0;
 
 Process::Process(const Configuration &configuration)
     : m_configuration(configuration)
+    , m_build_environment(0)
     , m_log_file(-1)
     , m_close_log_file(false)
     , m_print(false)
@@ -180,9 +181,10 @@ void Process::setProjectNode(JT::ObjectNode *projectNode)
     m_project_node = projectNode;
 }
 
-void Process::registerTokenTransformer(std::function<const JT::Token&(const JT::Token &)> token_transformer)
+void Process::setProjectNode(JT::ObjectNode *projectNode, BuildEnvironment *buildEnv)
 {
-    m_token_transformer = token_transformer;
+    m_build_environment = buildEnv;
+    m_project_node = projectNode;
 }
 
 void Process::setPrint(bool print)
@@ -197,13 +199,18 @@ bool Process::flushProjectNodeToTemporaryFile(const std::string &project_name, J
         fprintf(stderr, "Could not create temp file for project %s\n", project_name.c_str());
         return false;
     }
-    TreeWriter writer(temp_file);
-    writer.registerTokenTransformer(m_token_transformer);
-    writer.write(node);
-    if (writer.error()) {
+    TreeWriter *writer;
+    if (m_build_environment) {
+        writer = new BuildsetTreeWriter(*m_build_environment, m_project_name, temp_file);
+    } else {
+        writer = new TreeWriter(temp_file);
+    }
+    writer->write(node);
+    if (writer->error()) {
         fprintf(stderr, "Failed to write project node to temporary file %s\n", file_flushed_to.c_str());
         return false;
     }
+    delete writer;
     return true;
 }
 

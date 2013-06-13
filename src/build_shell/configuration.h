@@ -39,7 +39,8 @@ public:
         Build,
         Rebuild,
         Create,
-        Status
+        Status,
+        Print
     };
 
     enum BuildSystem {

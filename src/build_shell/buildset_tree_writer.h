@@ -19,24 +19,26 @@
  * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE
  * OF THIS SOFTWARE.
 */
-#ifndef BUILD_ACTION_H
-#define BUILD_ACTION_H
 
-#include "create_action.h"
+#ifndef BUILDSET_TREE_WRITER_H
+#define BUILDSET_TREE_WRITER_H
 
-#include "json_tokenizer.h"
+#include "tree_writer.h"
+#include "build_environment.h"
+#include "transformer_state.h"
 
-class BuildAction : public CreateAction
+class BuildsetTreeWriter : public TreeWriter
 {
 public:
-    BuildAction(const Configuration &configuration);
-    ~BuildAction();
-
-    bool execute();
+    BuildsetTreeWriter(const BuildEnvironment &buildEnvironment, const std::string &project, const std::string &file);
+    BuildsetTreeWriter(const BuildEnvironment &buildEnvironment, const std::string &project, int file, bool closeFileOnDestruct = false);
 
 private:
-    bool handlePrebuild();
-    bool handleBuildForProject(const std::string &projectName, const std::string &buildSystem, JT::ObjectNode *projectNode);
+    const JT::Token &token_transformer(const JT::Token &next_token);
+
+    const BuildEnvironment &m_build_environment;
+    TransformerState m_transformer_state;
+    std::function<const JT::Token&(const JT::Token &)> m_token_transformer;
 };
 
 #endif
