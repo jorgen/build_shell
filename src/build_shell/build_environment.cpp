@@ -225,7 +225,7 @@ const std::string BuildEnvironment::expandVariablesInString(const std::string &s
             fprintf(stderr, "Could not expand variable %s for project %s\n", variable_name.c_str(), project.c_str());
             continue;
         }
-        size_t pos = it->start - str.c_str();
+        size_t pos = it->start - str.c_str() + diff;
         return_str.replace(pos - 2, it->size + 3,variable_value);
         diff += variable_value.size() - (variable_name.size() + 3);
     }
