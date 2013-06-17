@@ -127,7 +127,7 @@ public:
     void markSuccess() { m_success = true; }
 private:
     std::string m_phase;
-    const std::string &m_project;
+    const std::string m_project;
     bool m_success;
 };
 
