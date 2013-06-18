@@ -41,7 +41,7 @@ public:
             std::function<void(JT::Token *next_token)> token_transformer = nullptr);
     ~TreeBuilder();
 
-    void load();
+    bool load();
     JT::ObjectNode *rootNode() const;
     JT::ObjectNode *takeRootNode();
 

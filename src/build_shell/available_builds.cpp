@@ -154,6 +154,8 @@ void AvailableBuilds::flushTreeToFile(JT::ObjectNode *root) const
 JT::ObjectNode *AvailableBuilds::rootNode() const
 {
     TreeBuilder tree(m_available_builds_file);
-    tree.load();
+    if (!tree.load()) {
+        fprintf(stderr, "
+    }
     return tree.takeRootNode();
 }

@@ -40,11 +40,11 @@ TreeBuilder::~TreeBuilder()
 {
 }
 
-void TreeBuilder::load()
+bool TreeBuilder::load()
 {
     const char *data = static_cast<const char *>(m_mapped_file.map());
     if (!data)
-        return;
+        return false;
     JT::TreeBuilder tree_builder;
     tree_builder.create_root_if_needed = true;
     JT::Tokenizer tokenizer;
@@ -55,10 +55,12 @@ void TreeBuilder::load()
     auto tree_build = tree_builder.build(&tokenizer);
     if (tree_build.second == JT::Error::NoError) {
         m_node.reset(tree_build.first->asObjectNode());
+    } else {
+        delete tree_build.first;
+        return false;
     }
 
-    if (!m_node)
-        delete tree_build.first;
+    return true;
 }
 
 JT::ObjectNode *TreeBuilder::rootNode() const
