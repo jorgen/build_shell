@@ -56,10 +56,14 @@ static const char *strfind(const char *data, const char *pattern, size_t datasiz
 BuildEnvironment::BuildEnvironment(const Configuration &configuration)
     : m_configuration(configuration)
     , m_environment_file(configuration.buildDir() + "/build_shell/build_environment.json")
+    , m_error(false)
 {
     if (access(m_environment_file.c_str(), R_OK) == 0) {
         TreeBuilder tree_builder(m_environment_file);
-        tree_builder.load();
+        if (!tree_builder.load()) {
+            m_error = true;
+            return;
+        }
         m_environment_node.reset(tree_builder.takeRootNode());
     } else {
         m_environment_node.reset(new JT::ObjectNode());
@@ -81,6 +85,11 @@ BuildEnvironment::~BuildEnvironment()
         fprintf(stderr, "Could not open %s : %s\n", m_environment_file.c_str(), strerror(errno));
 
     }
+}
+
+bool BuildEnvironment::error()
+{
+    return m_error;
 }
 
 std::string BuildEnvironment::getVariable(const std::string &variable, const std::string &project) const

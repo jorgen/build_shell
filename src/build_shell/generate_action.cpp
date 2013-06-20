@@ -69,8 +69,9 @@ void GenerateAction::init(const std::string &outfile)
 
     if (actual_outfile->size()) {
         m_out_file_name = *actual_outfile;
+        m_out_file_desc_name = m_out_file_name + ".tmp";
         mode_t create_mode = S_IROTH | S_IRGRP | S_IRUSR | S_IWUSR;
-        m_out_file = open(m_out_file_name.c_str(), O_RDWR | O_CLOEXEC | O_CREAT, create_mode);
+        m_out_file = open(m_out_file_desc_name.c_str(), O_RDWR | O_CLOEXEC | O_CREAT | O_TRUNC, create_mode);
         if (m_out_file < 0) {
             fprintf(stderr, "Failed to open buildset Out File %s\n%s\n",
                     m_out_file_name.c_str(), strerror(errno));
@@ -83,9 +84,16 @@ void GenerateAction::init(const std::string &outfile)
 
 GenerateAction::~GenerateAction()
 {
-    if (m_out_file_name.size())
+    if (m_out_file_desc_name.size()) {
         close(m_out_file);
-
+        if (!error()) {
+            if (rename(m_out_file_desc_name.c_str(), m_out_file_name.c_str())) {
+                fprintf(stderr, "Failed to rename generated buildset %s to %s : %s\n",
+                        m_out_file_desc_name.c_str(), m_out_file_name.c_str(),
+                        strerror(errno));
+            }
+        } //dont unlink as the failed generated file can be used for debugging
+    }
     if (m_delete_out_tree)
         delete m_out_tree;
 }

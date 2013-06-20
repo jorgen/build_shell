@@ -48,6 +48,7 @@ private:
     JT::ObjectNode *m_out_tree;
     bool m_delete_out_tree;
     std::string m_out_file_name;
+    std::string m_out_file_desc_name;
     int m_out_file;
 };
 

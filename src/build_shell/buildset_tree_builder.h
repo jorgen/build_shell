@@ -35,6 +35,7 @@ class BuildsetTreeBuilder
 public:
     BuildsetTreeBuilder(const BuildEnvironment &buildEnv, const std::string &file);
 
+    bool error() const;
     TreeBuilder treeBuilder;
 
     const std::set<std::string> &required_variables() const;
@@ -45,6 +46,7 @@ private:
     std::list<std::string> m_missing_variables;
     const BuildEnvironment &m_build_environment;
     TransformerState m_transformer_state;
+    bool m_error;
 };
 
 #endif

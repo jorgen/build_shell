@@ -32,8 +32,13 @@ BuildsetTreeBuilder::BuildsetTreeBuilder(const BuildEnvironment &buildEnv, const
         std::bind(&BuildsetTreeBuilder::filterTokens, this, std::placeholders::_1))
     , m_build_environment(buildEnv)
     , m_transformer_state(m_build_environment)
+    , m_error(!treeBuilder.load())
 {
-    treeBuilder.load();
+}
+
+bool BuildsetTreeBuilder::error() const
+{
+    return m_error;
 }
 
 const std::set<std::string> &BuildsetTreeBuilder::required_variables() const

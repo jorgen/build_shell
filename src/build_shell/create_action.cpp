@@ -48,6 +48,7 @@ CreateAction::CreateAction(const Configuration &configuration, bool allowMissing
     : Action(configuration)
     , m_build_environment(configuration)
     , m_buildset_tree_builder(m_build_environment, configuration.buildsetFile())
+    , m_buildset_tree(0)
     , m_env_script_builder(configuration, m_buildset_tree_builder.treeBuilder.rootNode())
 {
     auto missing_variables = m_buildset_tree_builder.missingVariables();
@@ -66,7 +67,9 @@ CreateAction::CreateAction(const Configuration &configuration, bool allowMissing
             return;
         }
     }
-    m_buildset_tree = m_buildset_tree_builder.treeBuilder.rootNode();
+    if (! m_buildset_tree_builder.error()) {
+        m_buildset_tree = m_buildset_tree_builder.treeBuilder.rootNode();
+    }
     if (!m_buildset_tree) {
         fprintf(stderr, "Error loading buildset %s\n",
                 configuration.buildsetFile().c_str());

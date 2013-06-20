@@ -50,6 +50,8 @@ public:
     BuildEnvironment(const Configuration &configuration);
     ~BuildEnvironment();
 
+    bool error();
+
     std::string getVariable(const std::string &variable, const std::string &project) const;
     void setVariable(const std::string &variable, const std::string &value, const std::string &project = "");
     const std::set<std::string> &staticVariables() const;
@@ -65,6 +67,8 @@ private:
 
     std::unique_ptr<JT::ObjectNode> m_environment_node;
     std::set<std::string> m_static_variables;
+
+    bool m_error;
 };
 
 #endif //BUILD_ENVIRONMENT_H
