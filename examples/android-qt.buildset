@@ -1,0 +1,48 @@
+{
+    "qtbase" : {
+        "scm" : {
+            "type" : "git",
+            "url" : "ssh://codereview.qt-project.org:29418/qt/qtbase.git",
+            "branch" : "stable",
+            "remote" : "origin",
+            "remote_branch" : "stable",
+        },
+        "configure_args" : "-xplatform android-g++ -developer-build -nomake tests -nomake examples -android-ndk {$ANDROID_NDK_ROOT} -android-sdk {$ANDROID_SDK_ROOT} -opensource",
+        "no_install" : true,
+        "env" : {
+            "PATH" : "{$project_build_path}/bin"
+        }
+    },
+    "qtjsbackend" : {
+        "scm" : {
+            "type" : "git",
+            "url" : "ssh://codereview.qt-project.org:29418/qt/qtjsbackend.git",
+            "branch" : "stable",
+            "remote" : "origin",
+            "remote_branch" : "stable",
+        },
+        "no_install" : true
+    },
+
+    "qtxmlpatterns" : {
+        "scm" : {
+            "type" : "git",
+            "url" : "ssh://codereview.qt-project.org:29418/qt/qtxmlpatterns.git",
+            "branch" : "stable",
+            "remote" : "origin",
+            "remote_branch" : "stable",
+        },
+        "no_install" : true
+    },
+
+    "qtdeclarative" : {
+        "scm" : {
+            "type" : "git",
+            "url" : "ssh://codereview.qt-project.org:29418/qt/qtdeclarative.git",
+            "branch" : "stable",
+            "remote" : "origin",
+            "remote_branch" : "stable",
+        }
+        "no_install" : true
+    }
+}
