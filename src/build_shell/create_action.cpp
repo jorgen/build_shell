@@ -49,7 +49,6 @@ CreateAction::CreateAction(const Configuration &configuration, bool allowMissing
     , m_build_environment(configuration)
     , m_buildset_tree_builder(m_build_environment, configuration.buildsetFile())
     , m_buildset_tree(0)
-    , m_env_script_builder(configuration, m_buildset_tree_builder.treeBuilder.rootNode())
 {
     auto missing_variables = m_buildset_tree_builder.missingVariables();
     if (missing_variables.size()) {
@@ -112,7 +111,8 @@ CreateAction::~CreateAction()
     if (m_error)
         return;
 
-    m_env_script_builder.writeScripts(m_set_build_env_file, m_unset_build_env_file,"");
+    EnvScriptBuilder env_script_builder(m_configuration, m_build_environment, m_buildset_tree);
+    env_script_builder.writeScripts(m_set_build_env_file, m_unset_build_env_file);
 
     std::string current_buildset_name = m_configuration.buildDir() + "/build_shell/current_buildset";
     GenerateAction generate(m_configuration, m_buildset_tree, current_buildset_name);

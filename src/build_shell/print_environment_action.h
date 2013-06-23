@@ -20,29 +20,16 @@
  * OF THIS SOFTWARE.
 */
 
-#ifndef CREATE_ACTION_H
-#define CREATE_ACTION_H
+#ifndef PRINT_ENVIRONMENT_ACTION_H
+#define PRINT_ENVIRONMENT_ACTION_H
 
 #include "action.h"
-#include "buildset_tree_builder.h"
-#include "json_tree.h"
-#include "env_script_builder.h"
-#include "build_environment.h"
 
-class CreateAction : public Action
+class PrintEnvironmentAction : public Action
 {
 public:
-    CreateAction(const Configuration &configuration, bool allowMissingVariables = true);
-    ~CreateAction();
+    PrintEnvironmentAction(const Configuration &configuration);
 
     bool execute();
-protected:
-    BuildEnvironment m_build_environment;
-    BuildsetTreeBuilder m_buildset_tree_builder;
-    JT::ObjectNode *m_buildset_tree;
-    std::string m_stored_buildset;
-    std::string m_set_build_env_file;
-    std::string m_unset_build_env_file;
 };
-
 #endif

@@ -12,7 +12,9 @@
         "configure_args" : "-developer-build -debug -no-framework -opensource -nomake tests",
         "no_install" : true,
         "env" : {
-            "PATH" : "{$project_build_path}/bin"
+            "post" : {
+                "PATH" : "{$project_build_path}/bin"
+            }
         }
     },
     "qtjsbackend" : {

@@ -10,7 +10,9 @@
         "configure_args" : "-xplatform android-g++ -developer-build -nomake tests -nomake examples -android-ndk {$ANDROID_NDK_ROOT} -android-sdk {$ANDROID_SDK_ROOT} -opensource",
         "no_install" : true,
         "env" : {
-            "PATH" : "{$project_build_path}/bin"
+            "post" : {
+                "PATH" : "{$project_build_path}/bin"
+            }
         }
     },
     "qtjsbackend" : {

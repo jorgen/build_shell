@@ -40,7 +40,8 @@ public:
         Rebuild,
         Create,
         Status,
-        Print
+        Print,
+        PrintEnv
     };
 
     enum BuildSystem {

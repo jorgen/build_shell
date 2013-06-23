@@ -29,6 +29,7 @@
 #include "create_action.h"
 #include "status_action.h"
 #include "buildset_printer_action.h"
+#include "print_environment_action.h"
 
 #include <vector>
 #include <iostream>
@@ -138,6 +139,8 @@ int main(int argc, char **argv)
             configuration.setMode(Configuration::Status, mode);
         } else if (mode == "print") {
             configuration.setMode(Configuration::Print, mode);
+        } else if (mode == "print_env") {
+            configuration.setMode(Configuration::PrintEnv, mode);
         } else {
             fprintf(stderr, "\nFailed to recognize mode: %s\n\n", mode.c_str());
             return 1;
@@ -247,6 +250,9 @@ int main(int argc, char **argv)
                 break;
             case Configuration::Print:
                 action = new BuildsetPrinterAction(configuration);
+                break;
+            case Configuration::PrintEnv:
+                action = new PrintEnvironmentAction(configuration);
                 break;
             default:
                 fprintf(stderr, "Mode is invalid %s. Exiting\n", configuration.modeString().c_str());

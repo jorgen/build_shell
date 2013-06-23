@@ -32,10 +32,10 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-EnvScriptBuilder::EnvScriptBuilder(const Configuration &configuration, JT::ObjectNode *buildset_node)
+EnvScriptBuilder::EnvScriptBuilder(const Configuration &configuration, const BuildEnvironment &buildEnvironment, JT::ObjectNode *buildset_node)
     : m_configuration(configuration)
+    , m_build_environment(buildEnvironment)
     , m_buildset_node(buildset_node)
-    , m_build_environment(configuration)
 {
 }
 
@@ -43,19 +43,30 @@ EnvScriptBuilder::~EnvScriptBuilder()
 {
 }
 
-void EnvScriptBuilder::writeSetScript(TempFile &tempFile, const std::string &toProject)
+void EnvScriptBuilder::setToProject(const std::string &toProject)
+{
+    m_to_project = toProject;
+}
+
+void EnvScriptBuilder::writeSetScript(TempFile &tempFile)
 {
     if (tempFile.closed()) {
         fprintf(stderr, "Writing set script to closed temp file\n");
         return;
     }
-    auto variables = make_variable_map_up_until(toProject);
+    auto variables = make_variable_map_up_until(m_to_project);
     writeSetScript("", variables, tempFile.fileStream("w+"),false);
 }
 
-void EnvScriptBuilder::writeScripts(const std::string &setFileName, const std::string &unsetFileName, const std::string &toProject)
+void EnvScriptBuilder::writeSetScript(FILE *file)
 {
-    auto variables = make_variable_map_up_until(toProject);
+    auto variables = make_variable_map_up_until(m_to_project);
+    writeSetScript("", variables, file, false);
+}
+
+void EnvScriptBuilder::writeScripts(const std::string &setFileName, const std::string &unsetFileName)
+{
+    auto variables = make_variable_map_up_until(m_to_project);
     if (setFileName.size()) {
         FILE *out_file = fopen(setFileName.c_str(), "w+");
         if (!out_file) {
@@ -87,14 +98,15 @@ static bool containsValue(const std::string &value, const std::list<EnvVariable>
     return false;
 }
 
-void EnvScriptBuilder::populateMapFromEnvironmentNode(const std::string &projectName, JT::ObjectNode *environmentNode, std::map<std::string, std::list<EnvVariable>> &map) const
+void EnvScriptBuilder::populateMapFromVariableNode(const std::string &projectName, JT::ObjectNode *variableNode, std::map<std::string, std::list<EnvVariable>> &map) const
 {
-    for (auto it = environmentNode->begin(); it != environmentNode->end(); ++it) {
+    for (auto it = variableNode->begin(); it != variableNode->end(); ++it) {
         EnvVariable variable;
         bool found = false;
         if (JT::ObjectNode *complex_variable = it->second->asObjectNode()) {
             variable.value = complex_variable->stringAt("value");
             variable.overwrite = complex_variable->booleanAt("overwrite");
+            variable.singular = complex_variable->booleanAt("singular");
             found = true;
         } else if (JT::StringNode *simple_variable = it->second->asStringNode()) {
             variable.value = simple_variable->string();
@@ -103,11 +115,17 @@ void EnvScriptBuilder::populateMapFromEnvironmentNode(const std::string &project
         }
         if (found) {
             variable.value = m_build_environment.expandVariablesInString(variable.value, projectName);
-            if (variable.overwrite) {
-                map[it->first.string()].clear();
-            }
 
             const std::string &variable_name = it->first.string();
+
+            if (variable.overwrite || variable.singular) {
+                map[variable_name].clear();
+            }
+
+            if (map.count(variable_name) && map[variable_name].front().singular) {
+                map[variable_name].clear();
+            }
+
             std::list<EnvVariable> &variable_list = map[variable_name];
             if (!containsValue(variable.value, variable_list))
                 variable_list.push_back(variable);
@@ -115,10 +133,28 @@ void EnvScriptBuilder::populateMapFromEnvironmentNode(const std::string &project
     }
 }
 
+void EnvScriptBuilder::populateMapFromEnvironmentNode(const std::string &projectName, JT::ObjectNode *environmentNode, std::map<std::string, std::list<EnvVariable>> &map) const
+{
+    JT::ObjectNode *local_variable = environmentNode->objectNodeAt("local");
+    if (local_variable && projectName == m_to_project) {
+        populateMapFromVariableNode(projectName, local_variable, map);
+    }
+
+    JT::ObjectNode *pre_variable = environmentNode->objectNodeAt("pre");
+    if (pre_variable) {
+        populateMapFromVariableNode(projectName, pre_variable, map);
+    }
+
+    JT::ObjectNode *post_variable = environmentNode->objectNodeAt("post");
+    if (post_variable && projectName != m_to_project) {
+        populateMapFromVariableNode(projectName, post_variable, map);
+    }
+}
+
 void EnvScriptBuilder::populateMapFromProjectNode(const std::string &projectName, JT::ObjectNode *projectNode, std::map<std::string, std::list<EnvVariable>> &map) const
 {
     for (auto it = projectNode->begin(); it != projectNode->end(); ++it) {
-        if (it->first.string() != "env" && it->first.string() != "buildsystem_env")
+        if (it->first.string() != "env")
             continue;
         JT::ObjectNode *env_node = it->second->asObjectNode();
         if (!env_node)
@@ -131,12 +167,12 @@ std::map<std::string, std::list<EnvVariable>> EnvScriptBuilder::make_variable_ma
 {
     std::map<std::string, std::list<EnvVariable>> return_map;
     for (auto it = m_buildset_node->begin(); it != m_buildset_node->end(); ++it) {
-        if (project_name.size() && it->first.compareString(project_name))
-                break;
         if (!it->second->asObjectNode())
             continue;
         JT::ObjectNode *project_node = it->second->asObjectNode();
         populateMapFromProjectNode(it->first.string(), project_node, return_map);
+        if (project_name.size() && it->first.compareString(project_name))
+                break;
     }
     return return_map;
 }

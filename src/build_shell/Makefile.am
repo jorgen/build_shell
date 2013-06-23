@@ -47,7 +47,9 @@ build_shell_SOURCES =	         	        			\
 	buildset_printer_action.cpp					\
 	buildset_printer_action.h					\
 	buildset_tree_writer.h						\
-	buildset_tree_writer.cpp
+	buildset_tree_writer.cpp					\
+	print_environment_action.h					\
+	print_environment_action.cpp
 
 
 

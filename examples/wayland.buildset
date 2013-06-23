@@ -10,9 +10,11 @@
             "common_ancestor" : "8c6fe682c29ead1f03c55656c5264812074c4efa"
         },
         "env" : {
-            "ACLOCAL" : {
-                "value" : "aclocal -I {$install_path}/share/aclocal",
-                "overwrite" : true
+            "post" : {
+                "ACLOCAL" : {
+                    "value" : "aclocal -I {$install_path}/share/aclocal",
+                    "overwrite" : true
+                }
             }
         },
         "configure_args" : "--disable-documentation"
@@ -118,7 +120,12 @@
         "configure_args" : "-developer-build -debug -opengl es2 -opensource -nomake tests",
         "no_install" : true,
         "env" : {
-            "PATH" : "{$project_build_path}/bin"
+            "post" : {
+                "PATH" : {
+                    "value" : "{$project_build_path}/bin"
+                        "separator" : ","
+                }
+            }
         }
     },
     "qtjsbackend" : {

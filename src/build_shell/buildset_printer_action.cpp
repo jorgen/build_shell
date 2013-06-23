@@ -36,11 +36,13 @@ BuildsetPrinterAction::BuildsetPrinterAction(const Configuration &configuration)
 
 bool BuildsetPrinterAction::execute()
 {
-    fprintf(stderr, "Printing\n");
     BuildsetTreeBuilder buildset_tree_builder(m_build_environment, m_configuration.buildsetFile());
     JT::ObjectNode *build_set = buildset_tree_builder.treeBuilder.rootNode();
 
-    fprintf(stderr, "Printing 2\n");
+    if (!build_set) {
+        fprintf(stderr, "Print action: Failed to create buildset\n");
+        return false;
+    }
     auto end_it = endIterator(build_set);
     for (auto it = startIterator(build_set); it != end_it; ++it) {
         JT::ObjectNode *project_node = it->second->asObjectNode();

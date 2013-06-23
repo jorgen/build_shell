@@ -299,7 +299,9 @@ bool BuildAction::handleBuildForProject(const std::string &projectName, const st
 {
     fprintf(stderr, "Processing buildstep for %s\n", projectName.c_str());
     TempFile temp_file(projectName + "_env");
-    m_env_script_builder.writeSetScript(temp_file, projectName);
+    EnvScriptBuilder env_script_builder(m_configuration, m_build_environment, m_buildset_tree);
+    env_script_builder.setToProject(projectName);
+    env_script_builder.writeSetScript(temp_file);
     temp_file.close();
 
     Process process(m_configuration);

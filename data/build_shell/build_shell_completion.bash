@@ -43,7 +43,7 @@ bs()
         flags="$flags --skip-configure"
     fi
 
-    if [[ $mode != "pull" ]] && [[ $mode != "build" ]] && [[ $mode != "status" ]] && [[ $mode != "print" ]]; then
+    if [[ $mode != "pull" ]] && [[ $mode != "build" ]] && [[ $mode != "status" ]] && [[ $mode != "print" ]] && [[ $mode != "print_env" ]]; then
         echo "unknown build shell mode $mode"
         return 1
     fi
@@ -218,7 +218,7 @@ _build_shell()
     prev="${COMP_WORDS[COMP_CWORD-1]}"
 
     if [ "$COMP_CWORD" -eq 1 ]; then
-        opts="pull build rebuild status print"
+        opts="pull build rebuild status print print_env"
         COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
         return 0
     fi
