@@ -1,0 +1,14 @@
+{
+    "object1" : {
+        "subObject" : {
+            "color" : "red",
+            "some other prop" : "value"
+        }
+    },
+    "this is a bool" : true,
+    "object2" : {
+        "subObject" : {
+            "animal" : "dog"
+        }
+    }
+}

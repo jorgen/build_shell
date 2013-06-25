@@ -1,0 +1,14 @@
+#!/bin/bash
+
+jsonmod -p object1.color -v green only_modify_specified_subtree.json > only_modify_specified_subtree_temp.json
+
+should_be_empty=$(diff only_modify_specified_subtree_temp.json only_modify_specified_subtree_expect.json)
+if [ $? -ne 0 ]; then
+    exit -1 
+fi
+
+if [ -n "$should_be_empty" ]; then
+    exit -1
+fi
+
+exit 0

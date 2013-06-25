@@ -70,5 +70,7 @@ AC_CONFIG_FILES([Makefile
                  src/build_shell/Makefile
                  src/jsonmod/Makefile
 		 src/build_shell-version.h
-                 data/Makefile])
+                 data/Makefile
+                 tests/Makefile
+                 tests/jsonmod/Makefile])
 AC_OUTPUT
