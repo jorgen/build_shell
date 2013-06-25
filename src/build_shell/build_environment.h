@@ -61,6 +61,8 @@ public:
 
     bool canResolveVariable(const std::string &variable, const std::string &project) const;
     static const std::list<Variable> findVariables(const char *str, const size_t size);
+
+    JT::ObjectNode *copyEnvironmentTree() const;
 private:
     const Configuration &m_configuration;
     const std::string m_environment_file;

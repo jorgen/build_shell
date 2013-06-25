@@ -264,3 +264,7 @@ const std::list<Variable> BuildEnvironment::findVariables(const char *str, const
     return return_list;
 }
 
+JT::ObjectNode *BuildEnvironment::copyEnvironmentTree() const
+{
+    return m_environment_node->copy();
+}

@@ -57,7 +57,7 @@ void TreeWriter:: registerTokenTransformer(std::function<const JT::Token&(const 
 {
     m_token_transformer = token_transformer;
 }
-void TreeWriter::write(JT::ObjectNode *root)
+void TreeWriter::write(const JT::ObjectNode *root)
 {
     if (m_error) {
         fprintf(stderr, "Error when writing node to file\n");

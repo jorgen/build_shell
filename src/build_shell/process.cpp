@@ -192,7 +192,7 @@ void Process::setPrint(bool print)
     m_print = print;
 }
 
-bool Process::flushProjectNodeToTemporaryFile(const std::string &project_name, JT::ObjectNode *node, std::string &file_flushed_to) const
+bool Process::flushProjectNodeToTemporaryFile(const std::string &project_name, const JT::ObjectNode *node, std::string &file_flushed_to) const
 {
     int temp_file = m_configuration.createTempFile(project_name, file_flushed_to);
     if (temp_file < 0) {

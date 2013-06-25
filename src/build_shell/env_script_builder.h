@@ -80,7 +80,7 @@ private:
 
     const Configuration &m_configuration;
     const BuildEnvironment &m_build_environment;
-    JT::ObjectNode *m_buildset_node;
+    const JT::ObjectNode * const m_buildset_node;
     std::string m_to_project;
 };
 

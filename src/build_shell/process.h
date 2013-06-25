@@ -51,7 +51,7 @@ public:
 
     void setPrint(bool print);
 private:
-    bool flushProjectNodeToTemporaryFile(const std::string &project_name, JT::ObjectNode *node, std::string &file_flushed_to) const;
+    bool flushProjectNodeToTemporaryFile(const std::string &project_name, const JT::ObjectNode *node, std::string &file_flushed_to) const;
     int runScript(const std::string &env_script,
                   const std::string &script,
                   const std::string &args,
@@ -71,7 +71,7 @@ private:
     bool m_close_log_file;
     bool m_print;
 
-    JT::ObjectNode *m_project_node;
+    const JT::ObjectNode *m_project_node;
 };
 
 #endif

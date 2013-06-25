@@ -262,17 +262,17 @@ bool BuildAction::handlePrebuild()
         }
 
         JT::ObjectNode *arguments = new JT::ObjectNode();
-        project_node->insertNode(std::string("arguments"), arguments, true);
         arguments->addValueToObject("src_path", project_src_path, JT::Token::String);
         arguments->addValueToObject("build_path", project_build_path, JT::Token::String);
         arguments->addValueToObject("install_path", m_configuration.installDir(), JT::Token::String);
         arguments->addValueToObject("build_system", build_system_string, JT::Token::String);
+        project_node->insertNode(std::string("arguments"), arguments, true);
 
         static const long num_cpu = sysconf( _SC_NPROCESSORS_ONLN );
         char cpu_buf[4];
         snprintf(cpu_buf, sizeof cpu_buf, "%ld", num_cpu);
         arguments->addValueToObject("cpu_count", cpu_buf, JT::Token::Number);
-        JT::ObjectNode *env_variables = new JT::ObjectNode();
+        JT::ObjectNode *env_variables = m_build_environment.copyEnvironmentTree();
         arguments->insertNode(std::string("environment"), env_variables);
 
         chdir(project_build_path.c_str());
@@ -297,7 +297,6 @@ bool BuildAction::handlePrebuild()
 
 bool BuildAction::handleBuildForProject(const std::string &projectName, const std::string &buildSystem, JT::ObjectNode *projectNode)
 {
-    fprintf(stderr, "Processing buildstep for %s\n", projectName.c_str());
     TempFile temp_file(projectName + "_env");
     EnvScriptBuilder env_script_builder(m_configuration, m_build_environment, m_buildset_tree);
     env_script_builder.setToProject(projectName);

@@ -30,7 +30,7 @@ public:
     TreeWriter(const std::string &file);
     TreeWriter(int file, bool closeFileOnDestruct = false);
 
-    void write(JT::ObjectNode *root);
+    void write(const JT::ObjectNode *root);
 
     void setSerializeTransformer(std::function<const JT::Token&(const JT::Token &)> transformer);
 
