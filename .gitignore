@@ -33,3 +33,11 @@ src/build_shell/.deps/
 src/build_shell/build_shell
 src/jsonmod/.deps/
 src/jsonmod/jsonmod
+test-driver
+tests/jsonmod/add_property.log
+tests/jsonmod/add_property.trs
+tests/jsonmod/add_property_temp.json
+tests/jsonmod/only_modify_specified_subtree.log
+tests/jsonmod/only_modify_specified_subtree.trs
+tests/jsonmod/only_modify_specified_subtree_temp.json
+tests/jsonmod/test-suite.log
