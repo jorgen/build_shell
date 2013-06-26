@@ -129,7 +129,7 @@ void JsonStreamer::stream()
                         token.name.size -= 2;
                     case JT::Token::Ascii:
                         if (matchAtDepth(token.name)) {
-                            m_last_matching_depth = m_current_depth;
+                            m_last_matching_depth++;
                             if (m_last_matching_depth == m_property.size() - 1) {
                                 print_token = true;
                                 if (m_config.hasValue()) {
@@ -148,7 +148,7 @@ void JsonStreamer::stream()
                                     }
                                 }
                             }
-                            m_found_on_depth[m_current_depth] = true;
+                            m_found_on_depth.back() = true;
                         }
                         break;
                     default:
@@ -176,7 +176,7 @@ void JsonStreamer::stream()
                     break;
                 case JT::Token::ObjectEnd:
                 case JT::Token::ArrayEnd:
-                    if (m_last_matching_depth == m_current_depth -1
+                    if (m_last_matching_depth == m_current_depth - 1
                             && !m_found_on_depth.back()) {
                         if (m_property.size() -1 == m_current_depth && m_config.hasValue()) {
                             JT::Token new_token;
@@ -211,11 +211,15 @@ void JsonStreamer::stream()
                         }
                     }
 
-                    if (m_print_subtree && m_last_matching_depth == m_current_depth -1) {
+                    if (m_print_subtree && m_last_matching_depth == m_current_depth - 1) {
                         finished_printing_subtree = true;
                     }
-                    if (m_current_depth -1 == m_last_matching_depth)
+                    if (m_current_depth - 1 == m_last_matching_depth) {
                         m_last_matching_depth--;
+                    } else if (m_current_depth == m_last_matching_depth && m_found_on_depth.back()) {
+                        m_last_matching_depth-=2;
+                    }
+
                     m_found_on_depth.pop_back();
                     m_current_depth--;
                     break;
