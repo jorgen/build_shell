@@ -182,7 +182,7 @@ static Variable next_variable(const char *data, size_t length)
     if (length <= 3)
         return returnVariable;
 
-    returnVariable.start = strfind(data, "{$", length);
+    returnVariable.start = strfind(data, "${", length);
 
     if (!returnVariable.start)
         return returnVariable;

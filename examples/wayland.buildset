@@ -12,7 +12,7 @@
         "env" : {
             "post" : {
                 "ACLOCAL" : {
-                    "value" : "aclocal -I {$install_path}/share/aclocal",
+                    "value" : "aclocal -I ${install_path}/share/aclocal",
                     "overwrite" : true
                 }
             }
@@ -122,7 +122,7 @@
         "env" : {
             "post" : {
                 "PATH" : {
-                    "value" : "{$project_build_path}/bin"
+                    "value" : "${project_build_path}/bin"
                         "separator" : ","
                 }
             }

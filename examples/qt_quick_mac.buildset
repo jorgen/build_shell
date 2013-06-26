@@ -13,7 +13,7 @@
         "no_install" : true,
         "env" : {
             "post" : {
-                "PATH" : "{$project_build_path}/bin"
+                "PATH" : "${project_build_path}/bin"
             }
         }
     },
