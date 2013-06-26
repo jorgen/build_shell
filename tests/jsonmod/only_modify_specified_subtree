@@ -1,10 +1,15 @@
 #!/bin/bash
 
-jsonmod -p object1.color -v green only_modify_specified_subtree.json > only_modify_specified_subtree_temp.json
+jsonmod -p qtjsbackend.scm.branch -v new_branch only_modify_specified_subtree.json > only_modify_specified_subtree_temp.json
+if [ $? -ne 0 ]; then
+    echo jsonmod failed
+    exit -1
+fi
 
 should_be_empty=$(diff only_modify_specified_subtree_temp.json only_modify_specified_subtree_expect.json)
 if [ $? -ne 0 ]; then
-    exit -1 
+    echo Diff failed
+    exit -1
 fi
 
 if [ -n "$should_be_empty" ]; then
