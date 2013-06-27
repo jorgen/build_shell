@@ -54,6 +54,25 @@ Process::~Process()
     }
 }
 
+class LogFileResetter
+{
+public:
+    LogFileResetter(Process &process)
+        : process(process)
+        , resetLog(false)
+    {
+
+    }
+
+    ~LogFileResetter()
+    {
+        if(resetLog)
+            process.setLogFile("");
+    }
+    Process &process;
+    bool resetLog;
+};
+
 bool Process::run(JT::ObjectNode **returnedObjectNode)
 {
     if (returnedObjectNode)
@@ -67,9 +86,11 @@ bool Process::run(JT::ObjectNode **returnedObjectNode)
 
     bool return_val = true;
 
-    if (m_log_file < 0 && !m_print) {
+    LogFileResetter resetter(*this);
+    if (m_log_file < 0) {
         std::string log_file_str = m_configuration.scriptExecutionLogPath() +  "/" + m_project_name + "_" + m_phase + ".log";
         setLogFile(log_file_str, false);
+        resetter.resetLog = true;
     }
 
     std::string temp_file;
@@ -149,12 +170,16 @@ void Process::setLogFile(int logFile, bool closeFileOnDelete)
 
 void Process::setLogFile(const std::string &logFile, bool append, bool closeFileOnDelete)
 {
-    if (m_close_log_file) {
-        if (m_log_file >= 0) {
-            close(m_log_file);
-        }
+    if (m_close_log_file && m_log_file >= 0) {
+        close(m_log_file);
     }
+
     m_log_file_str = logFile;
+    if (!m_log_file_str.size()) {
+        m_close_log_file = false;
+        return;
+    }
+
     m_close_log_file = closeFileOnDelete;
 
     int flags = O_WRONLY|O_CREAT|O_CLOEXEC;

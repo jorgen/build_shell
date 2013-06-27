@@ -307,7 +307,6 @@ bool BuildAction::handleBuildForProject(const std::string &projectName, const st
     process.setEnvironmentScript(temp_file.name());
     process.setProjectName(projectName);
     process.setFallback(buildSystem);
-    process.setLogFile(projectName + "_build.log", false);
 
     std::unique_ptr<JT::ObjectNode> temp_pointer(nullptr);
     JT::ObjectNode *project_node = projectNode;
