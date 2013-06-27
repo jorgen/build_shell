@@ -64,4 +64,5 @@ else
     AM_CPPFLAGS += -DSCRIPTS_PATH=\"$(pkgdatadir)/build_shell/scripts\"
 endif
 
+
 CLEANFILES = $(BUILT_SOURCES)

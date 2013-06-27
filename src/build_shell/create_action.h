@@ -40,7 +40,6 @@ protected:
     BuildEnvironment m_build_environment;
     BuildsetTreeBuilder m_buildset_tree_builder;
     JT::ObjectNode *m_buildset_tree;
-    std::string m_stored_buildset;
     std::string m_set_build_env_file;
     std::string m_unset_build_env_file;
 };

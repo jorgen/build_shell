@@ -65,7 +65,7 @@ BuildAction::~BuildAction()
         return;
 
     std::string build_shell_build_sets_dir;
-    if (!Configuration::getAbsPath("build_shell/build_sets", true, build_shell_build_sets_dir)) {
+    if (!Configuration::getAbsPath(m_configuration.buildDir() + "/build_shell/build_sets", true, build_shell_build_sets_dir)) {
         fprintf(stderr, "Failed to get build_sets dir\n");
         m_error = true;
         return;
@@ -76,9 +76,11 @@ BuildAction::~BuildAction()
     snprintf(&dateInFormat[0], 20,"%04d-%02d-%02d-%02d:%02d:%02d",
              1900 + local_tm->tm_year, local_tm->tm_mon+1, local_tm->tm_mday,
              local_tm->tm_hour, local_tm->tm_min, local_tm->tm_sec);
-    m_stored_buildset = build_shell_build_sets_dir + "/" + dateInFormat.c_str() + std::string(".buildset");
-    GenerateAction generate_action(m_configuration, m_stored_buildset);
+    std::string stored_buildset = build_shell_build_sets_dir + "/" + dateInFormat.c_str() + std::string(".buildset");
+    GenerateAction generate_action(m_configuration, stored_buildset);
     m_error = !generate_action.execute();
+    if (m_error)
+        fprintf(stderr, "Failed to print buildset snapshot %s\n", stored_buildset.c_str());
 }
 
 class ArgumentsCleanup
