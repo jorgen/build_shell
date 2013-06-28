@@ -56,7 +56,8 @@ CreateAction::CreateAction(const Configuration &configuration, bool allowMissing
         for (auto it = missing_variables.begin(); it != missing_variables.end(); ++it) {
             fprintf(stderr, "\t - %s\n", it->c_str());
         }
-        fprintf(stderr, "\nPlease use bs_variable to add variables to your buildset environment:\n");
+        fprintf(stderr, "\nPlease use bss to select a build shell,\n");
+        fprintf(stderr, "and then use bs_variable to add variables to your buildset environment:\n");
         fprintf(stderr, "\t bs_variable \"some_variable\" \"some_value\"\n");
         fprintf(stderr, "or if you need to limit scope of the variable\n");
         fprintf(stderr, "\t bs_variable \"some_project\" \"some_variable\" \"some_value\"\n\n");
