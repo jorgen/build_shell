@@ -41,17 +41,20 @@ public:
     EnvVariable()
         : overwrite(false)
         , singular(false)
+        , seperator(":")
     { }
     EnvVariable(const std::string &value)
         : overwrite(false)
         , singular(false)
         , value(value)
+        , seperator(":")
     {}
 
     bool overwrite;
     bool singular;
     std::string delimiter;
     std::string value;
+    std::string seperator;
 
 };
 

@@ -35,6 +35,11 @@ bool PrintEnvironmentAction::execute()
 {
     BuildEnvironment build_environment(m_configuration);
     BuildsetTreeBuilder buildset_tree_builder(build_environment, m_configuration.buildsetFile());
+    if (buildset_tree_builder.error()) {
+        fprintf(stderr, "Failed to parse buildset file %s\n", m_configuration.buildsetFile().c_str());
+        return false;
+    }
+
     JT::ObjectNode *build_set = buildset_tree_builder.treeBuilder.rootNode()->copy();
 
     if (!build_set) {

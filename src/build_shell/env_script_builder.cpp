@@ -107,6 +107,9 @@ void EnvScriptBuilder::populateMapFromVariableNode(const std::string &projectNam
             variable.value = complex_variable->stringAt("value");
             variable.overwrite = complex_variable->booleanAt("overwrite");
             variable.singular = complex_variable->booleanAt("singular");
+            auto seperatorNode = complex_variable->stringNodeAt("seperator");
+            if (seperatorNode)
+                variable.seperator = seperatorNode->string();
             found = true;
         } else if (JT::StringNode *simple_variable = it->second->asStringNode()) {
             variable.value = simple_variable->string();
@@ -177,14 +180,14 @@ std::map<std::string, std::list<EnvVariable>> EnvScriptBuilder::make_variable_ma
     return return_map;
 }
 
-static void writeEnvironmentVariable(FILE *file, const std::string &name, const std::string &value, bool overwrite)
+static void writeEnvironmentVariable(FILE *file, const std::string &name, const std::string &value, const std::string &seperator, bool overwrite)
 {
     fprintf(file, "if [ -n \"$%s\" ]; then\n", name.c_str());
     fprintf(file, "    export BUILD_SHELL_OLD_%s=$%s\n", name.c_str(), name.c_str());
     if (overwrite) {
         fprintf(file, "    export %s=\"%s\"\n", name.c_str(), value.c_str());
     } else {
-        fprintf(file, "    export %s=\"%s:$%s\"\n", name.c_str(), value.c_str(), name.c_str());
+        fprintf(file, "    export %s=\"%s%s$%s\"\n", name.c_str(), value.c_str(),seperator.c_str(), name.c_str());
     }
     fprintf(file, "else\n");
     fprintf(file, "    export %s=\"%s\"\n", name.c_str(), value.c_str());
@@ -200,18 +203,18 @@ static std::string make_env_variable(const std::list<EnvVariable> &variables)
         if (it->value == previous)
             continue;
         if (it != variables.begin())
-            ret += ":";
+            ret += it->seperator;
         ret += it->value;
     }
     return ret;
 }
 
-static void writeAddDirToVariable(FILE *file, const std::string &dir, const std::string &variable)
+static void writeAddDirToVariable(FILE *file, const std::string &dir, const std::string &variable, const std::string &seperator = ":")
 {
     fprintf(file, "if [ -d \"%s\" ]; then\n", dir.c_str());
     fprintf(file, "    if [ ! -z \"$%s\" ]; then\n", variable.c_str());
     fprintf(file, "        %s_VARIABLE_FOUND=""\n",variable.c_str());
-    fprintf(file, "        IFS=':' read -ra %s_VARIABLE_SPLIT<<< \"$%s\"\n", variable.c_str(), variable.c_str());
+    fprintf(file, "        IFS='%s' read -ra %s_VARIABLE_SPLIT<<< \"$%s\"\n", seperator.c_str(),variable.c_str(), variable.c_str());
     fprintf(file, "        for i in \"${%s_VARIABLE_SPLIT[@]}\"; do\n", variable.c_str());
     fprintf(file, "            [ \"$i\" == \"%s\" ] && %s_VARIABLE_FOUND=\"yes\"\n", dir.c_str(), variable.c_str());
     fprintf(file, "        done\n");
@@ -220,7 +223,7 @@ static void writeAddDirToVariable(FILE *file, const std::string &dir, const std:
     fprintf(file, "            if [ -z \"$BUILD_SHELL_OLD_%s\" ]; then\n", variable.c_str());
     fprintf(file, "                export BUILD_SHELL_OLD_%s=$%s\n", variable.c_str(), variable.c_str());
     fprintf(file, "            fi\n");
-    fprintf(file, "            export %s=\"%s:$%s\"\n", variable.c_str(), dir.c_str(), variable.c_str());
+    fprintf(file, "            export %s=\"%s%s$%s\"\n", variable.c_str(), dir.c_str(), seperator.c_str(), variable.c_str());
     fprintf(file, "            unset %s_VARIABLE_FOUND\n", variable.c_str());
     fprintf(file, "        fi\n");
     fprintf(file, "    else\n");
@@ -249,8 +252,11 @@ void EnvScriptBuilder::writeSetScript(const std::string &unsetFileName, const st
     for (auto it = variables.begin(); it != variables.end(); ++it) {
         if (!it->second.size())
             continue;
-        const std::string value = make_env_variable(it->second);
-        writeEnvironmentVariable(file, it->first, value, it->second.front().overwrite);
+        const std::string &value = make_env_variable(it->second);
+        bool overwrite = it->second.front().overwrite || it->second.front().singular;
+        const std::string &seperator = it->second.front().seperator;
+
+        writeEnvironmentVariable(file, it->first, value, seperator, overwrite);
     }
 
     if (m_configuration.installDir() != "/usr" && m_configuration.installDir() != "/usr/local") {
