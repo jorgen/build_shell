@@ -65,7 +65,7 @@ bool PullAction::execute()
     auto end_it = endIterator(m_buildset_tree);
     for (auto it = startIterator(m_buildset_tree); it != end_it; ++it) {
         JT::ObjectNode *project_node = it->second->asObjectNode();
-        if (!project_node)
+        if (!project_node || !project_node->objectNodeAt("scm"))
             continue;
 
         if (chdir(m_configuration.srcDir().c_str())) {

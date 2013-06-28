@@ -222,7 +222,7 @@ bool BuildAction::handlePrebuild()
         std::string project_build_path = m_configuration.buildDir() + "/" + project_name;
         std::string project_src_path = m_configuration.srcDir() + "/" + project_name;
 
-        if (access(project_src_path.c_str(), X_OK|R_OK)) {
+        if (access(project_src_path.c_str(), X_OK|R_OK) && project_node->objectNodeAt("scm")) {
             fprintf(stderr, "Problem accessing source path: %s for project %s. Running pull action\n",
                     project_src_path.c_str(), project_name.c_str());
             {
@@ -248,7 +248,7 @@ bool BuildAction::handlePrebuild()
 
         Configuration::BuildSystem build_system = Configuration::findBuildSystem(project_src_path.c_str());
         std::string build_system_string = Configuration::BuildSystemStringMap[build_system];
-        if (access(project_build_path.c_str(), X_OK|R_OK)) {
+        if (access(project_build_path.c_str(), X_OK|R_OK) && access(project_src_path.c_str(), X_OK|R_OK) == 0) {
             bool failed_mkdir = true;
             if (errno == ENOENT) {
                 if (!mkdir(project_build_path.c_str(),S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH)) {
@@ -264,8 +264,12 @@ bool BuildAction::handlePrebuild()
         }
 
         JT::ObjectNode *arguments = new JT::ObjectNode();
-        arguments->addValueToObject("src_path", project_src_path, JT::Token::String);
-        arguments->addValueToObject("build_path", project_build_path, JT::Token::String);
+        bool should_chdir_to_build = false;
+        if (access(project_src_path.c_str(), X_OK|R_OK) == 0) {
+            arguments->addValueToObject("src_path", project_src_path, JT::Token::String);
+            arguments->addValueToObject("build_path", project_build_path, JT::Token::String);
+            should_chdir_to_build = true;
+        }
         arguments->addValueToObject("install_path", m_configuration.installDir(), JT::Token::String);
         arguments->addValueToObject("build_system", build_system_string, JT::Token::String);
         project_node->insertNode(std::string("arguments"), arguments, true);
@@ -277,7 +281,11 @@ bool BuildAction::handlePrebuild()
         JT::ObjectNode *env_variables = m_build_environment.copyEnvironmentTree();
         arguments->insertNode(std::string("environment"), env_variables);
 
-        chdir(project_build_path.c_str());
+        if (should_chdir_to_build) {
+            chdir(project_build_path.c_str());
+        } else {
+            chdir(m_configuration.buildDir().c_str());
+        }
 
         {
             Process process(m_configuration);
@@ -313,14 +321,14 @@ bool BuildAction::handleBuildForProject(const std::string &projectName, const st
     std::unique_ptr<JT::ObjectNode> temp_pointer(nullptr);
     JT::ObjectNode *project_node = projectNode;
 
-    if (m_configuration.clean()) {
+    if (m_configuration.clean() && projectNode->objectNodeAt("scm")) {
         process.setPhase("clean");
         process.setProjectNode(project_node, &m_build_environment);
         process.setPrint(false);
         if (!process.run())
             return false;
     }
-    if (m_configuration.deepClean()) {
+    if (m_configuration.deepClean() && projectNode->objectNodeAt("scm")) {
         std::string scm_type = projectNode->stringAt("scm.type");
         if (scm_type.size() == 0) {
             scm_type = "regular";
