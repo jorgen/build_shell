@@ -246,8 +246,6 @@ bool BuildAction::handlePrebuild()
             }
         }
 
-        Configuration::BuildSystem build_system = Configuration::findBuildSystem(project_src_path.c_str());
-        std::string build_system_string = Configuration::BuildSystemStringMap[build_system];
         if (access(project_build_path.c_str(), X_OK|R_OK) && access(project_src_path.c_str(), X_OK|R_OK) == 0) {
             bool failed_mkdir = true;
             if (errno == ENOENT) {
@@ -271,7 +269,13 @@ bool BuildAction::handlePrebuild()
             should_chdir_to_build = true;
         }
         arguments->addValueToObject("install_path", m_configuration.installDir(), JT::Token::String);
-        arguments->addValueToObject("build_system", build_system_string, JT::Token::String);
+
+        if (project_node->objectNodeAt("scm")) {
+            Configuration::BuildSystem build_system = Configuration::findBuildSystem(project_src_path.c_str());
+            std::string build_system_string = Configuration::BuildSystemStringMap[build_system];
+            arguments->addValueToObject("build_system", build_system_string, JT::Token::String);
+        }
+
         project_node->insertNode(std::string("arguments"), arguments, true);
 
         static const long num_cpu = sysconf( _SC_NPROCESSORS_ONLN );
