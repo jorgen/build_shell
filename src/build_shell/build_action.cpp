@@ -154,7 +154,8 @@ bool BuildAction::execute()
         const std::string &project_build_path = project_node->stringAt("arguments.build_path");
         const std::string &project_build_system = project_node->stringAt("arguments.build_system");
 
-        if (chdir(project_build_path.c_str())) {
+        const std::string &move_to_dir = project_build_path.size() ? project_build_path : m_configuration.buildDir();
+        if (chdir(move_to_dir.c_str())) {
             fprintf(stderr, "Failed to move into directory %s to build\n", project_build_path.c_str());
             m_error = true;
             return false;
@@ -177,7 +178,8 @@ bool BuildAction::execute()
         const std::string &project_build_path = project_node->stringAt("arguments.build_path");
         const std::string &project_build_system = project_node->stringAt("arguments.build_system");
 
-        if (chdir(project_build_path.c_str())) {
+        const std::string &move_to_dir = project_build_path.size() ? project_build_path : m_configuration.buildDir();
+        if (chdir(move_to_dir.c_str())) {
             fprintf(stderr, "Failed to move into directory %s to do post build scripts\n", project_build_path.c_str());
             m_error = true;
             return false;
