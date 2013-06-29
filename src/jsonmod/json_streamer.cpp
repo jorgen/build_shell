@@ -177,7 +177,7 @@ void JsonStreamer::stream()
                 case JT::Token::ObjectEnd:
                 case JT::Token::ArrayEnd:
                     if (m_last_matching_depth == m_current_depth - 1
-                            && !m_found_on_depth.back()) {
+                            && m_found_on_depth.size() && !m_found_on_depth.back()) {
                         if (m_property.size() -1 == m_current_depth && m_config.hasValue()) {
                             JT::Token new_token;
                             new_token.name_type = JT::Token::String;
