@@ -14,6 +14,10 @@
                 "ACLOCAL" : {
                     "value" : "aclocal -I ${install_path}/share/aclocal",
                     "overwrite" : true
+                },
+                "BS_VIM_SEARCH_PATH" : {
+                    "value" : "${project_src_path}/src/**",
+                    "seperator" : ","
                 }
             }
         },
@@ -121,9 +125,10 @@
         "no_install" : true,
         "env" : {
             "post" : {
-                "PATH" : {
-                    "value" : "${project_build_path}/bin"
-                        "separator" : ","
+                "PATH" : "${project_build_path}/bin",
+                "BS_VIM_SEARCH_PATH" : {
+                    "value" : "${project_src_path}/src/**",
+                    "seperator" : ","
                 }
             }
         }
@@ -164,5 +169,13 @@
         },
         "configure_args" : "CONFIG+=wayland-compositor"
         "no_install" : true
+        "env" : {
+            "post" : {
+                "BS_VIM_SEARCH_PATH" : {
+                    "value" : "${project_src_path}/src/**",
+                    "seperator" : ","
+                }
+            }
+        }
     }
 }
