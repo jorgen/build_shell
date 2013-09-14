@@ -3,4 +3,14 @@
 FILE=$@
 URL=$(jsonmod -p scm.url $FILE)
 REMOTE_BRANCH=$(jsonmod -p scm.remote_branch $FILE)
-git clone --branch $REMOTE_BRANCH $URL
+BRANCH=$(jsonmod -p scm.branch $FILE)
+
+if [ -z $REMOTE_BRANCH ]; then
+    if [ -n $BRANCH ]; then
+        REMOTE_BRANCH=$BRANCH
+    else
+        REMOTE_BRANCH="master"
+    fi
+fi
+
+git clone --progress --branch $REMOTE_BRANCH $URL

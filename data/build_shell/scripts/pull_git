@@ -1,5 +1,5 @@
 #!/bin/bash
 
 FILE=$@
-git pull --rebase
+git pull --progress --rebase
 

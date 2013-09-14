@@ -35,6 +35,26 @@
 
 #include <assert.h>
 
+class RemoveArgumentNode
+{
+public:
+    RemoveArgumentNode(JT::ObjectNode *to_contain_argument, JT::ObjectNode *arguments_node)
+        : m_to_contain_argument(to_contain_argument)
+        , m_argument_node(arguments_node)
+    {
+        m_to_contain_argument->insertNode(std::string("arguments"), arguments_node, true);
+    }
+
+    ~RemoveArgumentNode()
+    {
+        JT::Node *removed_argnode = m_to_contain_argument->take("arguments");
+        assert(removed_argnode);
+    }
+
+    JT::ObjectNode *m_to_contain_argument;
+    JT::ObjectNode *m_argument_node;
+};
+
 PullAction::PullAction(const Configuration &configuration)
     : Action(configuration)
     , m_buildset_tree_builder(configuration.buildsetFile())
@@ -66,8 +86,11 @@ bool PullAction::execute()
     auto end_it = endIterator(m_buildset_tree);
     for (auto it = startIterator(m_buildset_tree); it != end_it; ++it) {
         JT::ObjectNode *project_node = it->second->asObjectNode();
+
         if (!project_node || !project_node->objectNodeAt("scm"))
             continue;
+
+        RemoveArgumentNode remove_argument_handler(project_node, arguments.get());
 
         if (chdir(m_configuration.srcDir().c_str())) {
             fprintf(stderr, "Could not move into src dir:%s\n%s\n",
@@ -75,23 +98,21 @@ bool PullAction::execute()
             return false;
         }
 
-        project_node->insertNode(std::string("arguments"), arguments.get(), true);
         const std::string &project_name = it->first.string();
 
         bool should_clone = false;
         bool should_pull = false;
         struct stat stat_buffer;
         if (stat(project_name.c_str(), &stat_buffer)) {
-            if (errno == ENOENT) {
                 should_clone = true;
-            }
-        }
-
-        if (S_ISDIR(stat_buffer.st_mode)) {
+        } else if (S_ISDIR(stat_buffer.st_mode)) {
             should_pull = true;
             if (chdir(project_name.c_str())) {
-                fprintf(stderr, "Failed to move into directory %s : %s\n",
-                        project_name.c_str(), strerror(errno));
+                char current_wd[PATH_MAX];
+                if (getcwd(current_wd, sizeof current_wd) == 0)
+                    fprintf(stderr, "failed to get cwd\n");
+                fprintf(stderr, "Failed to move into directory %s/%s : %s\n",
+                        current_wd, project_name.c_str(), strerror(errno));
                 m_error = true;
                 return false;
             }
@@ -129,9 +150,6 @@ bool PullAction::execute()
         if (success && m_configuration.correctBranch()) {
             success = CorrectBranchAction::handleProjectNode(m_configuration, project_name, project_node);
         }
-        //have to remove the project node, so it will not be deleted multiple times
-        JT::Node *removed_argnode = project_node->take("arguments");
-        assert(removed_argnode);
 
         if (!success)
             return false;
