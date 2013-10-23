@@ -24,6 +24,7 @@
 #include "json_tree.h"
 #include "tree_writer.h"
 #include "process.h"
+#include "correct_branch_action.h"
 
 #include <unistd.h>
 #include <limits.h>
@@ -125,6 +126,9 @@ bool PullAction::execute()
             success = process.run(nullptr);
         }
 
+        if (success && m_configuration.correctBranch()) {
+            success = CorrectBranchAction::handleProjectNode(m_configuration, project_name, project_node);
+        }
         //have to remove the project node, so it will not be deleted multiple times
         JT::Node *removed_argnode = project_node->take("arguments");
         assert(removed_argnode);

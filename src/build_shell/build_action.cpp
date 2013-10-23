@@ -362,9 +362,11 @@ bool BuildAction::handleBuildForProject(const std::string &projectName, const st
                 return false;
             } else {
                 process.setPhase("deep_clean");
+                process.setFallback(scm_type);
                 process.setProjectNode(project_node, &m_build_environment);
                 process.setPrint(false);
                 if (!process.run()) {
+                    m_error = true;
                     return false;
                 }
             }

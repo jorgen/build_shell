@@ -41,7 +41,8 @@ public:
         Create,
         Status,
         Print,
-        PrintEnv
+        PrintEnv,
+        CorrectBranch
     };
 
     enum BuildSystem {
@@ -113,6 +114,9 @@ public:
     void setPrint(bool print);
     bool print() const;
 
+    void setCorrectBranch(bool correctBranch);
+    bool correctBranch() const;
+
     void validate();
     bool sane() const;
 
@@ -168,6 +172,7 @@ private:
     bool m_pull_first;
     bool m_register;
     bool m_print;
+    bool m_correct_branch;
 
     std::list<std::string> m_script_search_paths;
 

@@ -43,7 +43,7 @@ bs()
         flags="$flags --skip-configure"
     fi
 
-    if [[ $mode != "pull" ]] && [[ $mode != "build" ]] && [[ $mode != "status" ]] && [[ $mode != "print" ]] && [[ $mode != "print_env" ]]; then
+    if [[ $mode != "pull" ]] && [[ $mode != "build" ]] && [[ $mode != "status" ]] && [[ $mode != "print" ]] && [[ $mode != "print_env" ]] && [[ $mode != "correct-branch" ]]; then
         echo "unknown build shell mode $mode"
         return 1
     fi
@@ -229,7 +229,7 @@ _build_shell()
         COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
         return 0
     else
-        opts="--skip-configure --skip-build --deep-clean --clean --continue --pull-first --print"
+        opts="--skip-configure --skip-build --deep-clean --clean --continue --pull-first --print --correct-branch"
         COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
         return 0
     fi

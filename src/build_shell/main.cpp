@@ -28,6 +28,7 @@
 #include "available_builds.h"
 #include "create_action.h"
 #include "status_action.h"
+#include "correct_branch_action.h"
 #include "buildset_printer_action.h"
 #include "print_environment_action.h"
 
@@ -49,6 +50,7 @@ enum optionIndex {
     ONLY_ONE,
     CONTINUE,
     PULL_FIRST,
+    CORRECT_BRANCH,
     CLEAN,
     DEEP_CLEAN,
     SKIP_CONFIGURE,
@@ -82,6 +84,7 @@ const option::Descriptor usage[] =
                                                                             "             \t    This is usefull when using the --from option as the option enables"
                                                                             "             \t    --only-one by default"},
   {PULL_FIRST,    0, "" , "pull-first",       option::Arg::None,            "  --pull-first \tPull/Clone before building"},
+  {CORRECT_BRANCH,0, "" , "correct-branch",   option::Arg::None,            "  --correct-branch \tAdjust branch to be the branch specified in the buildset"},
   {CLEAN,         0, "" , "clean",            option::Arg::None,            "  --clean \tRun clean scripts"},
   {DEEP_CLEAN,    0, "" , "deep-clean",       option::Arg::None,            "  --deep-clean\tRemove build directory if differentg from source dir\n"
                                                                             "              \t    and run deep clean script on source. This option discard clean"},
@@ -141,6 +144,8 @@ int main(int argc, char **argv)
             configuration.setMode(Configuration::Print, mode);
         } else if (mode == "print_env") {
             configuration.setMode(Configuration::PrintEnv, mode);
+        } else if (mode == "correct-branch") {
+            configuration.setMode(Configuration::CorrectBranch, mode);
         } else {
             fprintf(stderr, "\nFailed to recognize mode: %s\n\n", mode.c_str());
             return 1;
@@ -216,6 +221,9 @@ int main(int argc, char **argv)
             case PRINT:
                 configuration.setPrint(true);
                 break;
+            case CORRECT_BRANCH:
+                configuration.setCorrectBranch(true);
+                break;
             case UNKNOWN:
                 fprintf(stderr, "UNKNOWN!");
                 // not possible because Arg::Unknown returns ARG_ILLEGAL
@@ -253,6 +261,9 @@ int main(int argc, char **argv)
                 break;
             case Configuration::PrintEnv:
                 action = new PrintEnvironmentAction(configuration);
+                break;
+            case Configuration::CorrectBranch:
+                action = new CorrectBranchAction(configuration);
                 break;
             default:
                 fprintf(stderr, "Mode is invalid %s. Exiting\n", configuration.modeString().c_str());

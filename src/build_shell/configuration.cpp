@@ -66,6 +66,7 @@ Configuration::Configuration()
     , m_pull_first(false)
     , m_register(true)
     , m_print(false)
+    , m_correct_branch(false)
     , m_sane(false)
 {
 #ifdef JSONMOD_PATH
@@ -284,6 +285,16 @@ void Configuration::setPrint(bool print)
 bool Configuration::print() const
 {
     return m_print;
+}
+
+void Configuration::setCorrectBranch(bool correctBranch)
+{
+    m_correct_branch = correctBranch;
+}
+
+bool Configuration::correctBranch() const
+{
+    return m_correct_branch;
 }
 
 void Configuration::validate()
