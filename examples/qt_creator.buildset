@@ -1,0 +1,123 @@
+{
+    "qtbase" : {
+        "scm" : {
+            "type" : "git",
+            "url" : "ssh://codereview.qt-project.org:29418/qt/qtbase.git",
+            "branch" : "stable",
+            "remote" : "origin",
+            "remote_branch" : "stable",
+            "current_head" : "192a02d89d590ec3342bef54a17180905968315a",
+            "common_ancestor" : "5d8a882c11201a29475c5ea71cfb76c9de6573f5"
+        },
+        "configure_args" : "-developer-build -debug -opengl es2 -opensource",
+        "no_install" : true,
+        "env" : {
+            "post" : {
+                "PATH" : "${project_build_path}/bin",
+                "BS_VIM_SEARCH_PATH" : {
+                    "value" : "${project_src_path}/src/**,${project_src_path}/tests/auto/**",
+                    "seperator" : ","
+                }
+            }
+        }
+    },
+    "qtxmlpatterns" : {
+        "scm" : {
+            "type" : "git",
+            "url" : "ssh://codereview.qt-project.org:29418/qt/qtxmlpatterns.git",
+            "branch" : "stable",
+            "remote" : "origin",
+            "remote_branch" : "stable",
+        },
+        "no_install" : true
+    },
+    "qtdeclarative" : {
+        "scm" : {
+            "type" : "git",
+            "url" : "ssh://codereview.qt-project.org:29418/qt/qtdeclarative.git",
+            "branch" : "stable",
+            "remote" : "origin",
+            "remote_branch" : "stable",
+            "current_head" : "8169b297dacc20181fecac9eaeab4d8b3b805a4a",
+            "common_ancestor" : "8169b297dacc20181fecac9eaeab4d8b3b805a4a"
+        },
+        "no_install" : true,
+        "env" : {
+            "post" : {
+                "BS_VIM_SEARCH_PATH" : {
+                    "value" : "${project_src_path}/src/**",
+                    "seperator" : ","
+                }
+            }
+        }
+    },
+    "qtwayland" : {
+        "scm" : {
+            "type" : "git",
+            "url" : "ssh://codereview.qt-project.org:29418/qt/qtwayland.git",
+            "branch" : "stable",
+            "remote" : "origin",
+            "remote_branch" : "stable",
+            "current_head" : "078a50dad7f00d2e5455df109b6d1efdcb83cabe",
+            "common_ancestor" : "078a50dad7f00d2e5455df109b6d1efdcb83cabe"
+        },
+        "configure_args" : "CONFIG+=wayland-compositor",
+        "no_install" : true,
+        "env" : {
+            "post" : {
+                "BS_VIM_SEARCH_PATH" : {
+                    "value" : "${project_src_path}/src/**",
+                    "seperator" : ","
+                }
+            }
+        }
+    },
+    "qtscript" : {
+        "scm" : {
+            "type" : "git",
+            "url" : "ssh://codereview.qt-project.org:29418/qt/qtscript.git",
+            "branch" : "stable",
+            "remote" : "origin",
+            "remote_branch" : "stable",
+            "current_head" : "24d678ce9c3996f46d1069c2b1193e7ec1083fc8",
+            "common_ancestor" : "24d678ce9c3996f46d1069c2b1193e7ec1083fc8"
+        },
+        "no_install" : true
+    },
+    "qtx11extras" : {
+        "scm" : {
+            "type" : "git",
+            "url" : "ssh://codereview.qt-project.org:29418/qt/qtx11extras.git",
+            "branch" : "stable",
+            "remote" : "origin",
+            "remote_branch" : "stable",
+            "current_head" : "f0e400e1bca13176e56cf7bb323cd0a6393a85ea",
+            "common_ancestor" : "f0e400e1bca13176e56cf7bb323cd0a6393a85ea"
+        },
+        "no_install" : true
+    },
+    "qttools" : {
+        "scm" : {
+            "type" : "git",
+            "url" : "ssh://codereview.qt-project.org:29418/qt/qttools.git",
+            "branch" : "stable",
+            "remote" : "origin",
+            "remote_branch" : "stable",
+            "current_head" : "ac41a8cb8894108868ef91e10888a08e482767b5",
+            "common_ancestor" : "ac41a8cb8894108868ef91e10888a08e482767b5"
+        },
+        "no_install" : true
+    },
+    "qt-creator" : {
+        "scm" : {
+            "type" : "git",
+            "url" : "ssh://codereview.qt-project.org:29418/qt-creator/qt-creator.git",
+            "branch" : "3.0",
+            "remote" : "origin",
+            "remote_branch" : "3.0",
+            "current_head" : "8ab88c8d35c52078a03d2d2192756906709f9aff",
+            "common_ancestor" : "8ab88c8d35c52078a03d2d2192756906709f9aff"
+        },
+        "no_install" : true
+    }
+}
