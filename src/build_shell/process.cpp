@@ -43,6 +43,7 @@ Process::Process(const Configuration &configuration)
     , m_log_file(-1)
     , m_close_log_file(false)
     , m_print(false)
+    , m_script_has_to_exist(true)
     , m_project_node(0)
 {
 }
@@ -98,9 +99,16 @@ bool Process::run(JT::ObjectNode **returnedObjectNode)
     if (!flushProjectNodeToTemporaryFile(m_project_name, m_project_node, temp_file))
         return false;
     std::string primary_script = m_phase + "_" + m_project_name;
-    std::string fallback_script = m_phase + "_" + m_fallback;
+    std::string fallback_script = m_fallback.size() ? m_phase + "_" + m_fallback : "";
 
     auto scripts = m_configuration.findScript(primary_script, fallback_script);
+
+    if (m_script_has_to_exist && scripts.size() == 0) {
+        fprintf(stderr, "Could not find mandatory script for: \"%s\" with fallback \"%s\"\n",
+                primary_script.c_str(), fallback_script.c_str());
+        return false;
+    }
+
     bool temp_file_removed = false;
 
     for (auto it = scripts.begin(); it != scripts.end(); ++it) {
@@ -215,6 +223,11 @@ void Process::setProjectNode(JT::ObjectNode *projectNode, BuildEnvironment *buil
 void Process::setPrint(bool print)
 {
     m_print = print;
+}
+
+void Process::setScriptHasToExist(bool exist)
+{
+    m_script_has_to_exist = exist;
 }
 
 bool Process::flushProjectNodeToTemporaryFile(const std::string &project_name, const JT::ObjectNode *node, std::string &file_flushed_to) const

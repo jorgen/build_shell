@@ -50,6 +50,8 @@ public:
     void setProjectNode(JT::ObjectNode *projectNode, BuildEnvironment *buildEnv);
 
     void setPrint(bool print);
+
+    void setScriptHasToExist(bool exist);
 private:
     bool flushProjectNodeToTemporaryFile(const std::string &project_name, const JT::ObjectNode *node, std::string &file_flushed_to) const;
     int runScript(const std::string &env_script,
@@ -70,6 +72,7 @@ private:
     std::string m_log_file_str;
     bool m_close_log_file;
     bool m_print;
+    bool m_script_has_to_exist;
 
     const JT::ObjectNode *m_project_node;
 };

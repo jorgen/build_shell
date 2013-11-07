@@ -192,6 +192,7 @@ bool BuildAction::execute()
             process.setFallback(project_build_system);
             process.setProjectNode(project_node, &m_build_environment);
             process.setPrint(true);
+            process.setScriptHasToExist(false);
             if (!process.run()) {
                 return false;
             }
@@ -299,6 +300,7 @@ bool BuildAction::handlePrebuild()
             process.setProjectName(project_name);
             process.setProjectNode(project_node, &m_build_environment);
             process.setPrint(true);
+            process.setScriptHasToExist(false);
             if (!process.run()) {
                 fprintf(stderr, "Failed to run process\n");
                 return false;
@@ -311,6 +313,27 @@ bool BuildAction::handlePrebuild()
     return true;
 }
 
+class ProcessBuilder
+{
+public:
+    ProcessBuilder(const Configuration &configuration)
+        : configuration(configuration)
+    { }
+    const Configuration &configuration;
+    std::string env_script;
+    std::string project_name;
+    std::string fallback;
+
+    Process build() const
+    {
+        Process process(configuration);
+        process.setEnvironmentScript(env_script);
+        process.setProjectName(project_name);
+        process.setFallback(fallback);
+        return process;
+    }
+};
+
 bool BuildAction::handleBuildForProject(const std::string &projectName, const std::string &buildSystem, JT::ObjectNode *projectNode)
 {
     TempFile temp_file(projectName + "_env");
@@ -319,21 +342,23 @@ bool BuildAction::handleBuildForProject(const std::string &projectName, const st
     env_script_builder.writeSetScript(temp_file);
     temp_file.close();
 
-    Process process(m_configuration);
-    process.setEnvironmentScript(temp_file.name());
-    process.setProjectName(projectName);
-    process.setFallback(buildSystem);
+    ProcessBuilder processBuilder(m_configuration);
+    processBuilder.project_name = projectName;
+    processBuilder.env_script = temp_file.name();
+    processBuilder.fallback = buildSystem;
 
     std::unique_ptr<JT::ObjectNode> temp_pointer(nullptr);
     JT::ObjectNode *project_node = projectNode;
 
-    if (m_configuration.clean() && projectNode->objectNodeAt("scm")) {
+    if (m_configuration.clean()) {
+        Process process = processBuilder.build();
         process.setPhase("clean");
         process.setProjectNode(project_node, &m_build_environment);
         process.setPrint(false);
         if (!process.run())
             return false;
     }
+
     if (m_configuration.deepClean() && projectNode->objectNodeAt("scm")) {
         std::string scm_type = projectNode->stringAt("scm.type");
         if (scm_type.size() == 0) {
@@ -361,14 +386,16 @@ bool BuildAction::handleBuildForProject(const std::string &projectName, const st
                 m_error = true;
                 return false;
             } else {
+                PhaseReporter reporter("deep-clean", projectName);
+                Process process = processBuilder.build();
                 process.setPhase("deep_clean");
                 process.setFallback(scm_type);
                 process.setProjectNode(project_node, &m_build_environment);
-                process.setPrint(false);
+                process.setPrint(true);
                 if (!process.run()) {
-                    m_error = true;
                     return false;
                 }
+                reporter.markSuccess();
             }
         }
 
@@ -377,6 +404,7 @@ bool BuildAction::handleBuildForProject(const std::string &projectName, const st
 
     if (m_configuration.configure()) {
         PhaseReporter reporter("configure", projectName);
+        Process process = processBuilder.build();
         process.setPhase("configure");
         process.setProjectNode(project_node, &m_build_environment);
         process.setPrint(true);
@@ -389,6 +417,7 @@ bool BuildAction::handleBuildForProject(const std::string &projectName, const st
     if (m_configuration.build()) {
         {
             PhaseReporter reporter("build", projectName);
+            Process process = processBuilder.build();
             process.setPhase("build");
             process.setProjectNode(project_node, &m_build_environment);
             process.setPrint(false);
@@ -399,6 +428,7 @@ bool BuildAction::handleBuildForProject(const std::string &projectName, const st
         }
         if (m_configuration.install() && project_node->nodeAt("no_install") == nullptr) {
             PhaseReporter reporter("install", projectName);
+            Process process = processBuilder.build();
             process.setPhase("install");
             process.setProjectNode(project_node, &m_build_environment);
             process.setPrint(false);

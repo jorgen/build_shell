@@ -435,6 +435,8 @@ std::vector<std::string> Configuration::findScript(const std::string &primary, c
     const std::list<std::string> searchPath = scriptSearchPaths();
     for (int i = 0; i < 2; i++) {
         std::string script = i == 0 ? primary : fallback;
+        if (script.size() == 0)
+            continue;
         for (auto it = searchPath.begin(); it != searchPath.end(); ++it) {
             std::string full_script_path = *it;
             if (!full_script_path.back() != '/')
