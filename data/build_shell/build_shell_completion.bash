@@ -218,7 +218,7 @@ _build_shell()
     prev="${COMP_WORDS[COMP_CWORD-1]}"
 
     if [ "$COMP_CWORD" -eq 1 ]; then
-        opts="pull build rebuild status print print_env"
+        opts="pull build rebuild status print print_env correct-branch"
         COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
         return 0
     fi
