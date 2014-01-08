@@ -50,6 +50,7 @@ public:
         AutoReconf,
         CMake,
         QMake,
+        MerSource,
         NotRecognizedBuildSystem,
         BuildSystemSize
     };

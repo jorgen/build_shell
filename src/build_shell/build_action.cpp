@@ -265,18 +265,33 @@ bool BuildAction::handlePrebuild()
         }
 
         JT::ObjectNode *arguments = new JT::ObjectNode();
+        arguments->addValueToObject("install_path", m_configuration.installDir(), JT::Token::String);
+
+        if (project_node->objectNodeAt("scm")) {
+            Configuration::BuildSystem build_system = Configuration::findBuildSystem(project_src_path.c_str());
+            if (build_system == Configuration::MerSource) {
+                std::string tmp_src_path = project_src_path;
+                std::string base_name = basename(&tmp_src_path[0]);
+                std::string project_mer_src_path = project_src_path + "/" + base_name;
+                build_system = Configuration::findBuildSystem(project_mer_src_path);
+                if (build_system != Configuration::NotRecognizedBuildSystem) {
+                    std::string tmp_build_path;
+                    Configuration::getAbsPath(project_build_path + "/" + base_name, true, tmp_build_path);
+                    std::string tmp_src_path;
+                    Configuration::getAbsPath(project_mer_src_path, false, tmp_src_path);
+                    project_src_path = tmp_src_path;
+                    project_build_path = tmp_build_path;
+                }
+            }
+            std::string build_system_string = Configuration::BuildSystemStringMap[build_system];
+            arguments->addValueToObject("build_system", build_system_string, JT::Token::String);
+        }
+
         bool should_chdir_to_build = false;
         if (access(project_src_path.c_str(), X_OK|R_OK) == 0) {
             arguments->addValueToObject("src_path", project_src_path, JT::Token::String);
             arguments->addValueToObject("build_path", project_build_path, JT::Token::String);
             should_chdir_to_build = true;
-        }
-        arguments->addValueToObject("install_path", m_configuration.installDir(), JT::Token::String);
-
-        if (project_node->objectNodeAt("scm")) {
-            Configuration::BuildSystem build_system = Configuration::findBuildSystem(project_src_path.c_str());
-            std::string build_system_string = Configuration::BuildSystemStringMap[build_system];
-            arguments->addValueToObject("build_system", build_system_string, JT::Token::String);
         }
 
         project_node->insertNode(std::string("arguments"), arguments, true);

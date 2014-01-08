@@ -43,6 +43,7 @@ const char *Configuration::BuildSystemStringMap[BuildSystemSize] =
                                              "autoreconf",
                                              "cmake",
                                              "qmake",
+                                             "mer_source",
                                              "not_recognized" };
 const char *Configuration::ScmTypeStringMap[ScmTypeSize] =
                                       { "git",
@@ -657,6 +658,12 @@ Configuration::BuildSystem Configuration::findBuildSystem(const std::string &pat
                 path.c_str());
         return build_system;
     }
+
+    std::string tmp_path = path;
+    std::string bname(basename(&tmp_path[0]));
+    bool found_current_dir= false;
+    bool found_upstream_dir = false;
+    bool found_rpm_dir = false;
     while (struct dirent *ent = readdir(source_dir)) {
         if (strncmp(".",ent->d_name, sizeof(".")) == 0 ||
                 strncmp("..", ent->d_name, sizeof("..")) == 0)
@@ -680,6 +687,15 @@ Configuration::BuildSystem Configuration::findBuildSystem(const std::string &pat
                 build_system = AutoTools;
                 break;
             }
+        } else if (S_ISDIR(buf.st_mode)) {
+            std::string d_name = ent->d_name;
+            if (d_name == bname) {
+                found_current_dir = true;
+            } else if (d_name == "upstream") {
+                found_upstream_dir = true;
+            } else if (d_name == "rpm") {
+                found_rpm_dir = true;
+            }
         }
     }
     if (build_system == AutoTools) {
@@ -687,6 +703,13 @@ Configuration::BuildSystem Configuration::findBuildSystem(const std::string &pat
         if (access(autogen.c_str(), F_OK)) {
             build_system = AutoReconf;
         }
+    }
+    if (build_system == Configuration::NotRecognizedBuildSystem
+            && found_current_dir
+            && found_upstream_dir
+            && found_rpm_dir)
+    {
+        build_system = Configuration::MerSource;
     }
     closedir(source_dir);
 
