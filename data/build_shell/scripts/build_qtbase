@@ -1,6 +1,6 @@
 #!/bin/bash
 
-FILE=$@
+FILE=$2
 cpu_count=$(jsonmod -p arguments.cpu_count $FILE)
 make -j$cpu_count
 

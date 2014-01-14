@@ -1,6 +1,6 @@
 #!/bin/bash
 
-FILE=$@
+FILE=$2
 REMOTE_BRANCH=$(jsonmod -p scm.remote_branch $FILE)
 echo "Git correcting branch"
 

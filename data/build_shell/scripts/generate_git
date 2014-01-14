@@ -1,6 +1,6 @@
 #!/bin/bash
 
-OUT_FILE=$1
+OUT_FILE=$2
 jsonmod -p scm.type -v git -i $OUT_FILE
 
 url=$(git config --get remote.origin.url)

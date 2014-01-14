@@ -1,5 +1,5 @@
 #!/bin/bash
 
-OUT_FILE=$1
+OUT_FILE=$2
 jsonmod -p scm.type -v unknown -i $OUT_FILE
 

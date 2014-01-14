@@ -111,8 +111,9 @@ bool Process::run(JT::ObjectNode **returnedObjectNode)
 
     bool temp_file_removed = false;
 
+    std::string arguments =  m_project_name + " " + temp_file;
     for (auto it = scripts.begin(); it != scripts.end(); ++it) {
-        int exit_code = runScript(m_environement_script, (*it), temp_file,  m_log_file, m_print);
+        int exit_code = runScript(m_environement_script, (*it), arguments,  m_log_file, m_print);
         if (exit_code) {
             fprintf(stderr, "Script %s for project %s failed in execution\n", it->c_str(), m_project_name.c_str());
             return_val = false;

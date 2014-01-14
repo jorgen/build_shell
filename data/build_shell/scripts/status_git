@@ -7,7 +7,7 @@ trim() {
     echo -n "$var"
 }
 
-FILE=$1
+FILE=$2
 
 build_set_head=$(jsonmod -p scm.current_head $FILE)
 

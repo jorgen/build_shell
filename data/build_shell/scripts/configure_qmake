@@ -1,6 +1,6 @@
 #!/bin/bash
 
-FILE=$@
+FILE=$2
 source_path=$(jsonmod -p arguments.src_path $FILE)
 add_configure_args=$(jsonmod -p configure_args $FILE)
 qmake $source_path $add_configure_args
