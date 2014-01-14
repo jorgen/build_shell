@@ -133,18 +133,6 @@
             }
         }
     },
-    "qtjsbackend" : {
-        "scm" : {
-            "type" : "git",
-            "url" : "ssh://codereview.qt-project.org:29418/qt/qtjsbackend.git",
-            "branch" : "stable",
-            "remote" : "origin",
-            "remote_branch" : "stable",
-            "current_head" : "1dd094a4da1b472dbeae79fe9d6962e817a47b45",
-            "common_ancestor" : "1dd094a4da1b472dbeae79fe9d6962e817a47b45"
-        },
-        "no_install" : true
-    },
     "qtdeclarative" : {
         "scm" : {
             "type" : "git",
