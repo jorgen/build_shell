@@ -36,7 +36,7 @@ BuildsetPrinterAction::BuildsetPrinterAction(const Configuration &configuration)
 
 bool BuildsetPrinterAction::execute()
 {
-    BuildsetTreeBuilder buildset_tree_builder(m_build_environment, m_configuration.buildsetFile());
+    BuildsetTreeBuilder buildset_tree_builder(m_build_environment, m_configuration.buildsetFile(), false, true);
     JT::ObjectNode *build_set = buildset_tree_builder.treeBuilder.rootNode();
 
     if (!build_set) {

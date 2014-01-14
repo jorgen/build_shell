@@ -44,6 +44,7 @@ enum optionIndex {
     BUILD_DIR,
     INSTALL_DIR,
     BUILDSET,
+    BUILDSET_DIR,
     BUILDSET_OUT,
     RESET_SHA,
     BUILD_FROM,
@@ -76,6 +77,7 @@ const option::Descriptor usage[] =
   {INSTALL_DIR,   0, "i", "install-dir",      Arg::requiresArg,             "  --install-dir, -i   \tInstall dir, defaults to build dir. This is the directory\v"
                                                                             "     that will be used as prefix for projects."},
   {BUILDSET,      0, "f", "buildset",         Arg::requiresExistingFile,    "  --buildset -f  \tFile used as input for projects"},
+  {BUILDSET_DIR,  0, "d", "buildset-dir",     Arg::requiresExistingDir,     "  --buildset-dir -d\tDir used to create build shell configuration"},
   {BUILDSET_OUT,  0, "o", "buildset-out",     Arg::requiresNonExistingFile, "  --buildset-out -o  \tFile used for creating buildset file"},
   {RESET_SHA,     0, "" , "reset-sha",        option::Arg::None,            "  --reset-sha \tIn pull mode reset to sha"},
   {BUILD_FROM,    0, "" , "from",             Arg::requiresArg,             "  --from \tDoesn't perform the build steps for projectes before the mentioned project"},
@@ -184,6 +186,9 @@ int main(int argc, char **argv)
                 break;
             case BUILDSET:
                 configuration.setBuildsetFile(opt.arg);
+                break;
+            case BUILDSET_DIR:
+                configuration.setBuildsetDir(opt.arg);
                 break;
             case BUILDSET_OUT:
                 configuration.setBuildsetOutFile(opt.arg);

@@ -27,13 +27,21 @@
 #include "json_tree.h"
 #include "build_environment.h"
 
-BuildsetTreeBuilder::BuildsetTreeBuilder(const BuildEnvironment &buildEnv, const std::string &file)
+BuildsetTreeBuilder::BuildsetTreeBuilder(const BuildEnvironment &buildEnv, const std::string &file, bool print, bool allowMissingVariables)
     : treeBuilder(file,
         std::bind(&BuildsetTreeBuilder::filterTokens, this, std::placeholders::_1))
     , m_build_environment(buildEnv)
     , m_transformer_state(m_build_environment)
+    , m_print(print)
+    , m_allow_missing_variables(allowMissingVariables)
     , m_error(!treeBuilder.load())
 {
+    if (!m_allow_missing_variables && !m_missing_variables.empty()) {
+        if (m_print) {
+            fprintf(stderr, "Build set mode: %s does not allow to proceed with undefined variablees\n\n", buildEnv.configuration().modeString().c_str());
+        }
+        m_error = true;
+    }
 }
 
 bool BuildsetTreeBuilder::error() const
@@ -46,9 +54,24 @@ const std::set<std::string> &BuildsetTreeBuilder::required_variables() const
     return m_required_variables;
 }
 
-const std::list<std::string> &BuildsetTreeBuilder::missingVariables() const
+bool BuildsetTreeBuilder::has_missing_variables() const
 {
-    return m_missing_variables;
+    return !m_missing_variables.empty();
+}
+
+void BuildsetTreeBuilder::printMissingVariablesMessage()
+{
+    if (m_print && m_missing_variables.size()) {
+        fprintf(stderr, "Buildset is missing variables:\n");
+        for (auto it = m_missing_variables.begin(); it != m_missing_variables.end(); ++it) {
+            fprintf(stderr, "\t - %s\n", it->c_str());
+        }
+        fprintf(stderr, "\nPlease use bss to select a build shell,\n");
+        fprintf(stderr, "and then use bs_variable to add variables to your buildset environment:\n");
+        fprintf(stderr, "\t bs_variable \"some_variable\" \"some_value\"\n");
+        fprintf(stderr, "or if you need to limit scope of the variable\n");
+        fprintf(stderr, "\t bs_variable \"some_project\" \"some_variable\" \"some_value\"\n\n");
+    }
 }
 
 void BuildsetTreeBuilder::filterTokens(JT::Token *next_token)
@@ -70,4 +93,5 @@ void BuildsetTreeBuilder::filterTokens(JT::Token *next_token)
         }
 
     }
+    printMissingVariablesMessage();
 }

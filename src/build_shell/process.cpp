@@ -89,7 +89,8 @@ bool Process::run(JT::ObjectNode **returnedObjectNode)
 
     LogFileResetter resetter(*this);
     if (m_log_file < 0) {
-        std::string log_file_str = m_configuration.scriptExecutionLogPath() +  "/" + m_project_name + "_" + m_phase + ".log";
+        Configuration::ensurePath(m_configuration.scriptExecutionLogDir());
+        std::string log_file_str = m_configuration.scriptExecutionLogDir() +  "/" + m_project_name + "_" + m_phase + ".log";
         setLogFile(log_file_str, false);
         resetter.resetLog = true;
     }

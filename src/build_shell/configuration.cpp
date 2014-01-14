@@ -34,7 +34,8 @@
 #include <dirent.h>
 #include <assert.h>
 
-#include <sstream>
+#include <fstream>
+#include <fstream>
 
 static bool DEBUG_FIND_SCRIPT = getenv("BUILD_SHELL_DEBUG_FIND_SCRIPT") != 0;
 
@@ -147,6 +148,16 @@ void Configuration::setBuildsetFile(const char *buildset_file)
 const std::string &Configuration::buildsetFile() const
 {
     return m_buildset_file;
+}
+
+void Configuration::setBuildsetDir(const char *buildset_dir)
+{
+    m_buildset_dir = buildset_dir;
+}
+
+const std::string &Configuration::buildsetDir() const
+{
+    return m_buildset_dir;
 }
 
 void Configuration::setBuildsetOutFile(const char *buildset_out_file)
@@ -315,6 +326,17 @@ void Configuration::validate()
             m_buildset_file = buildset_realpath;
         }
     }
+
+    if (!m_buildset_dir.empty()) {
+        std::string new_buildset_dir;
+        if (!Configuration::getAbsPath(m_buildset_dir, false, new_buildset_dir)) {
+            fprintf(stderr, "Failed to set buildset dir to %s. Is it a valid directory?\n",
+                    m_buildset_dir.c_str());
+            return;
+        }
+        m_buildset_dir = std::move(new_buildset_dir);
+    }
+
     if (m_mode != Generate && !m_buildset_file.size()) {
         fprintf(stderr, "All modes except for create expects a buildset file\n");
         return;
@@ -369,6 +391,13 @@ void Configuration::validate()
         m_install_dir = m_build_dir;
     }
 
+    initializeScriptSearchPaths();
+
+    m_build_shell_meta_dir = m_build_dir + "/build_shell";
+    m_script_log_path = m_build_shell_meta_dir + "/logs";
+    m_build_shell_set_env_file = m_build_shell_meta_dir + "/set_build_env.sh";
+    m_build_shell_unset_env_file = m_build_shell_meta_dir + "/unset_build_env.sh";
+
     m_sane = true;
 }
 
@@ -379,39 +408,32 @@ bool Configuration::sane() const
 
 const std::list<std::string> &Configuration::scriptSearchPaths() const
 {
-    if (!m_script_search_paths.size()) {
-        Configuration *self = const_cast<Configuration *>(this);
-        self->initializeScriptSearchPaths();
-    }
     return m_script_search_paths;
 }
 
-
-
-const std::string &Configuration::buildShellConfigPath() const
+const std::string &Configuration::buildShellConfigDir() const
 {
     return m_build_shell_config_path;
 }
 
-const std::string &Configuration::buildSetConfigPath() const
+const std::string &Configuration::scriptExecutionLogDir() const
 {
-    if (m_build_dir.size() && !m_buildset_config_path.size()) {
-        std::string config_path = m_build_dir + "/" + "build_shell";
-        Configuration *self = const_cast<Configuration *>(this);
-        Configuration::getAbsPath(config_path, true, self->m_buildset_config_path);
-    }
-
-    return m_buildset_config_path;
+    return m_script_log_path;
 }
 
-const std::string &Configuration::scriptExecutionLogPath() const
+const std::string &Configuration::buildShellMetaDir() const
 {
-    if (m_build_dir.size() && !m_script_log_path.size()) {
-        std::string log_path = m_build_dir + "/" + "build_shell/logs";
-        Configuration *self = const_cast<Configuration *>(this);
-        Configuration::getAbsPath(log_path, true, self->m_script_log_path);
-    }
-    return m_script_log_path;
+    return m_build_shell_meta_dir;
+}
+
+const std::string &Configuration::buildShellSetEnvFile() const
+{
+    return m_build_shell_set_env_file;
+}
+
+const std::string &Configuration::buildShellUnsetEnvFile() const
+{
+    return m_build_shell_unset_env_file;
 }
 
 int Configuration::createTempFile(const std::string &project, std::string &tmp_file) const
@@ -440,7 +462,7 @@ std::vector<std::string> Configuration::findScript(const std::string &primary, c
             continue;
         for (auto it = searchPath.begin(); it != searchPath.end(); ++it) {
             std::string full_script_path = *it;
-            if (!full_script_path.back() != '/')
+            if (full_script_path.back() != '/')
                 full_script_path.append("/");
             full_script_path.append(script);
             if (DEBUG_FIND_SCRIPT)
@@ -576,6 +598,43 @@ bool Configuration::getAbsPath(const std::string &path, bool create, std::string
     return true;
 }
 
+bool Configuration::ensurePath(const std::string &path)
+{
+    if (!path.size()) {
+        return true;
+    }
+
+    ResetPath resetPath;
+    (void) resetPath;
+
+    std::list<std::string>dirs;
+
+    size_t first_slash;
+    size_t current_pos = 0;
+
+    if (path[0] == '/') {
+        if (chdir("/")) {
+            fprintf(stderr, "change dir into root %s\n", strerror(errno));
+            return false;
+        }
+    }
+    while ((first_slash = path.find('/', current_pos)) != std::string::npos) {
+        if (first_slash > current_pos) {
+            std::string dir = path.substr(current_pos, first_slash - current_pos);
+            if (!change_to_dir(dir,true))
+                return false;
+        }
+        current_pos = first_slash + 1;
+    }
+    if (current_pos < path.size() -1) {
+        std::string dir = path.substr(current_pos, first_slash - current_pos);
+        if (dir.size() && !change_to_dir(dir,true))
+            return false;
+    }
+
+    return true;
+}
+
 bool Configuration::removeRecursive(const std::string &path)
 {
     DIR *d = opendir(path.c_str());
@@ -616,6 +675,69 @@ bool Configuration::removeRecursive(const std::string &path)
         success = rmdir(path.c_str()) == 0;
         if (!success)
             fprintf(stderr, "rmdir failed on: %s %s\n", path.c_str(), strerror(errno));
+    }
+
+    return success;
+}
+
+bool Configuration::isRealDir(const std::string &path)
+{
+    struct stat path_stat;
+    return !lstat(path.c_str(), &path_stat)
+            && !S_ISLNK(path_stat.st_mode)
+            && S_ISDIR(path_stat.st_mode);
+}
+
+bool Configuration::isDir(const std::string &path)
+{
+    struct stat path_stat;
+    return !lstat(path.c_str(), &path_stat)
+            && S_ISDIR(path_stat.st_mode);
+}
+
+bool Configuration::copyContentOfFolder(const std::string &source_path, const std::string &destination_path)
+{
+    std::string real_src_path;
+    if (!getAbsPath(source_path, false, real_src_path)) {
+        fprintf(stderr, "Configuration::copyContentOfFolder Failed to get srouce path %s\n", source_path.c_str());
+        return false;
+    }
+
+    std::string real_dest_path;
+    if (!getAbsPath(destination_path, true, real_dest_path)) {
+        fprintf(stderr, "Configuration::copyContentOfFolder Failed to get destination path %s\n", destination_path.c_str());
+        return false;
+    }
+
+    if (!isRealDir(real_dest_path)) {
+        fprintf(stderr, "Configuration::copyContentOfFolder Failed to get destination folder %s\n", real_dest_path.c_str());
+        return false;
+    }
+
+    DIR *d = opendir(real_src_path.c_str());
+    bool success = true;
+
+    if (d) {
+        struct dirent *p;
+
+        while(success && (p=readdir(d))) {
+            /* Skip the names "." and ".." as we don't want to recurse on them. */
+            if (!strcmp(p->d_name, ".") || !strcmp(p->d_name, ".."))
+            {
+                continue;
+            }
+
+            std::string child_file = real_src_path + "/" + p->d_name;
+            if (isRealDir(child_file)) {
+                success = copyContentOfFolder(child_file, real_dest_path + "/" + p->d_name);
+            } else {
+                std::ifstream src(child_file, std::ios::binary);
+                std::string dest_child_file = real_dest_path + "/" + p->d_name;
+                std::ofstream dest(dest_child_file, std::ios::binary | std::ios::trunc);
+                dest << src.rdbuf();
+            }
+        }
+        closedir(d);
     }
 
     return success;

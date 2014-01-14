@@ -129,7 +129,8 @@ bool GenerateAction::execute()
     if (m_error)
         return false;
 
-    std::string log_file = m_configuration.scriptExecutionLogPath() + "/buildset_creation.log";
+    Configuration::ensurePath(m_configuration.scriptExecutionLogDir());
+    std::string log_file = m_configuration.scriptExecutionLogDir() + "/buildset_creation.log";
     LogFileHandler log_file_handler(log_file);
 
     DIR *source_dir = opendir(m_configuration.srcDir().c_str());

@@ -51,6 +51,21 @@ option::ArgStatus Arg::requiresExistingFile(const option::Option &option, bool m
     struct stat stat_buf;
     stat(option.arg, &stat_buf);
 
+    if (S_ISDIR(stat_buf.st_mode)) {
+        return option::ARG_OK;
+    }
+
+    if (msg)
+        printError("Option '", option, "' requires a existing directory\n");
+
+    return option::ARG_ILLEGAL;
+}
+
+option::ArgStatus Arg::requiresExistingDir(const option::Option &option, bool msg)
+{
+    struct stat stat_buf;
+    stat(option.arg, &stat_buf);
+
     if (S_ISREG(stat_buf.st_mode)) {
         return option::ARG_OK;
     }

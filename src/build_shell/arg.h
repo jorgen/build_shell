@@ -32,6 +32,7 @@ public:
     static option::ArgStatus requiresArg(const option::Option &option, bool msg);
     static option::ArgStatus requiresExistingFile(const option::Option &option, bool msg);
     static option::ArgStatus requiresNonExistingFile(const option::Option &option, bool msg);
+    static option::ArgStatus requiresExistingDir(const option::Option &option, bool msg);
     static option::ArgStatus unknown(const option::Option &option, bool msg);
 };
 

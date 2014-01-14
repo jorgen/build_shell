@@ -34,8 +34,10 @@
 
 AvailableBuilds::AvailableBuilds(const Configuration &configuration)
     : m_configuration(configuration)
-    , m_available_builds_file(m_configuration.buildShellConfigPath() + "/available_builds.json")
+    , m_available_builds_file(m_configuration.buildShellConfigDir() + "/available_builds.json")
 {
+    Configuration::ensurePath(m_configuration.buildShellConfigDir());
+
     if (access(m_available_builds_file.c_str(), F_OK)) {
         JT::ObjectNode *root = new JT::ObjectNode();
         flushTreeToFile(root);

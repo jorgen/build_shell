@@ -268,3 +268,8 @@ JT::ObjectNode *BuildEnvironment::copyEnvironmentTree() const
 {
     return m_environment_node->copy();
 }
+
+const Configuration &BuildEnvironment::configuration() const
+{
+    return m_configuration;
+}

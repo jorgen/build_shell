@@ -34,7 +34,7 @@ PrintEnvironmentAction::PrintEnvironmentAction(const Configuration &configuratio
 bool PrintEnvironmentAction::execute()
 {
     BuildEnvironment build_environment(m_configuration);
-    BuildsetTreeBuilder buildset_tree_builder(build_environment, m_configuration.buildsetFile());
+    BuildsetTreeBuilder buildset_tree_builder(build_environment, m_configuration.buildsetFile(),false, true);
     if (buildset_tree_builder.error()) {
         fprintf(stderr, "Failed to parse buildset file %s\n", m_configuration.buildsetFile().c_str());
         return false;

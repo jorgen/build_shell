@@ -33,19 +33,23 @@
 class BuildsetTreeBuilder
 {
 public:
-    BuildsetTreeBuilder(const BuildEnvironment &buildEnv, const std::string &file);
+    BuildsetTreeBuilder(const BuildEnvironment &buildEnv, const std::string &file, bool print, bool allowMissingVariables);
 
     bool error() const;
     TreeBuilder treeBuilder;
 
     const std::set<std::string> &required_variables() const;
-    const std::list<std::string> &missingVariables() const;
+    bool has_missing_variables() const;
+
+    void printMissingVariablesMessage();
 private:
     void filterTokens(JT::Token *next_token);
     std::set<std::string> m_required_variables;
     std::list<std::string> m_missing_variables;
     const BuildEnvironment &m_build_environment;
     TransformerState m_transformer_state;
+    bool m_print;
+    bool m_allow_missing_variables;
     bool m_error;
 };
 

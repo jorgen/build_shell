@@ -78,6 +78,9 @@ public:
     void setBuildsetFile(const char *buildset_file);
     const std::string &buildsetFile() const;
 
+    void setBuildsetDir(const char *buildset_dir);
+    const std::string &buildsetDir() const;;
+
     void setBuildsetOutFile(const char *buildset_out_file);
     const std::string &buildsetOutFile() const;
 
@@ -122,17 +125,25 @@ public:
     bool sane() const;
 
     const std::list<std::string> &scriptSearchPaths() const;
-
     std::vector<std::string> findScript(const std::string &script, const std::string &fallback) const;
-    const std::string &buildShellConfigPath() const;
-    const std::string &buildSetConfigPath() const;
-    const std::string &scriptExecutionLogPath() const;
+
+    const std::string &buildShellConfigDir() const;
+    const std::string &scriptExecutionLogDir() const;
+    const std::string &buildShellMetaDir() const;
+    const std::string &buildShellSetEnvFile() const;
+    const std::string &buildShellUnsetEnvFile() const;
 
     int createTempFile(const std::string &project, std::string &tmp_file_name) const;
     const std::string &tempFilePath() const;
 
+    static bool isRealDir(const std::string &path);
+    static bool isDir(const std::string &path);
+
     static bool getAbsPath(const std::string &path, bool create, std::string &abs_path);
+    static bool ensurePath(const std::string &path);
     static bool removeRecursive(const std::string &path);
+
+    static bool copyContentOfFolder(const std::string &source_path, const std::string &destination_path);
 
     static ScmType findScm(const std::string &path);
     static ScmType findScmForCurrentDirectory();
@@ -151,12 +162,16 @@ private:
     std::string m_build_dir;
     std::string m_install_dir;
     std::string m_buildset_file;
+    std::string m_buildset_dir;
     std::string m_buildset_out_file;
     std::string m_build_from_project;
     std::string m_build_shell_config_path;
     std::string m_buildset_config_path;
     std::string m_script_log_path;
     std::string m_tmp_file_path;
+    std::string m_build_shell_meta_dir;
+    std::string m_build_shell_set_env_file;
+    std::string m_build_shell_unset_env_file;
     bool m_reset_to_sha;
     bool m_clean_explicitly_set;
     bool m_clean;

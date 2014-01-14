@@ -63,6 +63,7 @@ public:
     static const std::list<Variable> findVariables(const char *str, const size_t size);
 
     JT::ObjectNode *copyEnvironmentTree() const;
+    const Configuration &configuration() const;
 private:
     const Configuration &m_configuration;
     const std::string m_environment_file;

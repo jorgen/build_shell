@@ -36,14 +36,24 @@
 #include <sys/dir.h>
 #include <fcntl.h>
 #include <time.h>
+#include <libgen.h>
 
 #include <memory>
 #include <algorithm>
 #include <string>
 
 BuildAction::BuildAction(const Configuration &configuration)
-    : CreateAction(configuration, false)
+    : Action(configuration)
+    , m_build_environment(configuration)
+    , m_buildset_tree_builder(m_build_environment, configuration.buildsetFile(), true, false)
 {
+    if (m_buildset_tree_builder.error()) {
+        m_error = true;
+        return;
+    }
+
+    m_buildset_tree = m_buildset_tree_builder.treeBuilder.rootNode();
+
     if (m_configuration.pullFirst()) {
         PullAction pull_action(configuration);
         if (pull_action.error()) {
@@ -186,7 +196,7 @@ bool BuildAction::execute()
         }
         {
             Process process(m_configuration);
-            process.setEnvironmentScript(m_set_build_env_file);
+            process.setEnvironmentScript(m_configuration.buildShellSetEnvFile());
             process.setPhase("post_build");
             process.setProjectName(project_name);
             process.setFallback(project_build_system);

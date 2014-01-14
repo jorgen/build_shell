@@ -26,7 +26,7 @@
 
 #include "json_tokenizer.h"
 
-class BuildAction : public CreateAction
+class BuildAction : public Action
 {
 public:
     BuildAction(const Configuration &configuration);
@@ -37,6 +37,10 @@ public:
 private:
     bool handlePrebuild();
     bool handleBuildForProject(const std::string &projectName, const std::string &buildSystem, JT::ObjectNode *projectNode);
+
+    BuildEnvironment m_build_environment;
+    BuildsetTreeBuilder m_buildset_tree_builder;
+    JT::ObjectNode *m_buildset_tree;
 };
 
 #endif
