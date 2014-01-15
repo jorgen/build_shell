@@ -24,7 +24,7 @@
 
 #include "available_builds.h"
 #include "tree_writer.h"
-#include "generate_action.h"
+#include "buildset_generator.h"
 
 #include <unistd.h>
 #include <errno.h>
@@ -58,31 +58,43 @@ CreateAction::CreateAction(const Configuration &configuration, bool allowMissing
         return;
     }
 
-    if (m_configuration.registerBuild()) {
-        AvailableBuilds available_builds(m_configuration);
-        available_builds.addAvailableBuild(m_configuration.buildDir(), m_configuration.buildShellSetEnvFile());
-    }
 }
 
 CreateAction::~CreateAction()
 {
-    if (m_error)
-        return;
-
-    EnvScriptBuilder env_script_builder(m_configuration, m_build_environment, m_buildset_tree.get());
-    env_script_builder.writeScripts(m_configuration.buildShellSetEnvFile(), m_configuration.buildShellUnsetEnvFile());
-
-    std::string current_buildset_name = m_configuration.buildDir() + "/build_shell/current_buildset";
-    GenerateAction generate(m_configuration, m_buildset_tree.get(), current_buildset_name);
-    bool success = generate.execute();
-    if (!success || generate.error()) {
-        fprintf(stderr, "Failed to write current buildset to file %s\n", current_buildset_name.c_str());
-        return;
-    }
 }
 
 bool CreateAction::execute()
 {
-    return !m_error;
+    if (m_error)
+        return false;
+
+    if (m_configuration.registerBuild()) {
+        AvailableBuilds available_builds(m_configuration);
+        available_builds.addAvailableBuild(m_configuration.buildDir(), m_configuration.buildShellSetEnvFile());
+    }
+
+    EnvScriptBuilder env_script_builder(m_configuration, m_build_environment, m_buildset_tree.get());
+    env_script_builder.writeScripts(m_configuration.buildShellSetEnvFile(), m_configuration.buildShellUnsetEnvFile());
+
+    {
+        BuildsetGenerator buildsetGenerator(m_configuration);
+        if(!buildsetGenerator.updateBuildsetNode(m_buildset_tree.get())) {
+            fprintf(stderr, "CreateAction: Failed to update buildset\n");
+            m_error = true;
+            return false;
+        }
+    }
+    {
+        TreeWriter treeWriter(m_configuration.currentBuildsetFile());
+        treeWriter.write(m_buildset_tree.get());
+        if (treeWriter.error()) {
+            fprintf(stderr, "CreateAction: Failed to write buildset\n");
+            m_error = true;
+            return false;
+        }
+    }
+
+    return true;
 }
 

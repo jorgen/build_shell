@@ -132,6 +132,7 @@ public:
     const std::string &buildShellMetaDir() const;
     const std::string &buildShellSetEnvFile() const;
     const std::string &buildShellUnsetEnvFile() const;
+    const std::string &currentBuildsetFile() const;
 
     int createTempFile(const std::string &project, std::string &tmp_file_name) const;
     const std::string &tempFilePath() const;
@@ -172,6 +173,7 @@ private:
     std::string m_build_shell_meta_dir;
     std::string m_build_shell_set_env_file;
     std::string m_build_shell_unset_env_file;
+    std::string m_current_buildset_file;
     bool m_reset_to_sha;
     bool m_clean_explicitly_set;
     bool m_clean;

@@ -21,6 +21,8 @@
 */
 #include "configuration.h"
 
+#include "reset_path.h"
+
 #include <limits.h>
 #include <stdlib.h>
 #include <string.h>
@@ -397,6 +399,7 @@ void Configuration::validate()
     m_script_log_path = m_build_shell_meta_dir + "/logs";
     m_build_shell_set_env_file = m_build_shell_meta_dir + "/set_build_env.sh";
     m_build_shell_unset_env_file = m_build_shell_meta_dir + "/unset_build_env.sh";
+    m_current_buildset_file = m_build_shell_meta_dir + "/current_buildset";
 
     m_sane = true;
 }
@@ -436,6 +439,10 @@ const std::string &Configuration::buildShellUnsetEnvFile() const
     return m_build_shell_unset_env_file;
 }
 
+const std::string &Configuration::currentBuildsetFile() const
+{
+    return m_current_buildset_file;
+}
 int Configuration::createTempFile(const std::string &project, std::string &tmp_file) const
 {
     std::string temp_file_prefix = tempFilePath() + "/build_shell_";
@@ -524,20 +531,6 @@ void Configuration::initializeScriptSearchPaths()
     m_script_search_paths.push_back(SCRIPTS_PATH);
 }
 
-class ResetPath
-{
-public:
-    ResetPath()
-    {
-        getcwd(initial_dir, sizeof initial_dir);
-    }
-
-    ~ResetPath()
-    {
-        chdir(initial_dir);
-    }
-    char initial_dir[PATH_MAX];
-};
 
 static bool change_to_dir(const std::string &dir, bool create)
 {

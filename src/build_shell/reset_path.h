@@ -19,28 +19,24 @@
  * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE
  * OF THIS SOFTWARE.
 */
-#ifndef GENERATE_ACTION_H
-#define GENERATE_ACTION_H
+#ifndef RESET_PATH
+#define RESET_PATH
 
-#include "action.h"
-#include "tree_builder.h"
-#include <memory>
-namespace JT {
-    class ObjectNode;
-}
+#include <unistd.h>
 
-class GenerateAction : public Action
+class ResetPath
 {
 public:
-    GenerateAction(const Configuration &configuration);
-    ~GenerateAction();
+    ResetPath()
+    {
+        getcwd(initial_dir, sizeof initial_dir);
+    }
 
-    bool execute() override;
-
-private:
-    bool handleCurrentSrcDir(int log_file);
-
-    void init(const std::string &outfile);
+    ~ResetPath()
+    {
+        chdir(initial_dir);
+    }
+    char initial_dir[4096];
 };
 
-#endif //GENERATE_ACTION_H
+#endif

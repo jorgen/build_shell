@@ -20,6 +20,7 @@
  * OF THIS SOFTWARE.
 */
 #include "generate_action.h"
+#include "buildset_generator.h"
 
 #include <sys/types.h>
 #include <sys/dir.h>
@@ -36,66 +37,14 @@
 #include "tree_writer.h"
 #include "process.h"
 
-GenerateAction::GenerateAction(const Configuration &configuration,
-                               const std::string &outfile)
+GenerateAction::GenerateAction(const Configuration &configuration)
     : Action(configuration)
-    , m_delete_out_tree(true)
 {
-    TreeBuilder tree_builder(configuration.buildsetFile());
-    tree_builder.load();
-    m_out_tree = tree_builder.takeRootNode();
-
-    if (!m_out_tree)
-        m_out_tree = new JT::ObjectNode();
-
-    init(outfile);
 }
 
-GenerateAction::GenerateAction(const Configuration &configuration,
-                               JT::ObjectNode *node,
-                               const std::string &outfile)
-    : Action(configuration)
-    , m_out_tree(node)
-    , m_delete_out_tree(false)
-{
-    init(outfile);
-}
-
-void GenerateAction::init(const std::string &outfile)
-{
-    const std::string *actual_outfile = &outfile;
-    if (!actual_outfile->size())
-        actual_outfile = &m_configuration.buildsetOutFile();
-
-    if (actual_outfile->size()) {
-        m_out_file_name = *actual_outfile;
-        m_out_file_desc_name = m_out_file_name + ".tmp";
-        mode_t create_mode = S_IROTH | S_IRGRP | S_IRUSR | S_IWUSR;
-        m_out_file = open(m_out_file_desc_name.c_str(), O_RDWR | O_CLOEXEC | O_CREAT | O_TRUNC, create_mode);
-        if (m_out_file < 0) {
-            fprintf(stderr, "Failed to open buildset Out File %s\n%s\n",
-                    m_out_file_name.c_str(), strerror(errno));
-            m_error = true;
-        }
-    } else {
-        m_out_file = STDOUT_FILENO;
-    }
-}
 
 GenerateAction::~GenerateAction()
 {
-    if (m_out_file_desc_name.size()) {
-        close(m_out_file);
-        if (!error()) {
-            if (rename(m_out_file_desc_name.c_str(), m_out_file_name.c_str())) {
-                fprintf(stderr, "Failed to rename generated buildset %s to %s : %s\n",
-                        m_out_file_desc_name.c_str(), m_out_file_name.c_str(),
-                        strerror(errno));
-            }
-        } //dont unlink as the failed generated file can be used for debugging
-    }
-    if (m_delete_out_tree)
-        delete m_out_tree;
 }
 
 class LogFileHandler
@@ -126,111 +75,56 @@ public:
 
 bool GenerateAction::execute()
 {
-    if (m_error)
-        return false;
+    TreeBuilder tree_builder(m_configuration.buildsetFile());
+    tree_builder.load();
 
-    Configuration::ensurePath(m_configuration.scriptExecutionLogDir());
-    std::string log_file = m_configuration.scriptExecutionLogDir() + "/buildset_creation.log";
-    LogFileHandler log_file_handler(log_file);
+    std::unique_ptr<JT::ObjectNode> out_tree(tree_builder.takeRootNode());
 
-    DIR *source_dir = opendir(m_configuration.srcDir().c_str());
-    if (!source_dir) {
-        fprintf(stderr, "Failed to open directory: %s\n%s\n",
-                m_configuration.srcDir().c_str(), strerror(errno));
-        return false;
-    }
-    char cwd[PATH_MAX];
-    getcwd(cwd, sizeof(cwd));
+    if (!out_tree)
+        out_tree.reset(new JT::ObjectNode());
 
-    if (chdir(m_configuration.srcDir().c_str()) != 0) {
-        fprintf(stderr, "Could not change dir: %s\n%s\n",
-                m_configuration.srcDir().c_str(),strerror(errno));
+    BuildsetGenerator generator(m_configuration);
+    if (!generator.updateBuildsetNode(out_tree.get())) {
+        fprintf(stderr, "Failed to update buildset node\n");
+        m_error = true;
         return false;
     }
 
-    while (struct dirent *ent = readdir(source_dir)) {
-        if (strncmp(".",ent->d_name, sizeof(".")) == 0 ||
-            strncmp("..", ent->d_name, sizeof("..")) == 0)
-            continue;
-        struct stat buf;
-        if (stat(ent->d_name, &buf) != 0) {
-            fprintf(stderr, "Something whent wrong when stating file %s: %s\n",
-                    ent->d_name, strerror(errno));
-            continue;
-        }
-        if (S_ISDIR(buf.st_mode)) {
-            if (chdir(ent->d_name)) {
-                fprintf(stderr, "Failed to change into directory %s\n%s\n", ent->d_name, strerror(errno));
-                return false;
-            }
-            if (!handleCurrentSrcDir(log_file_handler.log_file)) {
-                fprintf(stderr, "Failed to handle dir %s\n", ent->d_name);
-                closedir(source_dir);
-                return false;
-            }
-            chdir(m_configuration.srcDir().c_str());
+    std::string out_file_name;
+    std::string out_file_desc_name;
+    int out_file = STDOUT_FILENO;
+
+    if (m_configuration.buildsetOutFile().size()) {
+        out_file_name = m_configuration.buildsetOutFile();
+        out_file_desc_name = out_file_name + ".tmp";
+        mode_t create_mode = S_IROTH | S_IRGRP | S_IRUSR | S_IWUSR;
+        out_file = open(out_file_desc_name.c_str(), O_RDWR | O_CLOEXEC | O_CREAT | O_TRUNC, create_mode);
+        if (out_file < 0) {
+            fprintf(stderr, "Failed to open buildset Out File %s\n%s\n",
+                    out_file_name.c_str(), strerror(errno));
+            m_error = true;
+            return true;
         }
     }
-    closedir(source_dir);
 
-    //this should not fail ;)
-    chdir(cwd);
+    TreeWriter tree_writer(out_file);
+    tree_writer.write(out_tree.get());
+    if (tree_writer.error()) {
+        m_error = true;
+        return false;
+    }
 
-    TreeWriter tree_writer(m_out_file);
-    tree_writer.write(m_out_tree);
-    return !tree_writer.error();
+    if (out_file_desc_name.size()) {
+        close(out_file);
+        if (!error()) {
+            if (rename(out_file_desc_name.c_str(), out_file_name.c_str())) {
+                fprintf(stderr, "Failed to rename generated buildset %s to %s : %s\n",
+                        out_file_desc_name.c_str(), out_file_name.c_str(),
+                        strerror(errno));
+            }
+        } //dont unlink as the failed generated file can be used for debugging
+    }
+    return true;
 }
 
-
-bool GenerateAction::handleCurrentSrcDir(int log_file)
-{
-    char cwd[PATH_MAX];
-    getcwd(cwd, sizeof(cwd));
-    std::string base_name = basename(cwd);
-    std::string log = std::string() +
-        "***********************************************************\n"
-        "\tLog for " + cwd + "\n"
-        "***********************************************************\n"
-        "\n";
-    write(log_file, log.c_str(), log.size());
-
-    JT::ObjectNode *root_for_dir = m_out_tree->objectNodeAt(base_name);
-    if (!root_for_dir) {
-        root_for_dir = new JT::ObjectNode();
-    }
-
-    JT::ObjectNode *scm_node = root_for_dir->objectNodeAt("scm");
-    if (!scm_node) {
-        JT::Property prop(std::string("scm"));
-        root_for_dir->insertNode(prop, new JT::ObjectNode(), true);
-    }
-
-    std::string postfix;
-    Configuration::ScmType scm_type = Configuration::findScmForCurrentDirectory();
-    if (scm_type == Configuration::NotRecognizedScmType)
-        postfix = "regular_dir";
-    else
-        postfix = Configuration::ScmTypeStringMap[scm_type];
-
-    JT::ObjectNode *updated_node;
-    bool script_success;
-    {
-        Process process(m_configuration);
-        process.setPhase("generate");
-        process.setProjectName(base_name);
-        process.setFallback(postfix);
-        process.setLogFile(log_file, false);
-        process.setProjectNode(root_for_dir);
-        process.setPrint(true);
-        script_success = process.run(&updated_node);
-    }
-
-    if (!updated_node) {
-        updated_node = new JT::ObjectNode();
-    }
-
-    m_out_tree->insertNode(base_name, updated_node, true);
-
-    return script_success;
-}
 

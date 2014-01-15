@@ -19,28 +19,29 @@
  * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE
  * OF THIS SOFTWARE.
 */
-#ifndef GENERATE_ACTION_H
-#define GENERATE_ACTION_H
 
-#include "action.h"
-#include "tree_builder.h"
-#include <memory>
+#ifndef BUILDSET_GENERATOR_H
+#define BUILDSET_GENERATOR_H
+
+#include "configuration.h"
+
 namespace JT {
     class ObjectNode;
 }
 
-class GenerateAction : public Action
+class BuildsetGenerator
 {
 public:
-    GenerateAction(const Configuration &configuration);
-    ~GenerateAction();
+    BuildsetGenerator(const Configuration &configuration);
 
-    bool execute() override;
+    bool updateBuildsetNode(JT::ObjectNode *buildset);
+    JT::ObjectNode *createBuildsetNode();
 
 private:
-    bool handleCurrentSrcDir(int log_file);
+    bool updateBuildset(JT::ObjectNode *buildset);
+    bool handleCurrentSrcDir(JT::ObjectNode *buildset, int log_file);
 
-    void init(const std::string &outfile);
+    const Configuration &m_configuration;
 };
 
-#endif //GENERATE_ACTION_H
+#endif

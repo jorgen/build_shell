@@ -22,7 +22,7 @@
 #include "build_action.h"
 
 #include "tree_writer.h"
-#include "generate_action.h"
+#include "buildset_generator.h"
 #include "available_builds.h"
 #include "temp_file.h"
 #include "pull_action.h"
@@ -62,10 +62,6 @@ BuildAction::BuildAction(const Configuration &configuration)
         }
         m_error = !pull_action.execute();
     }
-
-    if (m_error)
-        return;
-
 }
 
 
@@ -74,10 +70,19 @@ BuildAction::~BuildAction()
     if (m_error)
         return;
 
+    TreeBuilder buildset_builder(m_configuration.currentBuildsetFile());
+    buildset_builder.load();
+    JT::ObjectNode *buildset =  buildset_builder.rootNode();
+
+    BuildsetGenerator buildset_generator(m_configuration);
+    if (!buildset_generator.updateBuildsetNode(buildset)) {
+        fprintf(stderr, "Failed to generate buildset node, updating current buildset failed\n");
+        return;
+    }
+
     std::string build_shell_build_sets_dir;
-    if (!Configuration::getAbsPath(m_configuration.buildDir() + "/build_shell/build_sets", true, build_shell_build_sets_dir)) {
+    if (!Configuration::getAbsPath(m_configuration.buildShellMetaDir() + "/build_sets", true, build_shell_build_sets_dir)) {
         fprintf(stderr, "Failed to get build_sets dir\n");
-        m_error = true;
         return;
     }
     time_t actual_time = time(0);
@@ -87,10 +92,21 @@ BuildAction::~BuildAction()
              1900 + local_tm->tm_year, local_tm->tm_mon+1, local_tm->tm_mday,
              local_tm->tm_hour, local_tm->tm_min, local_tm->tm_sec);
     std::string stored_buildset = build_shell_build_sets_dir + "/" + dateInFormat.c_str() + std::string(".buildset");
-    GenerateAction generate_action(m_configuration, stored_buildset);
-    m_error = !generate_action.execute();
-    if (m_error)
-        fprintf(stderr, "Failed to print buildset snapshot %s\n", stored_buildset.c_str());
+
+    {
+        TreeWriter writer(stored_buildset);
+        writer.write(buildset);
+        if (writer.error()) {
+            fprintf(stderr, "Failed to write date stamped buildset\n");
+        }
+    }
+    {
+        TreeWriter writer(m_configuration.currentBuildsetFile());
+        writer.write(buildset);
+        if (writer.error()) {
+            fprintf(stderr, "Failed to update current buildset\n");
+        }
+    }
 }
 
 class ArgumentsCleanup
