@@ -37,6 +37,8 @@ public:
 
     bool execute();
 protected:
+    void copyFolders();
+
     BuildEnvironment m_build_environment;
     std::unique_ptr<JT::ObjectNode> m_buildset_tree;
 };

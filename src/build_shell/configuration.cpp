@@ -35,6 +35,8 @@
 #include <libgen.h>
 #include <dirent.h>
 #include <assert.h>
+#include <fcntl.h>
+
 
 #include <fstream>
 #include <fstream>
@@ -337,6 +339,13 @@ void Configuration::validate()
             return;
         }
         m_buildset_dir = std::move(new_buildset_dir);
+    }
+
+    if (m_buildset_file.empty() && m_buildset_dir.size()) {
+        std::string buildset_file = m_buildset_dir + "/buildset";
+        if (access(buildset_file.c_str(), F_OK) == 0) {
+            m_buildset_file = buildset_file;
+        }
     }
 
     if (m_mode != Generate && !m_buildset_file.size()) {
@@ -688,6 +697,22 @@ bool Configuration::isDir(const std::string &path)
             && S_ISDIR(path_stat.st_mode);
 }
 
+static void copy_file(const std::string &source, const std::string &target)
+{
+    {
+        std::ifstream src(source, std::ios::binary);
+        std::ofstream dest(target, std::ios::binary | std::ios::trunc);
+        dest << src.rdbuf();
+    }
+    struct stat source_stat;
+    lstat(source.c_str(), &source_stat);
+
+    int target_fs = open(target.c_str(), O_CLOEXEC);
+    if (!target_fs)
+        return;
+    fchmod(target_fs, source_stat.st_mode);
+
+}
 bool Configuration::copyContentOfFolder(const std::string &source_path, const std::string &destination_path)
 {
     std::string real_src_path;
@@ -721,13 +746,11 @@ bool Configuration::copyContentOfFolder(const std::string &source_path, const st
             }
 
             std::string child_file = real_src_path + "/" + p->d_name;
-            if (isRealDir(child_file)) {
+            if (isDir(child_file)) {
                 success = copyContentOfFolder(child_file, real_dest_path + "/" + p->d_name);
             } else {
-                std::ifstream src(child_file, std::ios::binary);
                 std::string dest_child_file = real_dest_path + "/" + p->d_name;
-                std::ofstream dest(dest_child_file, std::ios::binary | std::ios::trunc);
-                dest << src.rdbuf();
+                copy_file(child_file, dest_child_file);
             }
         }
         closedir(d);

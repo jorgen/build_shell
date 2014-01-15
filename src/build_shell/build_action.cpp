@@ -177,10 +177,15 @@ bool BuildAction::execute()
             continue;
 
         const std::string project_name = it->first.string();
+        bool skip_project = project_node->booleanAt("default_skip") && m_configuration.buildFromProject() != project_name;
+        if (skip_project)
+            continue;
+
         const std::string &project_build_path = project_node->stringAt("arguments.build_path");
         const std::string &project_build_system = project_node->stringAt("arguments.build_system");
 
-        const std::string &move_to_dir = project_build_path.size() ? project_build_path : m_configuration.buildDir();
+        const std::string &move_to_dir = project_build_path.empty() ? m_configuration.buildDir() : project_build_path;
+
         if (chdir(move_to_dir.c_str())) {
             fprintf(stderr, "Failed to move into directory %s to build\n", project_build_path.c_str());
             m_error = true;
@@ -201,6 +206,10 @@ bool BuildAction::execute()
             continue;
 
         const std::string project_name = it->first.string();
+        bool skip_project = project_node->booleanAt("default_skip") && m_configuration.buildFromProject() != project_name;
+        if (skip_project)
+            continue;
+
         const std::string &project_build_path = project_node->stringAt("arguments.build_path");
         const std::string &project_build_system = project_node->stringAt("arguments.build_system");
 
@@ -240,6 +249,11 @@ bool BuildAction::handlePrebuild()
             continue;
 
         const std::string project_name = it->first.string();
+
+        bool skip_project = project_node->booleanAt("default_skip") && m_configuration.buildFromProject() != project_name;
+        if (skip_project)
+            continue;
+
         const std::string phase("pre_build");
         if (chdir(m_configuration.buildDir().c_str())) {
             fprintf(stderr, "Could not move into build dir:%s\n%s\n",
@@ -248,8 +262,14 @@ bool BuildAction::handlePrebuild()
             return false;
         }
 
-        std::string project_build_path = m_configuration.buildDir() + "/" + project_name;
         std::string project_src_path = m_configuration.srcDir() + "/" + project_name;
+        std::string project_build_path;
+        bool dont_shadow = project_node->booleanAt("no_shadow");
+        if (dont_shadow) {
+            project_build_path = project_src_path;
+        } else {
+            project_build_path = m_configuration.buildDir() + "/" + project_name;
+        }
 
         if (access(project_src_path.c_str(), X_OK|R_OK) && project_node->objectNodeAt("scm")) {
             fprintf(stderr, "Problem accessing source path: %s for project %s. Running pull action\n",

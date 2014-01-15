@@ -74,9 +74,6 @@ bool CreateAction::execute()
         available_builds.addAvailableBuild(m_configuration.buildDir(), m_configuration.buildShellSetEnvFile());
     }
 
-    EnvScriptBuilder env_script_builder(m_configuration, m_build_environment, m_buildset_tree.get());
-    env_script_builder.writeScripts(m_configuration.buildShellSetEnvFile(), m_configuration.buildShellUnsetEnvFile());
-
     {
         BuildsetGenerator buildsetGenerator(m_configuration);
         if(!buildsetGenerator.updateBuildsetNode(m_buildset_tree.get())) {
@@ -95,6 +92,25 @@ bool CreateAction::execute()
         }
     }
 
+    EnvScriptBuilder env_script_builder(m_configuration, m_build_environment, m_buildset_tree.get());
+    env_script_builder.writeScripts(m_configuration.buildShellSetEnvFile(), m_configuration.buildShellUnsetEnvFile());
+
+    copyFolders();
+
     return true;
 }
 
+void CreateAction::copyFolders()
+{
+    if (m_configuration.buildsetDir().empty())
+        return;
+    if (!Configuration::copyContentOfFolder(m_configuration.buildsetDir(), m_configuration.buildShellMetaDir())) {
+        fprintf(stderr, "Failed to copy Buildset Directory: %s\n into the created build shell environment: %s\n", m_configuration.buildsetDir().c_str(), m_configuration.buildShellMetaDir().c_str());
+        return;
+    }
+    std::string buildsetdir_buildset_file = m_configuration.buildShellMetaDir() + "/buildset";
+    if (access(buildsetdir_buildset_file.c_str(), F_OK) == 0) {
+        unlink(buildsetdir_buildset_file.c_str());
+    }
+
+}
