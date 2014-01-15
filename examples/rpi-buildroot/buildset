@@ -1,0 +1,166 @@
+{
+    "buildroot" : {
+        "scm" : {
+            "type" : "git",
+            "url" : "git://git.buildroot.net/buildroot",
+            "branch" : "master",
+            "remote" : "origin",
+            "remote_branch" : "master",
+        },
+        "env" : {
+            "local" : {
+                "BR2_DEFCONFIG" : {
+                    "value" : "${build_path}/build_shell/files/buildroot_defconf"
+                }
+            },
+            "post" : {
+                "PATH" : "${project_src_path}/output/host/usr/bin"
+            }
+        },
+        "no_install" : true
+        "default_skip" : true
+        "no_shadow" : true
+    },
+    "wayland-host-tools" : {
+        "scm" : {
+            "type" : "git",
+            "url" : "git://anongit.freedesktop.org/wayland/wayland",
+            "branch" : "1.1",
+            "remote" : "origin",
+            "remote_branch" : "1.1",
+        },
+        "configure_args" : "--prefix=${install_path}/host_tools --disable-documentation",
+        "env" : {
+            "post" : {
+                "PATH" : "${install_path}/host_tools/bin"
+            }
+        }
+    },
+    "wayland" : {
+        "scm" : {
+            "type" : "git",
+            "url" : "git://anongit.freedesktop.org/wayland/wayland",
+            "branch" : "1.1",
+            "remote" : "origin",
+            "remote_branch" : "1.1",
+        },
+        "env" : {
+            "pre" : {
+                "PATH" : "/home/jlind/dev/buildroot/output/host/usr/bin"
+            },
+            "local" : {
+                "CC" : {
+                    "value" : "arm-linux-gcc",
+                    "overwrite" : true
+                },
+                "CXX" : {
+                    "value" : "arm-linux-g++",
+                    "overwrite" : true
+                }
+            },
+            "post" : {
+                "ACLOCAL" : {
+                    "value" : "aclocal -I ${install_path}/share/aclocal",
+                    "overwrite" : true
+                },
+                "PKG_CONFIG_PATH" : {
+                    "value" : "${install_path}/lib/pkgconfig",
+                    "overwrite" : true
+                },
+                "BS_VIM_SEARCH_PATH" : {
+                    "value" : "${project_src_path}/src/**",
+                    "seperator" : ","
+                }
+            }
+        },
+        "configure_args" : "--disable-documentation --disable-scanner --with-sysroot=/home/jlind/dev/buildroot/output/staging --host=armv6-linux"
+    },
+    "macros" : {
+        "scm" : {
+            "type" : "git",
+            "url" : "git://anongit.freedesktop.org/xorg/util/macros",
+            "branch" : "master",
+            "remote" : "origin",
+            "remote_branch" : "master",
+            "current_head" : "72b211419977a211c871232d66e1a668e3cf702f",
+            "common_ancestor" : "72b211419977a211c871232d66e1a668e3cf702f"
+        }
+    },
+    "libxkbcommon" : {
+        "scm" : {
+            "type" : "git",
+            "url" : "git://github.com/xkbcommon/libxkbcommon",
+            "branch" : "master",
+            "remote" : "origin",
+            "remote_branch" : "master",
+            "current_head" : "917c751523598e82002d69e241763b02dac3cf04",
+            "common_ancestor" : "917c751523598e82002d69e241763b02dac3cf04"
+        },
+        "env" : {
+            "local" : {
+                "CC" : {
+                    "value" : "arm-linux-gcc",
+                    "overwrite" : true
+                },
+                "CXX" : {
+                    "value" : "arm-linux-g++",
+                    "overwrite" : true
+                }
+            }
+        },
+        "configure_args" : "--with-xkb-config-root=/usr/share/X11/xkb --with-sysroot=/home/jlind/dev/buildroot/output/staging --host=armv6-linux"
+    },
+    "qtbase" : {
+        "scm" : {
+            "type" : "git",
+            "url" : "ssh://codereview.qt-project.org:29418/qt/qtbase.git",
+            "branch" : "stable",
+            "remote" : "origin",
+            "remote_branch" : "stable",
+        },
+        "configure_args" : "-debug
+            -opengl es2
+            -opensource
+            -nomake tests
+            -prefix ${install_path}
+            -hostprefix ${install_path}/host_tools
+            -platform linux-g++
+            -xplatform linux-arm-g++
+            -force-pkg-config",
+        "env" : {
+            "post" : {
+                "BS_VIM_SEARCH_PATH" : {
+                    "value" : "${project_src_path}/src/**",
+                    "seperator" : ","
+                }
+            }
+        }
+    },
+    "qtdeclarative" : {
+        "scm" : {
+            "type" : "git",
+            "url" : "ssh://codereview.qt-project.org:29418/qt/qtdeclarative.git",
+            "branch" : "stable",
+            "remote" : "origin",
+            "remote_branch" : "stable",
+        }
+    },
+    "qtwayland" : {
+        "scm" : {
+            "type" : "git",
+            "url" : "ssh://codereview.qt-project.org:29418/qt/qtwayland.git",
+            "branch" : "stable",
+            "remote" : "origin",
+            "remote_branch" : "stable",
+        },
+        "configure_args" : "CONFIG+=wayland-compositor",
+        "env" : {
+            "post" : {
+                "BS_VIM_SEARCH_PATH" : {
+                    "value" : "${project_src_path}/src/**",
+                    "seperator" : ","
+                }
+            }
+        }
+    }
+}
