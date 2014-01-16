@@ -27,6 +27,7 @@
 #include "temp_file.h"
 #include "pull_action.h"
 #include "process.h"
+#include "reset_path.h"
 
 #include <unistd.h>
 #include <sys/stat.h>
@@ -41,6 +42,27 @@
 #include <memory>
 #include <algorithm>
 #include <string>
+
+class ProcessBuilder
+{
+public:
+    ProcessBuilder(const Configuration &configuration)
+        : configuration(configuration)
+    { }
+    const Configuration &configuration;
+    std::string env_script;
+    std::string project_name;
+    std::string fallback;
+
+    Process build() const
+    {
+        Process process(configuration);
+        process.setEnvironmentScript(env_script);
+        process.setProjectName(project_name);
+        process.setFallback(fallback);
+        return process;
+    }
+};
 
 BuildAction::BuildAction(const Configuration &configuration)
     : Action(configuration)
@@ -167,9 +189,6 @@ bool BuildAction::execute()
 
     ArgumentsCleanup argCleanup(m_buildset_tree);
 
-    if (!handlePrebuild())
-        return false;
-
     auto end_it = endIterator(m_buildset_tree);
     for (auto it = startIterator(m_buildset_tree); it != end_it; ++it) {
         JT::ObjectNode *project_node = it->second->asObjectNode();
@@ -181,10 +200,13 @@ bool BuildAction::execute()
         if (skip_project)
             continue;
 
+        if (!handlePrebuild(project_name, project_node))
+            return false;
+
         const std::string &project_build_path = project_node->stringAt("arguments.build_path");
         const std::string &project_build_system = project_node->stringAt("arguments.build_system");
 
-        const std::string &move_to_dir = project_build_path.empty() ? m_configuration.buildDir() : project_build_path;
+        const std::string &move_to_dir = project_build_path.size() ? project_build_path : m_configuration.buildDir();
 
         if (chdir(move_to_dir.c_str())) {
             fprintf(stderr, "Failed to move into directory %s to build\n", project_build_path.c_str());
@@ -195,25 +217,6 @@ bool BuildAction::execute()
             return false;
         }
 
-        if (m_configuration.onlyOne())
-            break;
-    }
-
-    end_it = endIterator(m_buildset_tree);
-    for (auto it = startIterator(m_buildset_tree); it != end_it; ++it) {
-        JT::ObjectNode *project_node = it->second->asObjectNode();
-        if (!project_node)
-            continue;
-
-        const std::string project_name = it->first.string();
-        bool skip_project = project_node->booleanAt("default_skip") && m_configuration.buildFromProject() != project_name;
-        if (skip_project)
-            continue;
-
-        const std::string &project_build_path = project_node->stringAt("arguments.build_path");
-        const std::string &project_build_system = project_node->stringAt("arguments.build_system");
-
-        const std::string &move_to_dir = project_build_path.size() ? project_build_path : m_configuration.buildDir();
         if (chdir(move_to_dir.c_str())) {
             fprintf(stderr, "Failed to move into directory %s to do post build scripts\n", project_build_path.c_str());
             m_error = true;
@@ -240,160 +243,175 @@ bool BuildAction::execute()
     return true;
 }
 
-bool BuildAction::handlePrebuild()
+bool BuildAction::handlePrebuild(const std::string &project_name, JT::ObjectNode *project_node)
 {
-    auto end_it = endIterator(m_buildset_tree);
-    for (auto it = startIterator(m_buildset_tree); it != end_it; ++it) {
-        JT::ObjectNode *project_node = it->second->asObjectNode();
-        if (!project_node)
-            continue;
+    const std::string phase("pre_build");
+    if (chdir(m_configuration.buildDir().c_str())) {
+        fprintf(stderr, "Could not move into build dir:%s\n%s\n",
+                m_configuration.buildDir().c_str(), strerror(errno));
+        m_error = true;
+        return false;
+    }
 
-        const std::string project_name = it->first.string();
+    std::string project_src_path = m_configuration.srcDir() + "/" + project_name;
+    std::string project_build_path;
+    bool dont_shadow = project_node->booleanAt("no_shadow");
+    if (dont_shadow) {
+        project_build_path = project_src_path;
+    } else {
+        project_build_path = m_configuration.buildDir() + "/" + project_name;
+    }
 
-        bool skip_project = project_node->booleanAt("default_skip") && m_configuration.buildFromProject() != project_name;
-        if (skip_project)
-            continue;
-
-        const std::string phase("pre_build");
-        if (chdir(m_configuration.buildDir().c_str())) {
-            fprintf(stderr, "Could not move into build dir:%s\n%s\n",
-                    m_configuration.buildDir().c_str(), strerror(errno));
-            m_error = true;
-            return false;
-        }
-
-        std::string project_src_path = m_configuration.srcDir() + "/" + project_name;
-        std::string project_build_path;
-        bool dont_shadow = project_node->booleanAt("no_shadow");
-        if (dont_shadow) {
-            project_build_path = project_src_path;
-        } else {
-            project_build_path = m_configuration.buildDir() + "/" + project_name;
-        }
-
-        if (access(project_src_path.c_str(), X_OK|R_OK) && project_node->objectNodeAt("scm")) {
-            fprintf(stderr, "Problem accessing source path: %s for project %s. Running pull action\n",
-                    project_src_path.c_str(), project_name.c_str());
-            {
-                Configuration clone_conf = m_configuration;
-                clone_conf.setBuildFromProject(project_name);
-                clone_conf.setOnlyOne(true);
-                PullAction pull_action(clone_conf);
-                if (pull_action.error()) {
-                    m_error = true;
-                    return false;
-                }
-                m_error = !pull_action.execute();
-                if (m_error)
-                    return false;
-            }
-            if (access(project_src_path.c_str(), X_OK|R_OK)) {
-                fprintf(stderr, "Problem accessing source path: %s for project %s. Can not complete build\n",
-                        project_src_path.c_str(), project_name.c_str());
+    if (access(project_src_path.c_str(), X_OK|R_OK) && project_node->objectNodeAt("scm")) {
+        fprintf(stderr, "Problem accessing source path: %s for project %s. Running pull action\n",
+                project_src_path.c_str(), project_name.c_str());
+        {
+            Configuration clone_conf = m_configuration;
+            clone_conf.setBuildFromProject(project_name);
+            clone_conf.setOnlyOne(true);
+            PullAction pull_action(clone_conf);
+            if (pull_action.error()) {
                 m_error = true;
                 return false;
             }
+            m_error = !pull_action.execute();
+            if (m_error)
+                return false;
         }
+        if (access(project_src_path.c_str(), X_OK|R_OK)) {
+            fprintf(stderr, "Problem accessing source path: %s for project %s. Can not complete build\n",
+                    project_src_path.c_str(), project_name.c_str());
+            m_error = true;
+            return false;
+        }
+    }
 
-        if (access(project_build_path.c_str(), X_OK|R_OK) && access(project_src_path.c_str(), X_OK|R_OK) == 0) {
-            bool failed_mkdir = true;
-            if (errno == ENOENT) {
-                if (!mkdir(project_build_path.c_str(),S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH)) {
-                    failed_mkdir = false;
-                }
+    if (access(project_build_path.c_str(), X_OK|R_OK) && access(project_src_path.c_str(), X_OK|R_OK) == 0) {
+        bool failed_mkdir = true;
+        if (errno == ENOENT) {
+            if (!mkdir(project_build_path.c_str(),S_IRWXU|S_IRGRP|S_IXGRP|S_IROTH|S_IXOTH)) {
+                failed_mkdir = false;
             }
-                if (failed_mkdir) {
-                    fprintf(stderr, "Failed to verify build path %s for project %s. Can not complete build\n",
-                            project_build_path.c_str(), project_name.c_str());
-                    m_error = true;
-                    return false;
-                }
         }
+        if (failed_mkdir) {
+            fprintf(stderr, "Failed to verify build path %s for project %s. Can not complete build\n",
+                    project_build_path.c_str(), project_name.c_str());
+            m_error = true;
+            return false;
+        }
+    }
 
-        JT::ObjectNode *arguments = new JT::ObjectNode();
-        arguments->addValueToObject("install_path", m_configuration.installDir(), JT::Token::String);
+    JT::ObjectNode *arguments = new JT::ObjectNode();
+    arguments->addValueToObject("install_path", m_configuration.installDir(), JT::Token::String);
 
-        if (project_node->objectNodeAt("scm")) {
-            Configuration::BuildSystem build_system = Configuration::findBuildSystem(project_src_path.c_str());
-            if (build_system == Configuration::MerSource) {
-                std::string tmp_src_path = project_src_path;
-                std::string base_name = basename(&tmp_src_path[0]);
-                std::string project_mer_src_path = project_src_path + "/" + base_name;
-                build_system = Configuration::findBuildSystem(project_mer_src_path);
-                if (build_system != Configuration::NotRecognizedBuildSystem) {
-                    std::string tmp_build_path;
-                    Configuration::getAbsPath(project_build_path + "/" + base_name, true, tmp_build_path);
-                    std::string tmp_src_path;
-                    Configuration::getAbsPath(project_mer_src_path, false, tmp_src_path);
-                    project_src_path = tmp_src_path;
-                    project_build_path = tmp_build_path;
-                }
+    if (project_node->objectNodeAt("scm")) {
+        Configuration::BuildSystem build_system = Configuration::findBuildSystem(project_src_path.c_str());
+        if (build_system == Configuration::MerSource) {
+            std::string tmp_src_path = project_src_path;
+            std::string base_name = basename(&tmp_src_path[0]);
+            std::string project_mer_src_path = project_src_path + "/" + base_name;
+            build_system = Configuration::findBuildSystem(project_mer_src_path);
+            if (build_system != Configuration::NotRecognizedBuildSystem) {
+                std::string tmp_build_path;
+                Configuration::getAbsPath(project_build_path + "/" + base_name, true, tmp_build_path);
+                std::string tmp_src_path;
+                Configuration::getAbsPath(project_mer_src_path, false, tmp_src_path);
+                project_src_path = tmp_src_path;
+                project_build_path = tmp_build_path;
             }
-            std::string build_system_string = Configuration::BuildSystemStringMap[build_system];
-            arguments->addValueToObject("build_system", build_system_string, JT::Token::String);
+        }
+        std::string build_system_string = Configuration::BuildSystemStringMap[build_system];
+        arguments->addValueToObject("build_system", build_system_string, JT::Token::String);
+    }
+
+    bool should_chdir_to_build = false;
+    if (access(project_src_path.c_str(), X_OK|R_OK) == 0) {
+        arguments->addValueToObject("src_path", project_src_path, JT::Token::String);
+        arguments->addValueToObject("build_path", project_build_path, JT::Token::String);
+        should_chdir_to_build = true;
+    }
+
+    project_node->insertNode(std::string("arguments"), arguments, true);
+
+    static const long num_cpu = sysconf( _SC_NPROCESSORS_ONLN );
+    char cpu_buf[4];
+    snprintf(cpu_buf, sizeof cpu_buf, "%ld", num_cpu);
+    arguments->addValueToObject("cpu_count", cpu_buf, JT::Token::Number);
+    JT::ObjectNode *env_variables = m_build_environment.copyEnvironmentTree();
+    arguments->insertNode(std::string("environment"), env_variables);
+
+    ProcessBuilder processBuilder(m_configuration);
+    processBuilder.project_name = project_name;
+    processBuilder.fallback = project_node->stringAt("arguments.build_system");
+
+    if (m_configuration.clean()) {
+        Process process = processBuilder.build();
+        process.setPhase("clean");
+        process.setProjectNode(project_node, &m_build_environment);
+        process.setPrint(false);
+        if (!process.run())
+            return false;
+    }
+
+    if (m_configuration.deepClean() && project_node->objectNodeAt("scm")) {
+        std::string scm_type = project_node->stringAt("scm.type");
+        if (scm_type.size() == 0) {
+            scm_type = "regular";
         }
 
-        bool should_chdir_to_build = false;
-        if (access(project_src_path.c_str(), X_OK|R_OK) == 0) {
-            arguments->addValueToObject("src_path", project_src_path, JT::Token::String);
-            arguments->addValueToObject("build_path", project_build_path, JT::Token::String);
-            should_chdir_to_build = true;
-        }
+        ResetPath resetPath;
+        (void) resetPath;
 
-        project_node->insertNode(std::string("arguments"), arguments, true);
-
-        static const long num_cpu = sysconf( _SC_NPROCESSORS_ONLN );
-        char cpu_buf[4];
-        snprintf(cpu_buf, sizeof cpu_buf, "%ld", num_cpu);
-        arguments->addValueToObject("cpu_count", cpu_buf, JT::Token::Number);
-        JT::ObjectNode *env_variables = m_build_environment.copyEnvironmentTree();
-        arguments->insertNode(std::string("environment"), env_variables);
-
-        if (should_chdir_to_build) {
-            chdir(project_build_path.c_str());
-        } else {
-            chdir(m_configuration.buildDir().c_str());
-        }
-
-        {
-            Process process(m_configuration);
-            process.setPhase(phase);
-            process.setProjectName(project_name);
-            process.setProjectNode(project_node, &m_build_environment);
-            process.setPrint(true);
-            process.setScriptHasToExist(false);
-            if (!process.run()) {
-                fprintf(stderr, "Failed to run process\n");
+        if (project_build_path.size() && project_build_path != project_src_path) {
+            if (!Configuration::removeRecursive(project_build_path.c_str())) {
+                fprintf(stderr, "Failed to remove build dir %s\n", project_build_path.c_str());
+                m_error = true;
                 return false;
             }
+            Configuration::ensurePath(project_build_path);
         }
 
-        if (m_configuration.onlyOne())
-            break;
+        if (project_src_path.size()) {
+            if (chdir(project_src_path.c_str())) {
+                fprintf(stderr, "Failed to change to source directory. Deep clean failed%s\n", strerror(errno));
+                m_error = true;
+                return false;
+            } else {
+                PhaseReporter reporter("deep-clean", project_name);
+                Process process = processBuilder.build();
+                process.setPhase("deep_clean");
+                process.setFallback(scm_type);
+                process.setProjectNode(project_node, &m_build_environment);
+                process.setPrint(true);
+                if (!process.run()) {
+                    return false;
+                }
+                reporter.markSuccess();
+            }
+        }
     }
+
+    if (should_chdir_to_build) {
+        chdir(project_build_path.c_str());
+    } else {
+        chdir(m_configuration.buildDir().c_str());
+    }
+
+    {
+        Process process(m_configuration);
+        process.setPhase(phase);
+        process.setProjectName(project_name);
+        process.setProjectNode(project_node, &m_build_environment);
+        process.setPrint(true);
+        process.setScriptHasToExist(false);
+        if (!process.run()) {
+            fprintf(stderr, "Failed to run process\n");
+            return false;
+        }
+    }
+
     return true;
 }
-
-class ProcessBuilder
-{
-public:
-    ProcessBuilder(const Configuration &configuration)
-        : configuration(configuration)
-    { }
-    const Configuration &configuration;
-    std::string env_script;
-    std::string project_name;
-    std::string fallback;
-
-    Process build() const
-    {
-        Process process(configuration);
-        process.setEnvironmentScript(env_script);
-        process.setProjectName(project_name);
-        process.setFallback(fallback);
-        return process;
-    }
-};
 
 bool BuildAction::handleBuildForProject(const std::string &projectName, const std::string &buildSystem, JT::ObjectNode *projectNode)
 {
@@ -410,58 +428,6 @@ bool BuildAction::handleBuildForProject(const std::string &projectName, const st
 
     std::unique_ptr<JT::ObjectNode> temp_pointer(nullptr);
     JT::ObjectNode *project_node = projectNode;
-
-    if (m_configuration.clean()) {
-        Process process = processBuilder.build();
-        process.setPhase("clean");
-        process.setProjectNode(project_node, &m_build_environment);
-        process.setPrint(false);
-        if (!process.run())
-            return false;
-    }
-
-    if (m_configuration.deepClean() && projectNode->objectNodeAt("scm")) {
-        std::string scm_type = projectNode->stringAt("scm.type");
-        if (scm_type.size() == 0) {
-            scm_type = "regular";
-        }
-        const std::string &build_path = projectNode->stringAt("arguments.build_path");
-        const std::string &src_path = projectNode->stringAt("arguments.src_path");
-        std::string cwd("\0");
-        cwd.reserve(PATH_MAX);
-        getcwd(&cwd[0], PATH_MAX);
-
-        if (build_path.size() && build_path != src_path) {
-            if (!Configuration::removeRecursive(build_path.c_str())) {
-                fprintf(stderr, "Failed to remove build dir %s\n", build_path.c_str());
-                m_error = true;
-                return false;
-            }
-            std::string actual_build_path;
-            Configuration::getAbsPath(build_path, true, actual_build_path);
-        }
-
-        if (src_path.size()) {
-            if (chdir(src_path.c_str())) {
-                fprintf(stderr, "Failed to change to source directory. Deep clean failed%s\n", strerror(errno));
-                m_error = true;
-                return false;
-            } else {
-                PhaseReporter reporter("deep-clean", projectName);
-                Process process = processBuilder.build();
-                process.setPhase("deep_clean");
-                process.setFallback(scm_type);
-                process.setProjectNode(project_node, &m_build_environment);
-                process.setPrint(true);
-                if (!process.run()) {
-                    return false;
-                }
-                reporter.markSuccess();
-            }
-        }
-
-        chdir(cwd.c_str());
-    }
 
     if (m_configuration.configure()) {
         PhaseReporter reporter("configure", projectName);

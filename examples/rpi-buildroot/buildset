@@ -10,15 +10,13 @@
         "env" : {
             "local" : {
                 "BR2_DEFCONFIG" : {
-                    "value" : "${build_path}/build_shell/files/buildroot_defconf"
+                    "value" : "${build_path}/build_shell/files/buildroot_defconfig",
+                    "overwrite" : true
                 }
-            },
-            "post" : {
-                "PATH" : "${project_src_path}/output/host/usr/bin"
             }
         },
-        "no_install" : true
-        "default_skip" : true
+        "no_install" : true,
+        "default_skip" : true,
         "no_shadow" : true
     },
     "wayland-host-tools" : {
@@ -32,7 +30,7 @@
         "configure_args" : "--prefix=${install_path}/host_tools --disable-documentation",
         "env" : {
             "post" : {
-                "PATH" : "${install_path}/host_tools/bin"
+                "PATH" : "${src_path}/buildroot/output/host/usr/bin:${install_path}/host_tools/bin"
             }
         }
     },
@@ -45,9 +43,6 @@
             "remote_branch" : "1.1",
         },
         "env" : {
-            "pre" : {
-                "PATH" : "/home/jlind/dev/buildroot/output/host/usr/bin"
-            },
             "local" : {
                 "CC" : {
                     "value" : "arm-linux-gcc",
@@ -82,8 +77,6 @@
             "branch" : "master",
             "remote" : "origin",
             "remote_branch" : "master",
-            "current_head" : "72b211419977a211c871232d66e1a668e3cf702f",
-            "common_ancestor" : "72b211419977a211c871232d66e1a668e3cf702f"
         }
     },
     "libxkbcommon" : {
@@ -93,8 +86,6 @@
             "branch" : "master",
             "remote" : "origin",
             "remote_branch" : "master",
-            "current_head" : "917c751523598e82002d69e241763b02dac3cf04",
-            "common_ancestor" : "917c751523598e82002d69e241763b02dac3cf04"
         },
         "env" : {
             "local" : {

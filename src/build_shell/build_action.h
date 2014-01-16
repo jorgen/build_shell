@@ -35,7 +35,7 @@ public:
     bool execute();
 
 private:
-    bool handlePrebuild();
+    bool handlePrebuild(const std::string &project_name, JT::ObjectNode *project_node);
     bool handleBuildForProject(const std::string &projectName, const std::string &buildSystem, JT::ObjectNode *projectNode);
 
     BuildEnvironment m_build_environment;

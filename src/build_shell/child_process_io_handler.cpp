@@ -28,6 +28,8 @@
 
 #include <vector>
 
+static bool ALLWAYS_PRINT = getenv("BUILD_SHELL_ALLWAYS_PRINT") != 0;
+
 ChildProcessIoHandler::ChildProcessIoHandler(const std::string &phase, const std::string &projectName, int out_file)
     : m_out_file(out_file)
     , m_stdout_pipe{-1,-1}
@@ -127,7 +129,7 @@ bool ChildProcessIoHandler::handle_events(const pollfd &poll_data, int out_file,
         } else {
             if (!flushToFile(out_file, in_buffer, r))
                 fprintf(stderr, "Failed to write to out_file %s\n", strerror(errno));
-            if (print || out_file < 0) {
+            if (ALLWAYS_PRINT || print || out_file < 0) {
                 if (!flushToFile(STDOUT_FILENO, in_buffer, r))
                     fprintf(stderr, "Failed to write to stderr %s\n", strerror(errno));
                 return_val = true;

@@ -1,0 +1,8 @@
+#!/bin/sh
+
+FILE=$2
+SRC_PATH=$(jsonmod -p arguments.src_path $FILE)
+BUILD_PATH=$(jsonmod -p arguments.build_path $FILE)
+if [ ! -d "$SRC_PATH/mkspecs/linux-arm-g++" ]; then
+    cp -r "$BUILD_PATH/../build_shell/files/mkspecs/linux-arm-g++" "$SRC_PATH/mkspecs/linux-arm-g++"
+fi

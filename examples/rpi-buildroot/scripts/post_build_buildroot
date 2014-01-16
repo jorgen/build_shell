@@ -1,0 +1,13 @@
+#!/bin/sh
+
+#We have to make a symlink to where our libraries will be installed
+#because the pkg-config from buildroot will allways prepend
+#the sysroot
+FILE=$2
+INSTALL_PATH=$(jsonmod -p arguments.install_path $FILE)
+echo THIS IS THE POST SCRIPT $INSTALL_PATH
+if [ ! -d output/staging$INSTALL_PATH ]; then
+    mkdir -p "output/staging$INSTALL_PATH"
+    ln -s $INSTALL_PATH/lib "output/staging$INSTALL_PATH/lib"
+    ln -s $INSTALL_PATH/include "output/staging$INSTALL_PATH/include"
+fi
