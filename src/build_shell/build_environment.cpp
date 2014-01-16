@@ -55,7 +55,7 @@ static const char *strfind(const char *data, const char *pattern, size_t datasiz
 
 BuildEnvironment::BuildEnvironment(const Configuration &configuration)
     : m_configuration(configuration)
-    , m_environment_file(configuration.buildDir() + "/build_shell/build_environment.json")
+    , m_environment_file(configuration.buildShellMetaDir() + "/build_environment.json")
     , m_error(false)
 {
     if (access(m_environment_file.c_str(), R_OK) == 0) {

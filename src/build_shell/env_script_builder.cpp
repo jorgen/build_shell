@@ -54,19 +54,25 @@ void EnvScriptBuilder::writeSetScript(TempFile &tempFile)
         fprintf(stderr, "Writing set script to closed temp file\n");
         return;
     }
-    auto variables = make_variable_map_up_until(m_to_project);
-    writeSetScript("", variables, tempFile.fileStream("w+"),false);
+    JT::ObjectNode *project_node = m_buildset_node->objectNodeAt(m_to_project);
+    bool clean_environment = project_node && project_node->booleanAt("clean_environment");
+    auto variables = make_variable_map_for(m_to_project, clean_environment);
+    writeSetScript("", variables, clean_environment, tempFile.fileStream("w+"),false);
 }
 
 void EnvScriptBuilder::writeSetScript(FILE *file)
 {
-    auto variables = make_variable_map_up_until(m_to_project);
-    writeSetScript("", variables, file, false);
+    JT::ObjectNode *project_node = m_buildset_node->objectNodeAt(m_to_project);
+    bool clean_environment = project_node && project_node->booleanAt("clean_environment");
+    auto variables = make_variable_map_for(m_to_project, clean_environment);
+    writeSetScript("", variables, clean_environment, file, false);
 }
 
 void EnvScriptBuilder::writeScripts(const std::string &setFileName, const std::string &unsetFileName)
 {
-    auto variables = make_variable_map_up_until(m_to_project);
+    JT::ObjectNode *project_node = m_buildset_node->objectNodeAt(m_to_project);
+    bool clean_environment = project_node && project_node->booleanAt("clean_environment");
+    auto variables = make_variable_map_for(m_to_project, clean_environment);
     if (setFileName.size()) {
         FILE *out_file = fopen(setFileName.c_str(), "w+");
         if (!out_file) {
@@ -76,7 +82,7 @@ void EnvScriptBuilder::writeScripts(const std::string &setFileName, const std::s
         }
         std::string build_set_name = setFileName;
         build_set_name = dirname(&build_set_name[0]);
-        writeSetScript(unsetFileName, variables, out_file,true);
+        writeSetScript(unsetFileName, variables, clean_environment, out_file,true);
     }
 
     if (unsetFileName.size()) {
@@ -166,16 +172,23 @@ void EnvScriptBuilder::populateMapFromProjectNode(const std::string &projectName
     }
 }
 
-std::map<std::string, std::list<EnvVariable>> EnvScriptBuilder::make_variable_map_up_until(const std::string &project_name) const
+std::map<std::string, std::list<EnvVariable>> EnvScriptBuilder::make_variable_map_for(const std::string &project_name, bool clean_environment) const
 {
     std::map<std::string, std::list<EnvVariable>> return_map;
-    for (auto it = m_buildset_node->begin(); it != m_buildset_node->end(); ++it) {
-        if (!it->second->asObjectNode())
-            continue;
-        JT::ObjectNode *project_node = it->second->asObjectNode();
-        populateMapFromProjectNode(it->first.string(), project_node, return_map);
-        if (project_name.size() && it->first.compareString(project_name))
+    if (clean_environment) {
+        JT::ObjectNode *project_node = m_buildset_node->objectNodeAt(project_name);
+        if (project_node) {
+            populateMapFromProjectNode(project_name, project_node, return_map);
+        }
+    } else {
+        for (auto it = m_buildset_node->begin(); it != m_buildset_node->end(); ++it) {
+            if (!it->second->asObjectNode())
+                continue;
+            JT::ObjectNode *project_node = it->second->asObjectNode();
+            populateMapFromProjectNode(it->first.string(), project_node, return_map);
+            if (project_name.size() && it->first.compareString(project_name))
                 break;
+        }
     }
     return return_map;
 }
@@ -234,7 +247,7 @@ static void writeAddDirToVariable(FILE *file, const std::string &dir, const std:
     fprintf(file, "\n");
 }
 
-void EnvScriptBuilder::writeSetScript(const std::string &unsetFileName, const std::map<std::string, std::list<EnvVariable>> &variables, FILE *file, bool close)
+void EnvScriptBuilder::writeSetScript(const std::string &unsetFileName, const std::map<std::string, std::list<EnvVariable>> &variables, bool clean_environment, FILE *file, bool close)
 {
     fprintf(file, "#!/bin/bash\n");
     fprintf(file, "\n");
@@ -261,7 +274,7 @@ void EnvScriptBuilder::writeSetScript(const std::string &unsetFileName, const st
         writeEnvironmentVariable(file, it->first, value, seperator, overwrite);
     }
 
-    if (m_configuration.installDir() != "/usr" && m_configuration.installDir() != "/usr/local") {
+    if (!clean_environment && m_configuration.installDir() != "/usr" && m_configuration.installDir() != "/usr/local") {
         std::string install_lib = m_configuration.installDir() + "/lib";
         std::string install_bin = m_configuration.installDir() + "/bin";
         std::string install_pkg_config = install_lib + "/pkgconfig";

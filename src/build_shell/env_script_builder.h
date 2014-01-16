@@ -71,9 +71,9 @@ public:
     void writeScripts(const std::string &setFileName, const std::string &unsetFileName);
 
 private:
-    std::map<std::string, std::list<EnvVariable>> make_variable_map_up_until(const std::string &project_name) const;
+    std::map<std::string, std::list<EnvVariable>> make_variable_map_for(const std::string &project_name, bool clean_environment) const;
 
-    void writeSetScript(const std::string &unsetFileName, const std::map<std::string, std::list<EnvVariable>> &variables, FILE *file, bool close);
+    void writeSetScript(const std::string &unsetFileName, const std::map<std::string, std::list<EnvVariable>> &variables, bool clean_environment, FILE *file, bool close);
     void writeUnsetScript(const std::string &file, const std::map<std::string, std::list<EnvVariable>> &variables);
     void writeUnsetScript(FILE *file, bool close, const std::map<std::string, std::list<EnvVariable>> &variables);
 
