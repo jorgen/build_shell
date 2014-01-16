@@ -238,7 +238,9 @@ void EnvScriptBuilder::writeSetScript(const std::string &unsetFileName, const st
 {
     fprintf(file, "#!/bin/bash\n");
     fprintf(file, "\n");
-    fprintf(file, "if [ ! -z \"$BUILD_SHELL_BUILD_DIR\" ] && [ -e \"$BUILD_SHELL_BUILD_DIR/build_shell/unset_build_env.sh\" ]; then\n");
+    fprintf(file, "if [ ! -z \"$BUILD_SHELL_UNSET_ENV_FILE\" ]; then\n");
+    fprintf(file, "    source \"$BUILD_SHELL_UNSET_ENV_FILE\"\n");
+    fprintf(file, "elif [ ! -z \"$BUILD_SHELL_BUILD_DIR\" ] && [ -e \"$BUILD_SHELL_BUILD_DIR/build_shell/unset_build_env.sh\" ]; then\n");
     fprintf(file, "    source \"$BUILD_SHELL_BUILD_DIR/build_shell/unset_build_env.sh\"\n");
     fprintf(file, "fi\n");
     fprintf(file, "\n");
