@@ -17,7 +17,8 @@
         },
         "no_install" : true,
         "default_skip" : true,
-        "no_shadow" : true
+        "no_shadow" : true,
+        "clean_environment" : true
     },
     "wayland-host-tools" : {
         "scm" : {

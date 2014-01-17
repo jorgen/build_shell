@@ -54,25 +54,19 @@ void EnvScriptBuilder::writeSetScript(TempFile &tempFile)
         fprintf(stderr, "Writing set script to closed temp file\n");
         return;
     }
-    JT::ObjectNode *project_node = m_buildset_node->objectNodeAt(m_to_project);
-    bool clean_environment = project_node && project_node->booleanAt("clean_environment");
-    auto variables = make_variable_map_for(m_to_project, clean_environment);
-    writeSetScript("", variables, clean_environment, tempFile.fileStream("w+"),false);
+    auto variables = make_variable_map_for(m_to_project, clean_environment());
+    writeSetScript("", variables, clean_environment(), tempFile.fileStream("w+"),false);
 }
 
 void EnvScriptBuilder::writeSetScript(FILE *file)
 {
-    JT::ObjectNode *project_node = m_buildset_node->objectNodeAt(m_to_project);
-    bool clean_environment = project_node && project_node->booleanAt("clean_environment");
-    auto variables = make_variable_map_for(m_to_project, clean_environment);
-    writeSetScript("", variables, clean_environment, file, false);
+    auto variables = make_variable_map_for(m_to_project, clean_environment());
+    writeSetScript("", variables, clean_environment(), file, false);
 }
 
 void EnvScriptBuilder::writeScripts(const std::string &setFileName, const std::string &unsetFileName)
 {
-    JT::ObjectNode *project_node = m_buildset_node->objectNodeAt(m_to_project);
-    bool clean_environment = project_node && project_node->booleanAt("clean_environment");
-    auto variables = make_variable_map_for(m_to_project, clean_environment);
+    auto variables = make_variable_map_for(m_to_project, clean_environment());
     if (setFileName.size()) {
         FILE *out_file = fopen(setFileName.c_str(), "w+");
         if (!out_file) {
@@ -82,7 +76,7 @@ void EnvScriptBuilder::writeScripts(const std::string &setFileName, const std::s
         }
         std::string build_set_name = setFileName;
         build_set_name = dirname(&build_set_name[0]);
-        writeSetScript(unsetFileName, variables, clean_environment, out_file,true);
+        writeSetScript(unsetFileName, variables, clean_environment(), out_file,true);
     }
 
     if (unsetFileName.size()) {
@@ -345,3 +339,8 @@ void EnvScriptBuilder::writeUnsetScript(FILE *file, bool close_file, const std::
         fclose(file);
 }
 
+bool EnvScriptBuilder::clean_environment() const
+{
+    JT::ObjectNode *project_node = m_buildset_node->objectNodeAt(m_to_project);
+    return project_node && project_node->booleanAt("clean_environment");
+}

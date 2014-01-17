@@ -80,6 +80,7 @@ private:
     void populateMapFromVariableNode(const std::string &projectName, JT::ObjectNode *variableNode, std::map<std::string, std::list<EnvVariable>> &map) const;
     void populateMapFromEnvironmentNode(const std::string &projectName, JT::ObjectNode *environmentNode, std::map<std::string, std::list<EnvVariable>> &map) const;
     void populateMapFromProjectNode(const std::string &projectName, JT::ObjectNode *projectNode, std::map<std::string, std::list<EnvVariable>> &map) const;
+    bool clean_environment() const;
 
     const Configuration &m_configuration;
     const BuildEnvironment &m_build_environment;
