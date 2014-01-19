@@ -245,7 +245,6 @@ bool BuildAction::execute()
 
 bool BuildAction::handlePrebuild(const std::string &project_name, JT::ObjectNode *project_node)
 {
-    const std::string phase("pre_build");
     if (chdir(m_configuration.buildDir().c_str())) {
         fprintf(stderr, "Could not move into build dir:%s\n%s\n",
                 m_configuration.buildDir().c_str(), strerror(errno));
@@ -399,7 +398,7 @@ bool BuildAction::handlePrebuild(const std::string &project_name, JT::ObjectNode
 
     {
         Process process(m_configuration);
-        process.setPhase(phase);
+        process.setPhase("pre_build");
         process.setProjectName(project_name);
         process.setProjectNode(project_node, &m_build_environment);
         process.setPrint(true);
