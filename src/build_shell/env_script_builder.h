@@ -28,7 +28,6 @@
 
 #include <string>
 #include <memory>
-#include <map>
 #include <list>
 #include <set>
 
@@ -38,22 +37,28 @@ namespace JT {
 class EnvVariable
 {
 public:
-    EnvVariable()
+    EnvVariable(const std::string &project, const std::string &name)
         : overwrite(false)
         , singular(false)
+        , project(project)
+        , name(name)
         , seperator(":")
     { }
-    EnvVariable(const std::string &value)
+    EnvVariable(const std::string &project, const std::string &name, const std::string &value)
         : overwrite(false)
         , singular(false)
-        , value(value)
+        , project(project)
+        , name(name)
         , seperator(":")
-    {}
+    {
+        values.push_back(value);
+    }
 
     bool overwrite;
     bool singular;
-    std::string delimiter;
-    std::string value;
+    const std::string project;
+    const std::string name;
+    std::list<std::string> values;
     std::string seperator;
 
 };
@@ -71,15 +76,15 @@ public:
     void writeScripts(const std::string &setFileName, const std::string &unsetFileName);
 
 private:
-    std::map<std::string, std::list<EnvVariable>> make_variable_map_for(const std::string &project_name, bool clean_environment) const;
+    std::list<EnvVariable> make_variable_list_for(const std::string &project_name, bool clean_environment) const;
 
-    void writeSetScript(const std::string &unsetFileName, const std::map<std::string, std::list<EnvVariable>> &variables, bool clean_environment, FILE *file, bool close);
-    void writeUnsetScript(const std::string &file, const std::map<std::string, std::list<EnvVariable>> &variables);
-    void writeUnsetScript(FILE *file, bool close, const std::map<std::string, std::list<EnvVariable>> &variables);
+    void writeSetScript(const std::string &unsetFileName, const std::list<EnvVariable> &variables, bool clean_environment, FILE *file, bool close);
+    void writeUnsetScript(const std::string &file, const std::list<EnvVariable> &variables);
+    void writeUnsetScript(FILE *file, bool close, const std::list<EnvVariable> &variables);
 
-    void populateMapFromVariableNode(const std::string &projectName, JT::ObjectNode *variableNode, std::map<std::string, std::list<EnvVariable>> &map) const;
-    void populateMapFromEnvironmentNode(const std::string &projectName, JT::ObjectNode *environmentNode, std::map<std::string, std::list<EnvVariable>> &map) const;
-    void populateMapFromProjectNode(const std::string &projectName, JT::ObjectNode *projectNode, std::map<std::string, std::list<EnvVariable>> &map) const;
+    void populateListFromVariableNode(const std::string &projectName, JT::ObjectNode *variableNode, std::list<EnvVariable> &variables) const;
+    void populateListFromEnvironmentNode(const std::string &projectName, JT::ObjectNode *environmentNode, std::list<EnvVariable> &variables) const;
+    void populateListFromProjectNode(const std::string &projectName, JT::ObjectNode *projectNode, std::list<EnvVariable> &variables) const;
     bool clean_environment() const;
 
     const Configuration &m_configuration;
