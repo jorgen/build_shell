@@ -129,6 +129,9 @@ BuildAction::~BuildAction()
             fprintf(stderr, "Failed to update current buildset\n");
         }
     }
+
+    EnvScriptBuilder env_script_builder(m_configuration, m_build_environment, m_buildset_tree);
+    env_script_builder.writeScripts(m_configuration.buildShellSetEnvFile(), m_configuration.buildShellUnsetEnvFile());
 }
 
 class ArgumentsCleanup
