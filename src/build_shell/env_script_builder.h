@@ -40,6 +40,7 @@ public:
     EnvVariable(const std::string &project, const std::string &name)
         : overwrite(false)
         , singular(false)
+        , directory(false)
         , project(project)
         , name(name)
         , seperator(":")
@@ -47,6 +48,7 @@ public:
     EnvVariable(const std::string &project, const std::string &name, const std::string &value)
         : overwrite(false)
         , singular(false)
+        , directory(false)
         , project(project)
         , name(name)
         , seperator(":")
@@ -56,6 +58,7 @@ public:
 
     bool overwrite;
     bool singular;
+    bool directory;
     const std::string project;
     const std::string name;
     std::list<std::string> values;
@@ -78,7 +81,7 @@ public:
 private:
     std::list<EnvVariable> make_variable_list_for(const std::string &project_name, bool clean_environment) const;
 
-    void writeSetScript(const std::string &unsetFileName, const std::list<EnvVariable> &variables, bool clean_environment, FILE *file, bool close);
+    void writeSetScript(const std::string &unsetFileName, const std::list<EnvVariable> &variables, FILE *file, bool close);
     void writeUnsetScript(const std::string &file, const std::list<EnvVariable> &variables);
     void writeUnsetScript(FILE *file, bool close, const std::list<EnvVariable> &variables);
 

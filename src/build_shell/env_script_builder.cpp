@@ -55,13 +55,13 @@ void EnvScriptBuilder::writeSetScript(TempFile &tempFile)
         return;
     }
     auto variables = make_variable_list_for(m_to_project, clean_environment());
-    writeSetScript("", variables, clean_environment(), tempFile.fileStream("w+"),false);
+    writeSetScript("", variables, tempFile.fileStream("w+"),false);
 }
 
 void EnvScriptBuilder::writeSetScript(FILE *file)
 {
     auto variables = make_variable_list_for(m_to_project, clean_environment());
-    writeSetScript("", variables, clean_environment(), file, false);
+    writeSetScript("", variables, file, false);
 }
 
 void EnvScriptBuilder::writeScripts(const std::string &setFileName, const std::string &unsetFileName)
@@ -76,7 +76,7 @@ void EnvScriptBuilder::writeScripts(const std::string &setFileName, const std::s
         }
         std::string build_set_name = setFileName;
         build_set_name = dirname(&build_set_name[0]);
-        writeSetScript(unsetFileName, variables, clean_environment(), out_file,true);
+        writeSetScript(unsetFileName, variables, out_file,true);
     }
 
     if (unsetFileName.size()) {
@@ -203,6 +203,37 @@ void EnvScriptBuilder::populateListFromProjectNode(const std::string &projectNam
     }
 }
 
+class RemoveVariableIfInList
+{
+public:
+    RemoveVariableIfInList(const EnvVariable &variable)
+        : m_variable(variable)
+    {
+    }
+
+    bool operator() (const EnvVariable& variable) {
+        if (m_variable.name == variable.name) {
+            for (auto it = m_variable.values.begin(); it != m_variable.values.end(); ++it) {
+                if (std::find(variable.values.begin(), variable.values.end(), *it) != variable.values.end()) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+private:
+    const EnvVariable &m_variable;
+};
+
+static void add_if_not_existent(std::list<EnvVariable> &to_add, std::list<EnvVariable> &target)
+{
+    for (auto it = target.begin(); it != target.end(); ++it) {
+        to_add.remove_if(RemoveVariableIfInList(*it));
+    }
+
+    target.splice(target.end(), to_add);
+}
+
 std::list<EnvVariable> EnvScriptBuilder::make_variable_list_for(const std::string &project_name, bool clean_environment) const
 {
     std::list<EnvVariable> return_list;
@@ -221,10 +252,36 @@ std::list<EnvVariable> EnvScriptBuilder::make_variable_list_for(const std::strin
                 break;
         }
     }
+
+    if (!clean_environment && m_configuration.installDir() != "/usr" && m_configuration.installDir() != "/usr/local") {
+        std::list<EnvVariable> build_shell_variables;
+#ifdef __APPLE__
+        const std::string library_path("DYLD_LIBRARY_PATH");
+#else
+        const std::string library_path("LD_LIBRARY_PATH");
+#endif
+        std::string install_lib = m_configuration.installDir() + "/lib";
+        std::string install_bin = m_configuration.installDir() + "/bin";
+        std::string install_pkg_config = install_lib + "/pkgconfig";
+
+        EnvVariable library_path_variable("build_shell", library_path, install_lib);
+        library_path_variable.directory = true;
+        build_shell_variables.push_back(library_path_variable);
+
+        EnvVariable bin_path_variable("build_shell", "PATH", install_bin);
+        bin_path_variable.directory = true;
+        build_shell_variables.push_back(bin_path_variable);
+
+        EnvVariable pkg_config_variable("build_shell", "PKG_CONFIG_PATH", install_pkg_config);
+        pkg_config_variable.directory = true;
+        build_shell_variables.push_back(pkg_config_variable);
+
+        add_if_not_existent(build_shell_variables, return_list);
+    }
     return return_list;
 }
 
-static void writeEnvironmentVariable(FILE *file, const EnvVariable &variable, const std::string &indent = "")
+static void writeEnvironmentVariable(FILE *file, const EnvVariable &variable, const std::string &requested_indent = "")
 {
 
     std::string value;
@@ -238,6 +295,11 @@ static void writeEnvironmentVariable(FILE *file, const EnvVariable &variable, co
         }
     }
     const std::string build_shell_projevt_variable = "BUILD_SHELL_" + variable.project + "_" + variable.name;
+    std::string indent = requested_indent;
+    if (variable.directory) {
+        fprintf(file, "%sif [ -d \"%s\" ]; then\n", indent.c_str(), variable.values.front().c_str());
+        indent += "    ";
+    }
     fprintf(file, "%sif [ -n \"$%s\" ]; then\n", indent.c_str(), variable.name.c_str());
     fprintf(file, "%s    export %s=$%s\n", indent.c_str(), build_shell_projevt_variable.c_str(), variable.name.c_str());
     if (variable.overwrite || variable.singular) {
@@ -248,21 +310,13 @@ static void writeEnvironmentVariable(FILE *file, const EnvVariable &variable, co
     fprintf(file, "%selse\n", indent.c_str());
     fprintf(file, "%s    export %s=\"%s\"\n", indent.c_str(), variable.name.c_str(), value.c_str());
     fprintf(file, "%sfi\n", indent.c_str());
+    if (variable.directory) {
+        indent.erase(0,4);
+        fprintf(file, "%sfi\n", indent.c_str());
+    }
 }
 
-static void writeAddDirToVariable(FILE *file, const std::string &dir, const std::string &variable_name, const std::string &seperator = ":")
-{
-
-    EnvVariable variable("build_shell", variable_name, dir);
-    variable.seperator = seperator;
-
-    fprintf(file, "if [ -d \"%s\" ]; then\n", dir.c_str());
-    writeEnvironmentVariable(file, variable, "    ");
-    fprintf(file, "fi\n");
-    fprintf(file, "\n");
-}
-
-void EnvScriptBuilder::writeSetScript(const std::string &unsetFileName, const std::list<EnvVariable> &variables, bool clean_environment, FILE *file, bool close)
+void EnvScriptBuilder::writeSetScript(const std::string &unsetFileName, const std::list<EnvVariable> &variables, FILE *file, bool close)
 {
     fprintf(file, "#!/bin/bash\n");
     fprintf(file, "\n");
@@ -286,21 +340,6 @@ void EnvScriptBuilder::writeSetScript(const std::string &unsetFileName, const st
         fprintf(file, "\n");
     }
 
-    if (!clean_environment && m_configuration.installDir() != "/usr" && m_configuration.installDir() != "/usr/local") {
-        std::string install_lib = m_configuration.installDir() + "/lib";
-        std::string install_bin = m_configuration.installDir() + "/bin";
-        std::string install_pkg_config = install_lib + "/pkgconfig";
-#ifdef __APPLE__
-        writeAddDirToVariable(file, install_lib, "DYLD_LIBRARY_PATH");
-#else
-        writeAddDirToVariable(file, install_lib, "LD_LIBRARY_PATH");
-#endif
-        writeAddDirToVariable(file, install_bin, "PATH");
-        writeAddDirToVariable(file, install_pkg_config, "PKG_CONFIG_PATH");
-    }
-
-    fprintf(file, "\n");
-
     if (close)
         fclose(file);
 }
@@ -322,31 +361,16 @@ static void write_unset_for_variable(FILE *file, const EnvVariable &variable, co
     fprintf(file, "%sfi\n", indent.c_str());
 }
 
-void write_strict_unset_for_variable(FILE *file, const std::string &variable_name)
-{
-    EnvVariable variable("build_shell", variable_name);
-    write_unset_for_variable(file,variable);
-    fprintf(file, "\n");
-}
-
 void EnvScriptBuilder::writeUnsetScript(FILE *file, bool close_file, const std::list<EnvVariable> &variables)
 {
     fprintf(file, "#!/bin/bash\n");
     fprintf(file, "\n");
     fprintf(file, "unset BUILD_SHELL_NAME\n");
     fprintf(file, "unset BUILD_SHELL_UNSET_ENV_FILE\n");
-    fprintf(file, "unset BUILD_SHELL_SRC_DIR");
-    fprintf(file, "unset BUILD_SHELL_BUILD_DIR");
-    fprintf(file, "unset BUILD_SHELL_INSTALL_DIR");
+    fprintf(file, "unset BUILD_SHELL_SRC_DIR\n");
+    fprintf(file, "unset BUILD_SHELL_BUILD_DIR\n");
+    fprintf(file, "unset BUILD_SHELL_INSTALL_DIR\n");
     fprintf(file, "\n");
-
-#ifdef __APPLE__
-    write_strict_unset_for_variable(file, "DYLD_LIBRARY_PATH");
-#else
-    write_strict_unset_for_variable(file, "LD_LIBRARY_PATH");
-#endif
-    write_strict_unset_for_variable(file, "PATH");
-    write_strict_unset_for_variable(file, "PKG_CONFIG_PATH");
 
     for (auto it = variables.rbegin(); it != variables.rend(); ++it) {
         write_unset_for_variable(file, *it);
