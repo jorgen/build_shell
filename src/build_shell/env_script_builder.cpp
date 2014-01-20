@@ -115,7 +115,7 @@ static std::list<std::string> get_variable_values(const std::string &values, con
     while (start_seperator < values.size()) {
         size_t end_seperator = values.find(seperator, start_seperator + 1);
         if (end_seperator - start_seperator > 0) {
-            std::string value = values.substr(start_seperator, (end_seperator - 1) - start_seperator);
+            std::string value = values.substr(start_seperator, end_seperator - start_seperator);
             return_variables.push_back(value);
         }
         if (end_seperator < values.size())
