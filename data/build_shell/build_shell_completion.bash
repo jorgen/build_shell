@@ -181,6 +181,14 @@ bss()
     fi
 
     local ENVIRONMENT=$1
+
+    if [[ $ENVIRONMENT == "none" ]]; then
+        if [ ! -z $BUILD_SHELL_UNSET_ENV_FILE ]; then
+            source $BUILD_SHELL_UNSET_ENV_FILE
+        fi
+        return
+    fi
+
     local CONFIG_DIR="$HOME/.config/build_shell"
     if [ -e $CONFIG_DIR/available_builds.json ]; then
         env_set_file=$(build_shell get_env_file $ENVIRONMENT)
@@ -200,6 +208,7 @@ _build_shell_select()
     cur="${COMP_WORDS[COMP_CWORD]}"
     if [ "$COMP_CWORD" -eq 1 ]; then
         opts=$(build_shell available)
+        [ ! -z $BUILD_SHELL_UNSET_ENV_FILE ] && opts="none $opts"
         COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
         return 0
     fi
