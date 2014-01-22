@@ -25,6 +25,8 @@
 #include "tree_builder.h"
 #include "tree_writer.h"
 
+#include <algorithm>
+
 #include <libgen.h>
 #include <stdio.h>
 #include <string.h>
