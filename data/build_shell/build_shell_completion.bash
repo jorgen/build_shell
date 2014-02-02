@@ -244,15 +244,15 @@ _build_shell()
     fi
 }
 
-build_shell_change_to_corresponding_dir()
+bse()
 {
     local cur_dir dest_dir cur_dest_dir
-    if [[ $PWD == $1* ]]; then
-        cur_dir=$1
-        dest_dir=$2
-    elif [[ $PWD == $2* ]]; then
-        cur_dir=$2
-        dest_dir=$1
+    if [[ $PWD == $BUILD_SHELL_BUILD_DIR* ]]; then
+        cur_dir=$BUILD_SHELL_BUILD_DIR
+        dest_dir=$BUILD_SHELL_SRC_DIR
+    elif [[ $PWD == $BUILD_SHELL_SRC_DIR* ]]; then
+        cur_dir=$BUILD_SHELL_SRC_DIR
+        dest_dir=$BUILD_SHELL_BUILD_DIR
     else
         echo "Could not find current_directory being inside build nor src"
         return 1
@@ -262,14 +262,28 @@ build_shell_change_to_corresponding_dir()
 
     while [[ $cur_dest_dir != $dest_dir ]]; do
         if [ -d $cur_dest_dir ]; then
-            cd $cur_dest_dir
+            echo $cur_dest_dir
             return 0
         fi
         cur_dest_dir=$(dirname "$cur_dest_dir")
     done
+    if [ ! -z $cur_dest_dir ]; then
+        echo $cur_dest_dir
+        return 0
+    fi
 
-    cd $cur_dest_dir
-    return 0;
+    return 1
+}
+
+build_shell_change_to_corresponding_dir()
+{
+
+    local corresponding_dir=$(bse)
+    if [ $? -eq 0 ]; then
+        cd $corresponding_dir
+        return 0
+    fi
+    return 1
 }
 
 build_shell_cd_with_component()
@@ -300,7 +314,7 @@ bcd()
     if $other; then
         if [ -z $component ]; then
             if [[ $PWD == $BUILD_SHELL_BUILD_DIR* ]] || [[ $PWD == $BUILD_SHELL_SRC_DIR* ]] ; then
-                build_shell_change_to_corresponding_dir $BUILD_SHELL_BUILD_DIR $BUILD_SHELL_SRC_DIR
+                build_shell_change_to_corresponding_dir
                 if [ $? -eq 0 ]; then
                     return 0
                 fi
