@@ -171,7 +171,7 @@ void JsonStreamer::stream()
                             break;
                         }
                         m_print_subtree = true;
-                        setStreamerOptions(true);
+                        setStreamerOptions(!m_config.prettyPrint());
                     }
                     break;
                 case JT::Token::ObjectEnd:

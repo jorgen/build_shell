@@ -35,6 +35,7 @@ Configuration::Configuration()
     : m_delimiter(".")
     , m_inline(false)
     , m_compact(false)
+    , m_pretty_print(false)
     , m_create_object(false)
     , m_print_only_name(false)
     , m_strict(false)
@@ -105,6 +106,16 @@ void Configuration::setCompactPrint(bool compactPrint)
 bool Configuration::compactPrint() const
 {
     return m_compact;
+}
+
+void Configuration::setPrettyPrint(bool pretty)
+{
+    m_pretty_print = pretty;
+}
+
+bool Configuration::prettyPrint() const
+{
+    return m_pretty_print;
 }
 
 void Configuration::setCreateObject(bool create)

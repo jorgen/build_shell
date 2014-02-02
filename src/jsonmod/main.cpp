@@ -34,6 +34,7 @@ enum optionIndex {
     INLINE,
     PROPERTY,
     COMPACT,
+    PRETTY,
     VALUE,
     CREATE_OBJ,
     ONLY_NAME,
@@ -52,6 +53,7 @@ const option::Descriptor usage[] =
   {PROPERTY,      0, "p", "property",         Arg::requiresValue,        "  --property, -p \tProperty to retrun/modify." },
   {VALUE,         0, "v", "value",            Arg::requiresValue,        "  --value, -v\tValue to update property with."},
   {COMPACT,       0, "c", "compact",          option::Arg::None,         "  --compact, -h\tOutput in compact format."},
+  {PRETTY,        0, "" , "pretty",           option::Arg::None,         "  --pretty,    \tForce pretty printing."},
   {CREATE_OBJ,    0, "o", "create-object",    Arg::requiresValue,        "  --create-object, -o\t Create object with path."},
   {ONLY_NAME,     0, "n", "only-name",        option::Arg::None,         "  --only-name, -n\t Only print the name of the object."},
   {DELIMITER,     0, "d", "delimiter",        Arg::requiresValue,        "  --delimiter, -d\t Delimiter to use between objects nodes."},
@@ -111,6 +113,9 @@ int main(int argc, char **argv)
                 break;
             case COMPACT:
                 configuration.setCompactPrint(true);
+                break;
+            case PRETTY:
+                configuration.setPrettyPrint(true);
                 break;
             case VALUE:
                 configuration.setValue(opt.arg);

@@ -47,6 +47,9 @@ public:
     void setCompactPrint(bool compactPrint);
     bool compactPrint() const;
 
+    void setPrettyPrint(bool pretty);
+    bool prettyPrint() const;
+
     void setCreateObject(bool create);
     bool createObject() const;
 
@@ -68,6 +71,7 @@ private:
 
     bool m_inline;
     bool m_compact;
+    bool m_pretty_print;
     bool m_create_object;
     bool m_print_only_name;
     bool m_strict;
