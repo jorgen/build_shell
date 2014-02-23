@@ -1,0 +1,30 @@
+cmake_minimum_required (VERSION 2.6)
+project (build_shell)
+
+if (DEFINED CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+    SET(DeveloperBuild ON)
+    message(STATUS "DEVELOPER BUILD")
+else()
+    SET(DeveloperBuild OFF)
+    message(STATUS "INSTALLATION REQUIRED")
+endif(DEFINED CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+
+include(CheckCXXCompilerFlag)
+CHECK_CXX_COMPILER_FLAG("-std=c++11" CompilerSupportsCXX11)
+if(CompilerSupportsCXX11)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+else()
+    CHECK_CXX_COMPILER_FLAG("-std=c++0x" CompilerSupportsCXX0X)
+    if(CompilerSupportsCXX0X)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+    else()
+        message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
+    endif()
+endif()
+
+enable_testing()
+
+add_subdirectory (src)
+add_subdirectory (data)
+add_subdirectory (tests)
+

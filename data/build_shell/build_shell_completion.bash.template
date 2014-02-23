@@ -357,32 +357,4 @@ complete -F _build_shell bs
 complete -F _build_shell_select bss
 complete -o nospace -F _build_shell_bcd bcd
 
-BUILD_SHELL_REAL_SCRIPT_FILE=${BASH_SOURCE[0]}
-if [ -L ${BASH_SOURCE[0]} ]; then
-    BUILD_SHELL_REAL_SCRIPT_FILE=$(readlink ${BASH_SOURCE[0]})
-fi
-
-BUILD_SHELL_BASE_SCRIPT_DIR="$( cd "$( dirname "$BUILD_SHELL_REAL_SCRIPT_FILE" )" && pwd )"
-BUILD_SHELL_DEVEL_EXEC="$BUILD_SHELL_BASE_SCRIPT_DIR/../../src/build_shell/build_shell"
-BUILD_SHELL_DEVEL_JSONMOD_EXEC="$BUILD_SHELL_BASE_SCRIPT_DIR/../../src/jsonmod/jsonmod"
-build_shell -h > /dev/null 2>&1
-if [[ $? != 0 ]]; then
-    if [[ -x $BUILD_SHELL_DEVEL_EXEC ]]; then
-        $BUILD_SHELL_DEVEL_EXEC build_shell_dev_build
-        if [[ $? == 0 ]]; then
-            BUILD_SHELL_DEVEL_EXEC_DIR="$( cd "$( dirname "$BUILD_SHELL_DEVEL_EXEC" )" && pwd )"
-            export PATH=$BUILD_SHELL_DEVEL_EXEC_DIR:$PATH
-            if [[ -x $BUILD_SHELL_DEVEL_JSONMOD_EXEC ]]; then
-                BUILD_SHELL_DEVEL_JSONMOD_EXEC_DIR="$( cd "$( dirname "$BUILD_SHELL_DEVEL_JSONMOD_EXEC" )" && pwd )"
-                export PATH=$BUILD_SHELL_DEVEL_JSONMOD_EXEC_DIR:$PATH
-            fi
-        fi
-    fi
-fi
-unset BUILD_SHELL_DEVEL_EXEC
-unset BUILD_SHELL_DEVEL_EXEC_DIR
-unset BUILD_SHELL_DEVEL_JSONMOD_EXEC
-unset BUILD_SHELL_DEVEL_JSONMOD_EXEC_DIR
-unset BUILD_SHELL_BASE_SCRIPT_DIR
-unset BUILD_SHELL_REAL_SCRIPT_FILE
-
+@INSERT_DEV_ENV_PATHS_HERE@

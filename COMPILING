@@ -1,14 +1,22 @@
 Be sure to update the submodule first
 
-autoconf doesnt come bundled with OS X, so you need to install them separatly. I don't want to maintain a separate xcode project :( Using Homebrew its easy though:
+build_shell uses cmake to build. For quick and dirty way to try out build_shell
+make a directory in the root build_shell directory. Then move to that directory
+and execute
 
-Install Homebrew with:
-# ruby -e "$(curl -fsSL https://raw.github.com/mxcl/homebrew/go)"
+$ cmake ..
 
-Then automake with friends:
-# brew install automake
-Its funny how a compile script needs another compile script :)
+build_shell builds in developer mode if no prefix is specified. developer mode
+means that it will not be possible to run the make install rule, and paths are
+hardcoded to point to the build and src directories. To be able to use
+build_shell move to the build directory then source the file in
+data/build_shell/build_shell_completion.bash
 
-if you want to pick up the system scripts from the $topsrcdir/data/ use --enable-developer-build
+This will add both the path for jsonmod and build_shell build directories to
+the path. build_shell has also been built to look for build scripts in the
+build_shell src directory .ie. $build_shell_src_dir/data/build_shell/scripts
 
-
+If a install prefix has been specified, then the prefix for the binary has to
+be set in the path, and the build_shel_completion.bash file has to be source
+from the installation location. Also note then that build_shell will look for
+build_scripts in the installation location

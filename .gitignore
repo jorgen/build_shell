@@ -41,3 +41,4 @@ tests/jsonmod/only_modify_specified_subtree.log
 tests/jsonmod/only_modify_specified_subtree.trs
 tests/jsonmod/only_modify_specified_subtree_temp.json
 tests/jsonmod/test-suite.log
+build/

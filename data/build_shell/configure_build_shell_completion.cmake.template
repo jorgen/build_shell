@@ -1,0 +1,15 @@
+set(SRC_DIR "@CMAKE_CURRENT_SOURCE_DIR@")
+set(BIN_DIR "@CMAKE_CURRENT_BINARY_DIR@")
+set(BINARY_ROOT "@CMAKE_BINARY_DIR@")
+set(DEVELOPER_BUILD "@DeveloperBuild@")
+
+if (DEVELOPER_BUILD)
+    set(INSERT_DEV_ENV_PATHS_HERE
+"       export PATH=\"${BINARY_ROOT}/src/build_shell:$PATH\"
+        export PATH=\"${BINARY_ROOT}/src/jsonmod:$PATH\"
+")
+endif(DEVELOPER_BUILD)
+
+configure_file(${SRC_DIR}/build_shell/build_shell_completion.bash.template
+               ${BIN_DIR}/build_shell/build_shell_completion.bash
+               @ONLY)

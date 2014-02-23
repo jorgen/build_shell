@@ -75,14 +75,6 @@ Configuration::Configuration()
     , m_correct_branch(false)
     , m_sane(false)
 {
-#ifdef JSONMOD_PATH
-    std::string old_path = getenv("PATH");
-    std::string new_path = JSONMOD_PATH;
-    new_path.append(":");
-    new_path.append(old_path);
-    setenv("PATH", new_path.c_str(),1);
-#endif
-
     struct passwd *pw = getpwuid(getuid());
     const char *homedir = pw->pw_dir;
     std::string config_path = std::string(homedir) + "/.config/build_shell";
