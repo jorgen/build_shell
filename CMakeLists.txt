@@ -1,11 +1,11 @@
-cmake_minimum_required (VERSION 2.6)
+cmake_minimum_required (VERSION 2.8)
 project (build_shell)
 
 if (DEFINED CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-    SET(DeveloperBuild ON)
+    set(DeveloperBuild ON)
     message(STATUS "DEVELOPER BUILD")
 else()
-    SET(DeveloperBuild OFF)
+    set(DeveloperBuild OFF)
     message(STATUS "INSTALLATION REQUIRED")
 endif(DEFINED CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 

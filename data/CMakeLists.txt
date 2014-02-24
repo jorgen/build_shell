@@ -4,7 +4,6 @@ if (DeveloperBuild)
         export PATH=\"${CMAKE_BINARY_DIR}/src/jsonmod:$PATH\"
 ")
 else()
-    message(STATUS FOOODWQODPWQOFKWE)
     install(DIRECTORY build_shell/scripts
             DESTINATION share/build_shell
             USE_SOURCE_PERMISSIONS)
