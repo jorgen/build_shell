@@ -1,2 +1,3 @@
 add_subdirectory(jsonmod)
 add_subdirectory(build_shell)
+add_subdirectory(buildset_convert)
