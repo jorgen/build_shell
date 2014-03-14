@@ -51,27 +51,6 @@
             }
         }
     },
-    "qtwayland" : {
-        "scm" : {
-            "type" : "git",
-            "url" : "ssh://codereview.qt-project.org:29418/qt/qtwayland.git",
-            "branch" : "stable",
-            "remote" : "origin",
-            "remote_branch" : "stable",
-            "current_head" : "078a50dad7f00d2e5455df109b6d1efdcb83cabe",
-            "common_ancestor" : "078a50dad7f00d2e5455df109b6d1efdcb83cabe"
-        },
-        "configure_args" : "CONFIG+=wayland-compositor",
-        "no_install" : true,
-        "env" : {
-            "post" : {
-                "BS_VIM_SEARCH_PATH" : {
-                    "value" : "${project_src_path}/src/**",
-                    "seperator" : ","
-                }
-            }
-        }
-    },
     "qtscript" : {
         "scm" : {
             "type" : "git",
