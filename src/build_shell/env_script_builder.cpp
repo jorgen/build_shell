@@ -302,16 +302,12 @@ static void writeEnvironmentVariable(FILE *file, const EnvVariable &variable, co
         fprintf(file, "%sif [ -d \"%s\" ]; then\n", indent.c_str(), variable.values.front().c_str());
         indent += "    ";
     }
-    fprintf(file, "%sif [ -n \"$%s\" ]; then\n", indent.c_str(), variable.name.c_str());
-    fprintf(file, "%s    export %s=$%s\n", indent.c_str(), build_shell_projevt_variable.c_str(), variable.name.c_str());
+    fprintf(file, "%sexport %s=$%s\n", indent.c_str(), build_shell_projevt_variable.c_str(), variable.name.c_str());
     if (variable.overwrite || variable.singular) {
-        fprintf(file, "%s    export %s=\"%s\"\n", indent.c_str(), variable.name.c_str(), value.c_str());
+        fprintf(file, "%sexport %s=\"%s\"\n", indent.c_str(), variable.name.c_str(), value.c_str());
     } else {
-        fprintf(file, "%s    export %s=\"%s%s$%s\"\n", indent.c_str(), variable.name.c_str(), value.c_str(),variable.seperator.c_str(), variable.name.c_str());
+        fprintf(file, "%sexport %s=\"%s%s$%s\"\n", indent.c_str(), variable.name.c_str(), value.c_str(),variable.seperator.c_str(), variable.name.c_str());
     }
-    fprintf(file, "%selse\n", indent.c_str());
-    fprintf(file, "%s    export %s=\"%s\"\n", indent.c_str(), variable.name.c_str(), value.c_str());
-    fprintf(file, "%sfi\n", indent.c_str());
     if (variable.directory) {
         indent.erase(0,4);
         fprintf(file, "%sfi\n", indent.c_str());
@@ -355,11 +351,12 @@ void EnvScriptBuilder::writeUnsetScript(const std::string &file, const std::list
 static void write_unset_for_variable(FILE *file, const EnvVariable &variable, const std::string &indent = "")
 {
     const std::string build_shell_projevt_variable = "BUILD_SHELL_" + variable.project + "_" + variable.name;
-    fprintf(file, "%sif [ ! -z \"$%s\" ]; then\n",indent.c_str(), build_shell_projevt_variable.c_str());
-    fprintf(file, "%s    export %s=$%s\n", indent.c_str(), variable.name.c_str(), build_shell_projevt_variable.c_str());
+    fprintf(file, "%sif [ -z \"$%s\" ]; then\n",indent.c_str(), build_shell_projevt_variable.c_str());
+    fprintf(file, "%s    unset %s\n", indent.c_str(), variable.name.c_str());
     fprintf(file, "%s    unset %s\n", indent.c_str(), build_shell_projevt_variable.c_str());
     fprintf(file, "%selse\n", indent.c_str());
-    fprintf(file, "%s    unset %s\n", indent.c_str(), variable.name.c_str());
+    fprintf(file, "%s    export %s=$%s\n", indent.c_str(), variable.name.c_str(), build_shell_projevt_variable.c_str());
+    fprintf(file, "%s    unset %s\n", indent.c_str(), build_shell_projevt_variable.c_str());
     fprintf(file, "%sfi\n", indent.c_str());
 }
 
