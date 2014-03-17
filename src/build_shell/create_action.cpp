@@ -36,6 +36,7 @@ CreateAction::CreateAction(const Configuration &configuration, bool allowMissing
     , m_build_environment(configuration)
 {
 
+    Configuration::ensurePath(m_configuration.buildShellMetaDir());
     BuildsetTreeBuilder buildset_tree_builder(m_build_environment, configuration.buildsetFile(), true, allowMissingVariables);
     if (buildset_tree_builder.error()) {
         m_error = true;

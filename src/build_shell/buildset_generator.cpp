@@ -42,18 +42,22 @@ public:
     LogFileHandler(const std::string &logFile)
         : error(false)
     {
-        mode_t mode = S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH;
-        log_file = open(logFile.c_str(), O_WRONLY|O_APPEND|O_CREAT|O_TRUNC|O_CLOEXEC, mode);
-        if (log_file < 0) {
-            fprintf(stderr, "Failed to open file %s for stderr redirection %s\n", logFile.c_str(),
-                    strerror(errno));
-            error = true;;
+        if (logFile.size()) {
+            mode_t mode = S_IRUSR|S_IWUSR|S_IRGRP|S_IWGRP|S_IROTH;
+            log_file = open(logFile.c_str(), O_WRONLY|O_APPEND|O_CREAT|O_TRUNC|O_CLOEXEC, mode);
+            if (log_file < 0) {
+                fprintf(stderr, "Failed to open file %s for stderr redirection %s\n", logFile.c_str(),
+                        strerror(errno));
+                error = true;;
+            }
+        } else {
+            log_file = -1;
         }
     }
 
     ~LogFileHandler()
     {
-        if (!error) {
+        if (!error && log_file >= 0) {
             close(log_file);
         }
     }
@@ -83,8 +87,9 @@ JT::ObjectNode *BuildsetGenerator::createBuildsetNode()
 
 bool BuildsetGenerator::updateBuildset(JT::ObjectNode *buildset)
 {
-    Configuration::ensurePath(m_configuration.scriptExecutionLogDir());
-    std::string log_file = m_configuration.scriptExecutionLogDir() + "/buildset_creation.log";
+    std::string log_file;
+    if (Configuration::isDir(m_configuration.scriptExecutionLogDir()))
+        log_file = m_configuration.scriptExecutionLogDir() + "/buildset_creation.log";
     LogFileHandler log_file_handler(log_file);
 
     DIR *source_dir = opendir(m_configuration.srcDir().c_str());
@@ -105,7 +110,8 @@ bool BuildsetGenerator::updateBuildset(JT::ObjectNode *buildset)
 
     while (struct dirent *ent = readdir(source_dir)) {
         if (strncmp(".",ent->d_name, sizeof(".")) == 0 ||
-            strncmp("..", ent->d_name, sizeof("..")) == 0)
+            strncmp("..", ent->d_name, sizeof("..")) == 0 ||
+            strncmp("build_shell", ent->d_name, sizeof("build_shell")) == 0)
             continue;
         struct stat buf;
         if (stat(ent->d_name, &buf) != 0) {
@@ -136,12 +142,14 @@ bool BuildsetGenerator::handleCurrentSrcDir(JT::ObjectNode *buildset, int log_fi
     char cwd[PATH_MAX];
     getcwd(cwd, sizeof(cwd));
     std::string base_name = basename(cwd);
-    std::string log = std::string() +
-        "***********************************************************\n"
-        "\tLog for " + cwd + "\n"
-        "***********************************************************\n"
-        "\n";
-    write(log_file, log.c_str(), log.size());
+    if (log_file >= 0) {
+        std::string log = std::string() +
+            "***********************************************************\n"
+            "\tLog for " + cwd + "\n"
+            "***********************************************************\n"
+            "\n";
+        write(log_file, log.c_str(), log.size());
+    }
 
     JT::ObjectNode *root_for_dir = buildset->objectNodeAt(base_name);
     if (!root_for_dir) {
