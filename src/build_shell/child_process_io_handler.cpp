@@ -40,9 +40,11 @@ ChildProcessIoHandler::ChildProcessIoHandler(const std::string &phase, const std
     , m_print_stderr(true)
     , m_roller_state(0)
     , m_rooler_active(false)
+    , m_use_roller(isatty(out_file))
     , m_phase(phase)
     , m_project_name(projectName)
 {
+
 
     if (::pipe(m_stderr_pipe)) {
         fprintf(stderr, "Failed to open pipe for stderr redirection %s\n", strerror(errno));
@@ -162,7 +164,7 @@ void ChildProcessIoHandler::run()
             }
             bool stderr_wrote_out = handle_events(poll_data[1], m_out_file, m_print_stderr, &active_connections);
             bool stdout_wrote_out = handle_events(poll_data[0], m_out_file, m_print_stdout, &active_connections);
-            if (!stderr_wrote_out && !stdout_wrote_out) {
+            if (m_use_roller && !stderr_wrote_out && !stdout_wrote_out) {
                 if (!m_roller_string.size()) {
                     m_roller_string = m_phase + ": " + m_project_name + " /";
                 }

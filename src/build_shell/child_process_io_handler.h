@@ -54,6 +54,7 @@ private:
     std::thread m_thread;
     int m_roller_state;
     int m_rooler_active;
+    bool m_use_roller;
     const std::string &m_phase;
     const std::string &m_project_name;
     std::string m_roller_string;
