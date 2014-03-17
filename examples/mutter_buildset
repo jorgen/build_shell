@@ -1,0 +1,71 @@
+{
+    "upower" : {
+        "scm" : {
+            "type" : "git",
+            "url" : "git://anongit.freedesktop.org/upower",
+            "branch" : "master",
+            "remote" : "origin",
+            "remote_branch" : "master",
+            "current_head" : "b9cff29978113aefe3ad18521f383f12ab099a34",
+            "common_ancestor" : "b9cff29978113aefe3ad18521f383f12ab099a34"
+        }
+    },
+    "cogl" : {
+        "scm" : {
+            "type" : "git",
+            "url" : "git://git.gnome.org/cogl",
+            "branch" : "master",
+            "remote" : "origin",
+            "remote_branch" : "master",
+            "current_head" : "8418e98b2b1b25515a961ad1bb9f0c4770d6eb1d",
+            "common_ancestor" : "8418e98b2b1b25515a961ad1bb9f0c4770d6eb1d"
+        }
+        "env" : {
+            "local" : {
+                "CXXFLAGS" : {
+                    "value" : "-g",
+                    "overwrite" : true
+                },
+                "CFLAGS" : {
+                    "value" : "-g",
+                    "overwrite" : true
+                }
+            },
+            "post" : {
+                "BS_VIM_SEARCH_PATH" : {
+                    "value" : "${project_src_path}/src/**,${project_src_path}/include/**",
+                    "seperator" : ","
+                }
+            }
+        },
+    },
+    "mutter" : {
+        "scm" : {
+            "type" : "git",
+            "url" : "git://git.gnome.org/mutter",
+            "branch" : "master",
+            "remote" : "origin",
+            "remote_branch" : "master",
+            "current_head" : "4f9872c037bb6602a6e000b4a29ce6f43df5a0c1",
+            "common_ancestor" : "4f9872c037bb6602a6e000b4a29ce6f43df5a0c1"
+        }
+        "env" : {
+            "local" : {
+                "CXXFLAGS" : {
+                    "value" : "-g",
+                    "overwrite" : true
+                },
+                "CFLAGS" : {
+                    "value" : "-g",
+                    "overwrite" : true
+                }
+            },
+            "post" : {
+                "BS_VIM_SEARCH_PATH" : {
+                    "value" : "${project_src_path}/src/**,${project_src_path}/include/**",
+                    "seperator" : ","
+                }
+            }
+        },
+    }
+}
