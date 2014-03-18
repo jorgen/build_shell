@@ -25,7 +25,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
-#include <unistd.h>
+#include <string.h>
 
 BuildsetConverter::BuildsetConverter(const std::string &inputFile)
     : m_input_file(inputFile)

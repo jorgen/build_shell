@@ -26,8 +26,9 @@
 
 #include <vector>
 #include <iostream>
-
 #include <unistd.h>
+#include <string.h>
+
 enum optionIndex {
     UNKNOWN,
     HELP,
