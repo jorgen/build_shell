@@ -6,11 +6,12 @@ URL=$(jsonmod -p scm.url $FILE)
 REMOTE_BRANCH=$(jsonmod -p scm.remote_branch $FILE)
 BRANCH=$(jsonmod -p scm.branch $FILE)
 
-if [ -z $REMOTE_BRANCH ]; then
-    if [ -n $BRANCH ]; then
+if [ -z "$REMOTE_BRANCH" ]; then
+    if [ -n "$BRANCH" ]; then
         REMOTE_BRANCH=$BRANCH
     else
         REMOTE_BRANCH="master"
     fi
 fi
+echo "git clone --progress --branch $REMOTE_BRANCH $URL --recursive $PROJECT_NAME"
 git clone --progress --branch $REMOTE_BRANCH $URL --recursive $PROJECT_NAME
