@@ -8,18 +8,19 @@
             "remote_branch" : "master",
             "current_head" : "b9cff29978113aefe3ad18521f383f12ab099a34",
             "common_ancestor" : "b9cff29978113aefe3ad18521f383f12ab099a34"
-        }
+        },
+        "configure_args" : "--with-backend=dummy --disable-maintainer-mode --with-systemdutildir=${install_path} --with-systemdsystemunitdir=${install_path}"
     },
     "cogl" : {
         "scm" : {
             "type" : "git",
             "url" : "git://git.gnome.org/cogl",
-            "branch" : "master",
+            "branch" : "cogl-1.18",
             "remote" : "origin",
-            "remote_branch" : "master",
-            "current_head" : "8418e98b2b1b25515a961ad1bb9f0c4770d6eb1d",
-            "common_ancestor" : "8418e98b2b1b25515a961ad1bb9f0c4770d6eb1d"
-        }
+            "remote_branch" : "cogl-1.18",
+            "current_head" : "18b8035dcf42e4175eff37a0a01f6b5f2f3977a0",
+            "common_ancestor" : "18b8035dcf42e4175eff37a0a01f6b5f2f3977a0"
+        },
         "env" : {
             "local" : {
                 "CXXFLAGS" : {
@@ -37,7 +38,36 @@
                     "seperator" : ","
                 }
             }
+        }
+    },
+    "clutter" : {
+        "scm" : {
+            "type" : "git",
+            "url" : "git://git.gnome.org/clutter",
+            "branch" : "clutter-1.18",
+            "remote" : "origin",
+            "remote_branch" : "clutter-1.18",
+            "current_head" : "2102573700c84dcb9f94a77eaee7863326ebe3db",
+            "common_ancestor" : "2102573700c84dcb9f94a77eaee7863326ebe3db"
         },
+        "env" : {
+            "local" : {
+                "CXXFLAGS" : {
+                    "value" : "-g",
+                    "overwrite" : true
+                },
+                "CFLAGS" : {
+                    "value" : "-g",
+                    "overwrite" : true
+                }
+            },
+            "post" : {
+                "BS_VIM_SEARCH_PATH" : {
+                    "value" : "${project_src_path}/src/**,${project_src_path}/include/**",
+                    "seperator" : ","
+                }
+            }
+        }
     },
     "mutter" : {
         "scm" : {
@@ -46,9 +76,9 @@
             "branch" : "master",
             "remote" : "origin",
             "remote_branch" : "master",
-            "current_head" : "4f9872c037bb6602a6e000b4a29ce6f43df5a0c1",
-            "common_ancestor" : "4f9872c037bb6602a6e000b4a29ce6f43df5a0c1"
-        }
+            "current_head" : "b8eb7b883f9a24a2cac266d444bae5fce202ef87",
+            "common_ancestor" : "b8eb7b883f9a24a2cac266d444bae5fce202ef87"
+        },
         "env" : {
             "local" : {
                 "CXXFLAGS" : {
@@ -66,6 +96,6 @@
                     "seperator" : ","
                 }
             }
-        },
+        }
     }
 }
