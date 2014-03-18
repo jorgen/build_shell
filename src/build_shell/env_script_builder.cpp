@@ -296,13 +296,15 @@ static void writeEnvironmentVariable(FILE *file, const EnvVariable &variable, co
             value += variable.seperator + (*it);
         }
     }
-    const std::string build_shell_projevt_variable = "BUILD_SHELL_" + variable.project + "_" + variable.name;
+    const std::string build_shell_project_variable = "BUILD_SHELL_" + variable.project + "_" + variable.name;
+    const std::string build_shell_project_variable_set = build_shell_project_variable + "_SET";
     std::string indent = requested_indent;
     if (variable.directory) {
         fprintf(file, "%sif [ -d \"%s\" ]; then\n", indent.c_str(), variable.values.front().c_str());
         indent += "    ";
     }
-    fprintf(file, "%sexport %s=$%s\n", indent.c_str(), build_shell_projevt_variable.c_str(), variable.name.c_str());
+    fprintf(file, "%sexport %s=$%s\n", indent.c_str(), build_shell_project_variable.c_str(), variable.name.c_str());
+    fprintf(file, "%sexport %s=1\n", indent.c_str(), build_shell_project_variable_set.c_str());
     if (variable.overwrite || variable.singular) {
         fprintf(file, "%sexport %s=\"%s\"\n", indent.c_str(), variable.name.c_str(), value.c_str());
     } else {
@@ -350,13 +352,17 @@ void EnvScriptBuilder::writeUnsetScript(const std::string &file, const std::list
 
 static void write_unset_for_variable(FILE *file, const EnvVariable &variable, const std::string &indent = "")
 {
-    const std::string build_shell_projevt_variable = "BUILD_SHELL_" + variable.project + "_" + variable.name;
-    fprintf(file, "%sif [ -z \"$%s\" ]; then\n",indent.c_str(), build_shell_projevt_variable.c_str());
-    fprintf(file, "%s    unset %s\n", indent.c_str(), variable.name.c_str());
-    fprintf(file, "%s    unset %s\n", indent.c_str(), build_shell_projevt_variable.c_str());
-    fprintf(file, "%selse\n", indent.c_str());
-    fprintf(file, "%s    export %s=$%s\n", indent.c_str(), variable.name.c_str(), build_shell_projevt_variable.c_str());
-    fprintf(file, "%s    unset %s\n", indent.c_str(), build_shell_projevt_variable.c_str());
+    const std::string build_shell_project_variable = "BUILD_SHELL_" + variable.project + "_" + variable.name;
+    const std::string build_shell_project_variable_set = build_shell_project_variable + "_SET";
+    fprintf(file, "%sif [ ! -z \"$%s\" ]; then\n", indent.c_str(), build_shell_project_variable_set.c_str());
+    fprintf(file, "%s    if [ -z \"$%s\" ]; then\n",indent.c_str(), build_shell_project_variable.c_str());
+    fprintf(file, "%s        unset %s\n", indent.c_str(), variable.name.c_str());
+    fprintf(file, "%s        unset %s\n", indent.c_str(), build_shell_project_variable.c_str());
+    fprintf(file, "%s    else\n", indent.c_str());
+    fprintf(file, "%s        export %s=$%s\n", indent.c_str(), variable.name.c_str(), build_shell_project_variable.c_str());
+    fprintf(file, "%s        unset %s\n", indent.c_str(), build_shell_project_variable.c_str());
+    fprintf(file, "%s    fi\n", indent.c_str());
+    fprintf(file, "%s    unset %s\n", indent.c_str(), build_shell_project_variable_set.c_str());
     fprintf(file, "%sfi\n", indent.c_str());
 }
 

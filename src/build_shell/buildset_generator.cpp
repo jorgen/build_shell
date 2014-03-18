@@ -109,9 +109,16 @@ bool BuildsetGenerator::updateBuildset(JT::ObjectNode *buildset)
     }
 
     while (struct dirent *ent = readdir(source_dir)) {
-        if (strncmp(".",ent->d_name, sizeof(".")) == 0 ||
-            strncmp("..", ent->d_name, sizeof("..")) == 0 ||
-            strncmp("build_shell", ent->d_name, sizeof("build_shell")) == 0)
+        if (strncmp(".",ent->d_name, sizeof(".")) == 0
+                || strncmp("..", ent->d_name, sizeof("..")) == 0
+                || strncmp("build_shell", ent->d_name, sizeof("build_shell")) == 0
+                || strncmp("etc", ent->d_name, sizeof("etc")) == 0
+                || strncmp("share", ent->d_name, sizeof("share")) == 0
+                || strncmp("include", ent->d_name, sizeof("include")) == 0
+                || strncmp("libexec", ent->d_name, sizeof("libexec")) == 0
+                || strncmp("lib", ent->d_name, sizeof("lib")) == 0
+                || strncmp("bin", ent->d_name, sizeof("bin")) == 0
+                || strncmp("var", ent->d_name, sizeof("var")) == 0)
             continue;
         struct stat buf;
         if (stat(ent->d_name, &buf) != 0) {
