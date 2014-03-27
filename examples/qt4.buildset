@@ -1,0 +1,24 @@
+{
+    "qt" : {
+        "scm" : {
+            "type" : "git",
+            "url" : "ssh://codereview.qt-project.org:29418/qt/qt.git",
+            "branch" : "4.8",
+            "remote" : "origin",
+            "remote_branch" : "4.8",
+            "current_head" : "19458101ebc48a8cc6d5ff75aa4b657d2898758e",
+            "common_ancestor" : "19458101ebc48a8cc6d5ff75aa4b657d2898758e"
+        },
+        "configure_args" : "-developer-build -opengl -opensource -nomake tests -nomake examples",
+        "no_install" : true,
+        "env" : {
+            "post" : {
+                "PATH" : "${project_build_path}/bin",
+                "BS_VIM_SEARCH_PATH" : {
+                    "value" : "${project_src_path}/src/**",
+                    "seperator" : ","
+                }
+            }
+        }
+    }
+}
