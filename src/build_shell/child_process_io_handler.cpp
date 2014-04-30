@@ -40,12 +40,10 @@ ChildProcessIoHandler::ChildProcessIoHandler(const std::string &phase, const std
     , m_print_stderr(true)
     , m_roller_state(0)
     , m_rooler_active(false)
-    , m_use_roller(isatty(out_file))
+    , m_use_roller(isatty(STDOUT_FILENO))
     , m_phase(phase)
     , m_project_name(projectName)
 {
-
-
     if (::pipe(m_stderr_pipe)) {
         fprintf(stderr, "Failed to open pipe for stderr redirection %s\n", strerror(errno));
         return;
@@ -111,7 +109,7 @@ static bool flushToFile(int file, char *buffer, ssize_t size)
     return true;
 }
 
-const char roller[] = { '|', '/', '-', '\\' };
+static const char roller[] = { '|', '/', '-', '\\' };
 
 bool ChildProcessIoHandler::handle_events(const pollfd &poll_data, int out_file, bool print, int *active_connections) const
 {
