@@ -38,7 +38,7 @@ public:
 
     bool error() const { return m_error; }
 
-    void printStdOut(bool print);
+    void setPrintStdOut(bool print);
 private:
     bool handle_events(const pollfd &poll_data,
                        int out_file,

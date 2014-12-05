@@ -81,14 +81,20 @@ void ChildProcessIoHandler::setupChildProcessState()
 {
     close(m_stdout_pipe[0]);
     close(STDOUT_FILENO);
-    dup2(m_stdout_pipe[1], STDOUT_FILENO);
+    if (dup2(m_stdout_pipe[1], STDOUT_FILENO) < 0) {
+        const char *error_msg = "Failed to dup pipe onto STDOUT_FILENO\n";
+        write(m_stderr_pipe[1], error_msg, sizeof error_msg);
+    }
 
     close(m_stderr_pipe[0]);
     close(STDERR_FILENO);
-    dup2(m_stderr_pipe[1], STDERR_FILENO);
+    if (dup2(m_stderr_pipe[1], STDERR_FILENO) < 0) {
+        const char *error_msg = "Failed to dup pipe onto STDERR_FILENO\n";
+        write(m_stderr_pipe[1], error_msg, sizeof error_msg);
+    }
 }
 
-void ChildProcessIoHandler::printStdOut(bool print)
+void ChildProcessIoHandler::setPrintStdOut(bool print)
 {
     m_print_stdout = print;
 }
@@ -128,8 +134,10 @@ bool ChildProcessIoHandler::handle_events(const pollfd &poll_data, int out_file,
         if (r == 0) {
             (*active_connections)--;
         } else {
-            if (!flushToFile(out_file, in_buffer, r))
-                fprintf(stderr, "Failed to write to out_file %s\n", strerror(errno));
+            if (out_file >= 0) {
+                if (!flushToFile(out_file, in_buffer, r))
+                    fprintf(stderr, "Failed to write to out_file %s\n", strerror(errno));
+            }
             if (ALLWAYS_PRINT || print || out_file < 0) {
                 if (!flushToFile(STDOUT_FILENO, in_buffer, r))
                     fprintf(stderr, "Failed to write to stderr %s\n", strerror(errno));

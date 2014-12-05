@@ -57,9 +57,8 @@ private:
     int runScript(const std::string &env_script,
                   const std::string &script,
                   const std::string &args,
-                  int redirect_out_to,
-                  bool print) const;
-    int exec_script(const std::string &command, int redirect_out_to, bool print) const;
+                  int redirect_out_to) const;
+    int exec_script(const std::string &command, int redirect_out_to) const;
 
     const Configuration &m_configuration;
     std::string m_environement_script;

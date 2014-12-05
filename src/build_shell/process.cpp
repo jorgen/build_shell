@@ -88,7 +88,8 @@ bool Process::run(JT::ObjectNode **returnedObjectNode)
     bool return_val = true;
 
     LogFileResetter resetter(*this);
-    if (m_log_file < 0 && Configuration::isDir(m_configuration.scriptExecutionLogDir())) {
+    if (m_log_file < 0 && Configuration::isDir(m_configuration.buildShellMetaDir())) {
+        Configuration::ensurePath(m_configuration.scriptExecutionLogDir());
         std::string log_file_str = m_configuration.scriptExecutionLogDir() +  "/" + m_project_name + "_" + m_phase + ".log";
         setLogFile(log_file_str, false);
         resetter.resetLog = true;
@@ -113,7 +114,7 @@ bool Process::run(JT::ObjectNode **returnedObjectNode)
 
     std::string arguments =  m_project_name + " " + temp_file;
     for (auto it = scripts.begin(); it != scripts.end(); ++it) {
-        int exit_code = runScript(m_environement_script, (*it), arguments,  m_log_file, m_print);
+        int exit_code = runScript(m_environement_script, (*it), arguments,  m_log_file);
         if (exit_code) {
             fprintf(stderr, "Script %s for project %s failed in execution\n", it->c_str(), m_project_name.c_str());
             return_val = false;
@@ -256,8 +257,7 @@ bool Process::flushProjectNodeToTemporaryFile(const std::string &project_name, c
 int Process::runScript(const std::string &env_script,
                        const std::string &script,
                        const std::string &args,
-                       int redirect_out_to,
-                       bool print) const
+                       int redirect_out_to) const
 {
     if (!script.size())
         return -1;
@@ -278,15 +278,15 @@ int Process::runScript(const std::string &env_script,
 
     std::string script_command = pre_script_command + script + post_script_command;
 
-    int exit_code = exec_script(script_command, redirect_out_to, print);
+    int exit_code = exec_script(script_command, redirect_out_to);
     return exit_code;
 }
-int Process::exec_script(const std::string &command, int redirect_out_to, bool print) const
+int Process::exec_script(const std::string &command, int redirect_out_to) const
 {
     if (DEBUG_EXEC_SCRIPT)
         fprintf(stderr, "executing command %s\n", command.c_str());
     ChildProcessIoHandler childProcessIoHandler(m_phase, m_project_name, redirect_out_to);
-    childProcessIoHandler.printStdOut(m_print || print);
+    childProcessIoHandler.setPrintStdOut(m_print);
 
     pid_t process = fork();
 
@@ -301,9 +301,7 @@ int Process::exec_script(const std::string &command, int redirect_out_to, bool p
         } while(wpid != process);
         return WEXITSTATUS(child_status);
     } else {
-        if (redirect_out_to >= 0) {
-            childProcessIoHandler.setupChildProcessState();
-        }
+        childProcessIoHandler.setupChildProcessState();
         execlp("bash", "bash", "-c", command.c_str(), nullptr);
         fprintf(stderr, "Failed to execute %s : %s\n", command.c_str(), strerror(errno));
         exit(1);
