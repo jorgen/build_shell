@@ -1,39 +1,13 @@
 {
-    "wayland" : {
-        "scm" : {
-            "type" : "git",
-            "url" : "git://anongit.freedesktop.org/wayland/wayland",
-            "branch" : "1.2",
-            "remote" : "origin",
-            "remote_branch" : "1.2",
-            "current_head" : "0df6d81aeecc0d5a52ee8ec228f743836aa24448",
-            "common_ancestor" : "0df6d81aeecc0d5a52ee8ec228f743836aa24448"
-        },
-        "env" : {
-            "post" : {
-                "ACLOCAL" : {
-                    "value" : "aclocal -I ${install_path}/share/aclocal",
-                    "overwrite" : true
-                },
-                "BS_VIM_SEARCH_PATH" : {
-                    "value" : "${project_src_path}/src/**",
-                    "seperator" : ","
-                }
-            }
-        },
-        "configure_args" : "--disable-documentation"
-    },
     "qtbase" : {
         "scm" : {
             "type" : "git",
             "url" : "ssh://codereview.qt-project.org:29418/qt/qtbase.git",
-            "branch" : "stable",
+            "branch" : "dev",
             "remote" : "origin",
-            "remote_branch" : "stable",
-            "current_head" : "d87ddcf56ff3bc46f468d8da276f1afc28b6ac26",
-            "common_ancestor" : "d87ddcf56ff3bc46f468d8da276f1afc28b6ac26"
+            "remote_branch" : "dev",
         },
-        "configure_args" : "-developer-build -debug -opengl -opensource -nomake tests -nomake examples",
+        "configure_args" : "-developer-build -debug -opengl",
         "no_install" : true,
         "env" : {
             "post" : {
@@ -49,11 +23,9 @@
         "scm" : {
             "type" : "git",
             "url" : "ssh://codereview.qt-project.org:29418/qt/qtdeclarative.git",
-            "branch" : "stable",
+            "branch" : "dev",
             "remote" : "origin",
-            "remote_branch" : "stable",
-            "current_head" : "0c5620c43350804a5df03825ae7a849c783fbfeb",
-            "common_ancestor" : "0c5620c43350804a5df03825ae7a849c783fbfeb"
+            "remote_branch" : "dev",
         },
         "no_install" : true,
         "env" : {
@@ -65,36 +37,13 @@
             }
         }
     },
-    "qtwayland" : {
-        "scm" : {
-            "type" : "git",
-            "url" : "ssh://codereview.qt-project.org:29418/qt/qtwayland.git",
-            "branch" : "stable",
-            "remote" : "origin",
-            "remote_branch" : "stable",
-            "current_head" : "2b1b071e281cf78e398309197ae3213ef2c5c870",
-            "common_ancestor" : "5c605d363e2fc42f5ec80413d093b69614027da4"
-        },
-        "configure_args" : "CONFIG+=wayland-compositor",
-        "no_install" : true,
-        "env" : {
-            "post" : {
-                "BS_VIM_SEARCH_PATH" : {
-                    "value" : "${project_src_path}/**",
-                    "seperator" : ","
-                }
-            }
-        }
-    },
     "qtquickcontrols" : {
         "scm" : {
             "type" : "git",
             "url" : "ssh://codereview.qt-project.org:29418/qt/qtquickcontrols.git",
-            "branch" : "stable",
+            "branch" : "dev",
             "remote" : "origin",
-            "remote_branch" : "stable",
-            "current_head" : "de35432376a215587e05b4817f2a1ddc7ac221fa",
-            "common_ancestor" : "de35432376a215587e05b4817f2a1ddc7ac221fa"
+            "remote_branch" : "dev",
         },
         "no_install" : true,
         "env" : {

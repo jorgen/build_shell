@@ -54,9 +54,9 @@
         "scm" : {
             "type" : "git",
             "url" : "git://anongit.freedesktop.org/mesa/mesa",
-            "branch" : "10.0",
+            "branch" : "master",
             "remote" : "origin",
-            "remote_branch" : "10.0",
+            "remote_branch" : "master",
         },
         "env" : {
             "local" : {
@@ -123,6 +123,10 @@
                 "BS_VIM_SEARCH_PATH" : {
                     "value" : "${project_src_path}/src/**",
                     "seperator" : ","
+                },
+                "QT_LOGGING_RULES" : {
+                    "value" : "qt.xcb.glintegration.debug=true",
+                    "seperator" : " "
                 }
             }
         }
