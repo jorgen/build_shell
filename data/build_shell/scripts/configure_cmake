@@ -1,0 +1,14 @@
+#!/bin/bash
+
+FILE=$2
+
+source_path=$(jsonmod -p arguments.src_path $FILE)
+install_path=$(jsonmod -p arguments.install_path $FILE)
+add_configure_args=$(jsonmod -p configure_args $FILE)
+no_install=$(jsonmod -p no_install $FILE)
+configure_args=""
+if [ "$no_install" != "true" ]; then
+    configure_args="$configure_args -DCMAKE_INSTALL_PREFIX:PATH=$install_path "
+fi
+configure_args="$configure_args $add_configure_args"
+cmake $configure_args $source_path
