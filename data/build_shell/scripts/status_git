@@ -12,7 +12,7 @@ FILE=$2
 build_set_head=$(jsonmod -p scm.current_head $FILE)
 
 current_dir=$(basename $PWD)
-dirty=$(git status --porcelain -u no)
+dirty=$(git status --porcelain -uno)
 dirty_str=""
 ahead="0"
 if [ ! -z "$build_set_head" ]; then
