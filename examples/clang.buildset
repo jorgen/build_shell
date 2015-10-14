@@ -1,0 +1,31 @@
+{
+    "llvm" : {
+        "scm" : {
+            "type" : "git",
+            "url" : "git@github.com:llvm-mirror/llvm.git",
+            "branch" : "master",
+            "remote" : "origin",
+            "sub_repos" : [
+                {
+                    "name" : "clang",
+                    "type" : "git",
+                    "url" : "git@github.com:llvm-mirror/clang.git",
+                    "branch" : "master",
+                    "remote" : "origin",
+                    "path" : "tools"
+                },
+                {
+                    "name" : "compiler-rt",
+                    "type" : "git",
+                    "url" : "git@github.com:llvm-mirror/compiler-rt.git",
+                    "branch" : "master",
+                    "remote" : "origin",
+                    "path" : "projects"
+                }
+            ],
+            "remote_branch" : "master",
+            "current_head" : "f7b2acbdbab88727d5983eced28544641f9ee568",
+            "common_ancestor" : "f7b2acbdbab88727d5983eced28544641f9ee568"
+        }
+    }
+}
