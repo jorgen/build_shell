@@ -34,6 +34,13 @@ public:
     bool execute();
 
 private:
+    enum ScmAction {
+        Pull,
+        Clone
+    };
+
+    bool determinAndRunScmAction(const std::string &relPath, JT::ObjectNode *scmNode);
+    bool runPullActionForScmNode(const std::string &name, ScmAction action, JT::ObjectNode *scmNode);
     TreeBuilder m_buildset_tree_builder;
     JT::ObjectNode *m_buildset_tree;
 };

@@ -2,9 +2,9 @@
 
 FILE=$2
 PROJECT_NAME=$1
-URL=$(jsonmod -p scm.url $FILE)
-REMOTE_BRANCH=$(jsonmod -p scm.remote_branch $FILE)
-BRANCH=$(jsonmod -p scm.branch $FILE)
+URL=$(jsonmod -p url $FILE)
+REMOTE_BRANCH=$(jsonmod -p remote_branch $FILE)
+BRANCH=$(jsonmod -p branch $FILE)
 
 if [ -z "$REMOTE_BRANCH" ]; then
     if [ -n "$BRANCH" ]; then
